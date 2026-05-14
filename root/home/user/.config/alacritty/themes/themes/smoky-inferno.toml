@@ -1,0 +1,60 @@
+# Smoky Inferno — Inferno fire palette on a deep charcoal/smoke canvas
+# Greens replaced with warm amber so bash ls/git never shows green.
+
+[colors.primary]
+background = "#1c1512"
+foreground = "#d6d0ce"
+
+[colors.cursor]
+text = "#1c1512"
+cursor = "#ff6633"
+
+[colors.vi_mode_cursor]
+text = "#1c1512"
+cursor = "#ffaa44"
+
+[colors.search.matches]
+foreground = "#1c1512"
+background = "#ff9900"
+
+[colors.search.focused_match]
+foreground = "#1c1512"
+background = "#ff6633"
+
+[colors.footer_bar]
+foreground = "#8a8080"
+background = "#1c1512"
+
+[colors.hints.start]
+foreground = "#1c1512"
+background = "#ffaa44"
+
+[colors.hints.end]
+foreground = "#1c1512"
+background = "#2e2520"
+
+[colors.selection]
+text = "#1c1512"
+background = "#d6d0ce"
+
+# Normal — no greens; everything warm/fire/smoke
+[colors.normal]
+black   = "#1a1210"
+red     = "#dd4400"
+green   = "#cc7733"    # warm amber instead of green
+yellow  = "#ffaa44"
+blue    = "#667788"    # muted smoke-blue (only cool tone, desaturated)
+magenta = "#cc5500"
+cyan    = "#bb8844"    # bronze instead of teal
+white   = "#d6d0ce"
+
+# Bright
+[colors.bright]
+black   = "#3a3028"
+red     = "#ff5533"
+green   = "#dd9955"    # brighter amber
+yellow  = "#ffbb55"
+blue    = "#8899aa"    # light smoke-blue
+magenta = "#ff6633"
+cyan    = "#ccaa77"    # lighter bronze
+white   = "#eceae6"
