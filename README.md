@@ -42,7 +42,7 @@ Checksum automation note: installer integrity checks remain environment-driven u
 The public snapshot contains user settings from `.config`, terminal/shell files,
 Codex configuration and rules, `.agents` skills, Hindsight integration settings,
 authored local launchers, desktop entries and user systemd units. 9router's
-configuration tables are exported as JSON, not as its live database.
+configuration tables are private renderer values, not a live database in Git.
 
 `templates/manifest.json` owns the captured files, integrity hashes, generated
 user-unit links and exclusions. Sources end in `.tmpl`; `@@DOTFILES:NAME@@`
@@ -66,10 +66,13 @@ home's `.local/state/dotfiles/`. It creates empty Hindsight data directories and
 owned user-unit enablement links, but does not install packages or start services.
 Run as the destination user; reload the user systemd manager after review.
 
-To restore 9router routing, initialize the same compatible 9router version once,
-stop it, then add `--restore-router` to `dotfiles.py install`. Only the exported configuration
-tables are replaced in one transaction, after a private SQLite backup; request
-history and usage tables are untouched. OAuth connections require a fresh login.
+For a fresh 9router installation, `scripts/router.sh install` initializes the
+pinned container offline and restores the captured tables before network exposure.
+For an existing database, stop the gateway and run `scripts/router.py restore`
+or add `--restore-router` to `dotfiles.py install`. Only six configuration tables
+are replaced transactionally after a private SQLite backup; history and usage
+remain untouched. Captured OAuth credentials are retained, but expired or revoked
+sessions may still require login. See the network identity boundary below.
 
 Refreshes are explicit, never automatic:
 
@@ -292,6 +295,22 @@ should include `~/.zsh_functions` in their `fpath` to use the installed completi
 Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v0.8.2),
 [Alacritty source](https://github.com/alacritty/alacritty/tree/f99dc71708d31d5c32d4b3fa611f9a87bf22657e),
 [Nerd Fonts release](https://github.com/ryanoasis/nerd-fonts/releases/tag/v3.4.0).
+
+### Network services
+
+`scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions
+as other components; bootstrap selects them with `--with-network` or
+`--only tailscale,router`. The Compose definition pins 9router 0.5.69,
+host networking, **2 CPUs** and **4 GiB `/dev/shm`**, reusing `~/.9router` rather
+than copying credentials. Tailscale stays native; its existing SSH, node identity
+and public Funnel endpoint remain unchanged.
+
+The live gateway runs under the enabled user `9router.service`; its old GUI
+autostart is disabled and `9router-local` starts that unit instead. Native npm
+9router is no longer a restoration prerequisite. Identity/configuration bundles
+live only in the private values store; Git contains placeholders. See
+[network service operations](.github/context/PROJECT/network-services.md) for
+deployment order, recovery, secret-restoration boundaries and checks.
 
 ## Security
 

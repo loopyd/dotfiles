@@ -1,0 +1,11 @@
+[Unit]
+Description=Verify and preserve captured Tailscale exposure
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/systemctl is-active --quiet tailscaled.service
+ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py apply
+
+[Install]
+WantedBy=default.target

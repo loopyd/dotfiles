@@ -1,0 +1,20 @@
+[Unit]
+Description=9router gateway (Docker Compose)
+After=tailscale.service
+Requires=tailscale.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/test -s %h/.9router/db/data.sqlite
+ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
+ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStart=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml up --no-build --pull never --abort-on-container-exit
+ExecStop=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60
+ExecStopPost=-/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60
+SuccessExitStatus=130
+Restart=always
+RestartSec=15
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

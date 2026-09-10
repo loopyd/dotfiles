@@ -24,7 +24,6 @@
     "zig"
   ],
   "npm": [
-    "9router",
     "@biomejs/biome",
     "@earendil-works/pi-client",
     "@earendil-works/pi-coding-agent",

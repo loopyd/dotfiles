@@ -121,7 +121,7 @@ class Scrubber:
             text = text.replace(value, marker)
         text = text.replace(str(self.home), '@@DOTFILES:HOME@@')
         text = text.replace('/run/user/' + str(os.getuid()), '/run/user/@@DOTFILES:UID@@')
-        if label == '.config/hindsight/compose.yaml':
+        if label in {'.config/hindsight/compose.yaml', '.config/9router/compose.yaml'}:
             text = text.replace(str(os.getuid()) + ':' + str(os.getgid()), '@@DOTFILES:UID@@:@@DOTFILES:GID@@')
             text = text.replace('uid=' + str(os.getuid()), 'uid=@@DOTFILES:UID@@')
             text = text.replace('gid=' + str(os.getgid()), 'gid=@@DOTFILES:GID@@')
@@ -193,6 +193,15 @@ def capture(args):
         raise ValueError('Use an empty output directory')
     scrubber = Scrubber(home)
     collected = {}
+    private_network = {'.config/9router/identity.json', '.config/9router/restore.json', '.config/tailscale/identity.json'}
+    existing_values = json.loads(values_path.read_text()) if values_path.exists() else {}
+    network_keys = {'SECRET_ROUTER_IDENTITY', 'SECRET_ROUTER_TABLES', 'SECRET_TAILSCALE_IDENTITY'}
+    preserve_network = network_keys.issubset(existing_values)
+    if preserve_network:
+        scrubber.values.update({key: existing_values[key] for key in network_keys})
+        for relative in private_network | {'.config/tailscale/network.json', '.config/tailscale/default.env'}:
+            template = Path(__file__).resolve().parents[1] / 'root/home/user' / (relative + '.tmpl')
+            collected[relative] = (template.read_text(), False)
     exclusions = Counter()
     links = []
     roots = ['.config', '.agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
@@ -208,6 +217,9 @@ def capture(args):
             candidates.extend(parent / name for name in sorted(files))
     for source in sorted(set(candidates)):
         relative = source.relative_to(home)
+        if str(relative) in private_network:
+            exclusions['private network bundle (preserved only as template)'] += 1
+            continue
         excluded = reason(relative)
         if source.is_symlink():
             if str(relative).startswith('.config/systemd/user/') and '.wants/' in str(relative) and source.resolve().is_relative_to(home / '.config/systemd/user'):
@@ -239,7 +251,7 @@ def capture(args):
             continue
         scrubber.inspect(text, str(relative))
         collected[str(relative)] = (text, bool(source.stat().st_mode & stat.S_IXUSR))
-    exported = router_export(home)
+    exported = None if preserve_network else router_export(home)
     if exported:
         scrubber.inspect(exported, '.config/9router/restore.json')
         collected['.config/9router/restore.json'] = (exported, False)

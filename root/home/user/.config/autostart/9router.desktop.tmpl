@@ -2,7 +2,7 @@
 Type=Application
 Name=9Router
 Comment=9Router API Proxy
-Exec=@@DOTFILES:HOME@@/.local/bin/9router-local --tray --skip-update
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
+Exec=systemctl --user start 9router.service
+Hidden=true
+NoDisplay=true
+X-GNOME-Autostart-enabled=false

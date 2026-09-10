@@ -20,6 +20,7 @@ WITH_HINDSIGHT=false
 WITH_USER_TOOLS=false
 WITH_TERMINALS=false
 WITH_DESKTOP=false
+WITH_NETWORK=false
 DESKTOP_BACKUP=""
 DOTFILES_VALUES="${HOME}/.config/dotfiles/values.json"
 COMPONENTS=()
@@ -41,11 +42,12 @@ Usage: ./bootstrap.sh <install|update|uninstall|check> [options]
   --with-hindsight     Include Hindsight (Docker prerequisite)
   --with-terminals     Include Alacritty and herdr
   --with-desktop       Include selected desktop preferences
+  --with-network       Include native Tailscale exposure and 9router Compose
   --desktop-backup <path>  Explicit pre-install settings snapshot for removal
   --dotfiles-values <path>  Private renderer values outside the repository
 
 Names: core, gh, docker, nvidia, hooks, neovim, ghidra, blender, reaper,
-ollama, 8bitdo, dotfiles, desktop, mise, tools, alacritty, herdr, hindsight.
+ollama, 8bitdo, dotfiles, desktop, mise, tools, alacritty, herdr, tailscale, router, hindsight.
 Install/update follow dependency order; uninstall verifies receipts first
 and reverses that order. Check never installs prerequisites.
 EOF
@@ -80,6 +82,7 @@ parse_args() {
             --with-user-tools) WITH_USER_TOOLS=true; shift ;;
             --with-terminals) WITH_TERMINALS=true; shift ;;
             --with-desktop) WITH_DESKTOP=true; shift ;;
+            --with-network) WITH_NETWORK=true; shift ;;
             -h|--help) usage; exit 0 ;;
             *) err "Unknown option: $1"; return 2 ;;
         esac
@@ -108,20 +111,22 @@ select_components() {
         [[ "${WITH_HINDSIGHT}" != true ]] || requested+=(hindsight)
         [[ "${WITH_TERMINALS}" != true ]] || requested+=(alacritty herdr)
         [[ "${WITH_DESKTOP}" != true ]] || requested+=(desktop)
+        [[ "${WITH_NETWORK}" != true ]] || requested+=(tailscale router)
     fi
     for component in "${requested[@]}"; do
         case "${component}" in
-            core|gh|docker|nvidia|hooks|neovim|ghidra|blender|reaper|ollama|8bitdo|dotfiles|desktop|mise|tools|alacritty|herdr|hindsight) selected["${component}"]=true ;;
+            core|gh|docker|nvidia|hooks|neovim|ghidra|blender|reaper|ollama|8bitdo|dotfiles|desktop|mise|tools|alacritty|herdr|tailscale|router|hindsight) selected["${component}"]=true ;;
             *) err "Unknown component: ${component}"; return 2 ;;
         esac
     done
     if [[ "${ACTION}" == install || "${ACTION}" == update ]]; then
-        if [[ -n "${selected[hindsight]:-}${selected[nvidia]:-}" ]]; then selected[docker]=true; fi
+        if [[ -n "${selected[hindsight]:-}${selected[nvidia]:-}${selected[router]:-}" ]]; then selected[docker]=true; fi
+        if [[ -n "${selected[router]:-}" ]]; then selected[tailscale]=true; fi
     fi
     if [[ "${ACTION}" == uninstall && -n "${selected[desktop]:-}" && -z "${DESKTOP_BACKUP}" ]]; then
         err 'Desktop removal requires --desktop-backup'; return 2
     fi
-    for component in core gh docker nvidia hooks neovim ghidra blender reaper ollama 8bitdo dotfiles desktop mise tools alacritty herdr hindsight; do
+    for component in core gh docker nvidia hooks neovim ghidra blender reaper ollama 8bitdo dotfiles desktop mise tools alacritty herdr tailscale router hindsight; do
         [[ -z "${selected[${component}]:-}" ]] || COMPONENTS+=("${component}")
     done
 }

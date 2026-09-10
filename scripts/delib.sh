@@ -210,6 +210,8 @@ lifecycle_payload() {
                 "${HOME}/.local/share/man/man1/alacritty.1.gz" "${HOME}/.local/share/man/man5/alacritty.5.gz"
                 "${HOME}/.local/share/man/man5/alacritty-bindings.5.gz" "${HOME}/.local/share/man/man1/alacritty-msg.1.gz"
                 "${HOME}/.local/share/man/man7/alacritty-escapes.7.gz") ;;
+        router) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/router.py") ;;
+        tailscale) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/tailscale.py") ;;
         hooks|tools) ;;
         *) err "Unknown component: ${LIFECYCLE_COMPONENT}"; return 1 ;;
     esac
@@ -235,6 +237,8 @@ lifecycle_check() {
         herdr) python3 "${SCRIPT_DIR}/terminal.py" check-herdr; "${HOME}/.local/bin/herdr" --version ;;
         hindsight) python3 "${SCRIPT_DIR}/hindsight.py" preflight; python3 "${SCRIPT_DIR}/hindsight.py" health ;;
         tools) python3 "${SCRIPT_DIR}/packages.py" check ;;
+        router) python3 "${SCRIPT_DIR}/router.py" check ;;
+        tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;
         mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
         hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;
         blender) "${INSTALL_DIR}/blender" --version ;;
@@ -251,6 +255,10 @@ lifecycle_uninstall() {
     lifecycle_receipt verify
     case "${LIFECYCLE_COMPONENT}" in
         herdr) systemctl --user disable --now herdr.service ;;
+        router)
+            systemctl --user disable --now 9router.service
+            "${COMPOSE[@]}" down ;;
+        tailscale) systemctl --user disable --now tailscale.service ;;
         hindsight)
             systemctl --user disable --now hindsight.service
             systemctl --user disable --now hindsight-db.service

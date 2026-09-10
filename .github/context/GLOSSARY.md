@@ -22,6 +22,11 @@ Concise repository terms used across .github/context.
 - Meaning: Local installation record used to refuse unmanaged, modified or dependency-cascading removal while preserving configuration and persistent data.
 - References: [PROJECT/coding-standards.md#lifecycle-interface](PROJECT/coding-standards.md#lifecycle-interface)
 
+## private identity export
+
+- Meaning: Explicit fixed-allowlist capture into private renderer values; only placeholders enter Git.
+- References: [Network identity boundary](PROJECT/network-services.md#identity-restoration-boundary)
+
 ## symlink policy
 
 - Meaning: Host-derived symlinks are not stored in overlay; recreate via scripts/bootstrap.

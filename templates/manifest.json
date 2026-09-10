@@ -1031,7 +1031,7 @@
       "source": "root/home/user/.config/9router/restore.json.tmpl",
       "target": ".config/9router/restore.json",
       "mode": "0600",
-      "sha256": "db25505f9fbaa3c8534140fe488762471ca8204cf441834eaced0a66778d10c9"
+      "sha256": "44405c882a392c40e90ff59f8c34ae70c43fd3cf7b05666fb9cc2c2b2e42db94"
     },
     {
       "source": "root/home/user/.config/9router/runtime.env.tmpl",
@@ -4265,7 +4265,7 @@
       "source": "root/home/user/.config/autostart/9router.desktop.tmpl",
       "target": ".config/autostart/9router.desktop",
       "mode": "0600",
-      "sha256": "2f3d13b0ed4b78e7210fb86a04a4ff83ab7108f809f8db12eb3c6bcddf1c4e7d"
+      "sha256": "a73d5c9061a9f2a296985814adbf39abcbf976f27251d34f1de4db573908d354"
     },
     {
       "source": "root/home/user/.config/autostart/org.rncbc.qpwgraph.desktop.tmpl",
@@ -5087,7 +5087,7 @@
       "source": "templates/commands/9router-local.tmpl",
       "target": ".local/bin/9router-local",
       "mode": "0700",
-      "sha256": "9d4561ea93194eda7fbc8169edb00c99d8975a8ae67a6673aa2eb7cc93c05b88"
+      "sha256": "14739a819df6300d560579cdd0f0af99faba70c0125cb3d857c8250ba6786cd9"
     },
     {
       "source": "templates/commands/archon.tmpl",
@@ -5214,6 +5214,48 @@
       "target": "Documents/pipewirepatch.qpwgraph",
       "mode": "0600",
       "sha256": "c7899aa8826265f61c3a4955beca5b027e4fca365f836e1fb883fde0cdf5c025"
+    },
+    {
+      "source": "root/home/user/.config/9router/compose.yaml.tmpl",
+      "target": ".config/9router/compose.yaml",
+      "mode": "0600",
+      "sha256": "ff69a80a8beb84890700d6f54581386f32df11e9319bb2358b6804269b2d51b0"
+    },
+    {
+      "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
+      "target": ".config/systemd/user/9router.service",
+      "mode": "0600",
+      "sha256": "df925b485b7603fc342e49ae144a13fdcb0776851e28d7e1dc21f61bc48c0ad2"
+    },
+    {
+      "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
+      "target": ".config/systemd/user/tailscale.service",
+      "mode": "0600",
+      "sha256": "cf289de067849a714e5d3e843ed0596412838ac36c2b5903ede694653e8e9aab"
+    },
+    {
+      "source": "root/home/user/.config/tailscale/network.json.tmpl",
+      "target": ".config/tailscale/network.json",
+      "mode": "0600",
+      "sha256": "9661e83767181c451055afdf64bf0253681a145683c4fcf184cb842a8fc03a9a"
+    },
+    {
+      "source": "root/home/user/.config/tailscale/default.env.tmpl",
+      "target": ".config/tailscale/default.env",
+      "mode": "0600",
+      "sha256": "d77d820c00eb4c03248658123baf0a281f22e52f5fa6a759a9a924c8c500debf"
+    },
+    {
+      "source": "root/home/user/.config/9router/identity.json.tmpl",
+      "target": ".config/9router/identity.json",
+      "mode": "0600",
+      "sha256": "d77041b89a2a86da6271906bdf07d30c240c22ecbf398cbbe1f543667c135a77"
+    },
+    {
+      "source": "root/home/user/.config/tailscale/identity.json.tmpl",
+      "target": ".config/tailscale/identity.json",
+      "mode": "0600",
+      "sha256": "f1348da2c31f6fc6a921180a827be3ef15021a4cce23e36383205d7ffc001f3e"
     }
   ],
   "symlinks": [
@@ -5232,6 +5274,14 @@
     {
       "target": ".config/systemd/user/default.target.wants/hindsight.service",
       "link": "../hindsight.service"
+    },
+    {
+      "target": ".config/systemd/user/default.target.wants/9router.service",
+      "link": "../9router.service"
+    },
+    {
+      "target": ".config/systemd/user/default.target.wants/tailscale.service",
+      "link": "../tailscale.service"
     }
   ],
   "excluded_file_counts": {

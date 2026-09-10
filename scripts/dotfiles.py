@@ -5,14 +5,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import socket
 import sqlite3
 import tomllib
 from xml.sax.saxutils import escape
 
-from snapshot import MARKER, TABLES, private_write
+from snapshot import MARKER, private_write
+from network import decode_tables, restore_tables
 
 
 def beneath(root, relative):
@@ -55,32 +55,14 @@ def restore_router(home, backup, port):
     database = home / '.9router/db/data.sqlite'
     if not database.exists():
         raise ValueError('Initialize 9router once, then stop it before database restore')
-    exported = json.loads((home / '.config/9router/restore.json').read_text())
-    if exported.get('format') != 1 or set(exported['tables']) != set(TABLES):
-        raise ValueError('Unsupported 9router export format')
+    tables = decode_tables(json.loads((home / '.config/9router/restore.json').read_text()))
     connection = sqlite3.connect(database)
     saved = backup / '9router.sqlite'
     saved.touch(mode=0o600)
     with sqlite3.connect(saved) as destination:
         connection.backup(destination)
-    try:
-        with connection:
-            connection.execute('BEGIN IMMEDIATE')
-            for table in TABLES:
-                columns = {row[1] for row in connection.execute('PRAGMA table_info("' + table + '")')}
-                for record in exported['tables'][table]:
-                    if not set(record).issubset(columns):
-                        raise ValueError('9router schema differs for table ' + table)
-                connection.execute('DELETE FROM "' + table + '"')
-                for record in exported['tables'][table]:
-                    if not all(re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', column) for column in record):
-                        raise ValueError('Invalid column in export')
-                    names = ','.join('"' + column + '"' for column in record)
-                    parameters = ','.join('?' for column in record)
-                    values = [json.dumps(value) if isinstance(value, (list, dict)) else value for value in record.values()]
-                    connection.execute('INSERT INTO "' + table + '" (' + names + ') VALUES (' + parameters + ')', values)
-    finally:
-        connection.close()
+    connection.close()
+    restore_tables(database, tables)
 
 
 def main():
