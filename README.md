@@ -92,6 +92,20 @@ the snapshot is configuration recovery, not a complete home-directory backup.
 order. Captured operational notes may refer to runtime receipts that are not
 backed up; perform fresh health checks after restoring services.
 
+### Hindsight authentication
+
+Set `SECRET_HINDSIGHT_API_KEY` and `SECRET_HINDSIGHT_DASHBOARD_ACCESS_KEY` in
+your private renderer values. The API key is reused by the server, built-in MCP,
+dashboard dataplane client, Codex Hindsight plugin and CLI; the dashboard login
+uses its separate access key. Both keys are generated and populated on this host.
+Only placeholders and null-valued examples belong in Git.
+
+Rendering also creates `~/.config/hindsight/credentials.json` with mode `0600`
+for local key retrieval. Keep it private. After an intentional restore, restart
+only `hindsight.service`; the renderer does not restart it automatically. Existing
+imports remain in the separate persistent database. Services stay loopback-only;
+upstream health, metrics and API-documentation routes remain unauthenticated.
+
 ## Installer scripts
 
 - `scripts/install-core-cli.sh` installs base apt tooling and fish (install-only).

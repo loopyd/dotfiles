@@ -6,8 +6,8 @@ Dashboard: http://localhost:9999. API: http://localhost:8888.
 
 The official `hindsight` CLI 0.9.2 is installed at `~/.local/bin/hindsight`,
 already on PATH. Its user configuration at `~/.hindsight/config` points to
-`http://127.0.0.1:8888`. No client API key is configured for this loopback-only
-deployment; the server's 9router credentials remain separate.
+`http://127.0.0.1:8888` with its private API key configured. API and dashboard
+authentication are enabled as described below; 9router credentials remain separate.
 
 ```sh
 hindsight --version
@@ -269,15 +269,18 @@ Qwen template defaulted to extra-high reasoning during structured extraction.
   deadlines to 600 seconds. `~/.local/bin/9router-local` loads this file and
   starts the installed CLI without modifying its package. Desktop login uses
   that launcher; use `9router-local --tray --skip-update` for manual startup.
-- Hindsight uses one worker with no reserved consolidation slot, one LLM call
-  per scope, one retain chunk per LLM call, and one embedding batch request with
-  at most 16 items. LLM timeout is 900 seconds; retry backoff starts at 5 seconds
-  and caps at 60 seconds. These conservative settings favor progress over bulk
-  throughput on a swapping GPU; monitor before increasing concurrency.
-- Only retain calls disable thinking, using
-  `HINDSIGHT_API_RETAIN_LLM_REASONING_EFFORT=none` and
-  `HINDSIGHT_API_RETAIN_LLM_EXTRA_BODY={"chat_template_kwargs":{"enable_thinking":false}}`.
-  Other Qwen clients and Hindsight reflect/consolidation reasoning are unchanged.
+- Hindsight keeps one background worker with no reserved consolidation slot,
+  one retain chunk per LLM call, and one embedding batch request of at most
+  16 items. Retry backoff starts at 5 seconds and caps at 60 seconds.
+- LLM concurrency is capped at 4 globally, with additional caps of 1 for retain,
+  1 for consolidation and 2 for reflect. These are LLM request caps, not worker
+  counts; background jobs remain serialized by the existing single worker.
+- Global and retain reasoning effort is `low`; consolidation and reflect use
+  `medium`. Each scope also passes matching Qwen `chat_template_kwargs` with
+  `enable_thinking=true`, replacing the former retain-only thinking disable.
+- The LLM request timeout is 300 seconds; the entire reflect operation has a
+  600-second wall timeout. Observations and automatic consolidation are enabled.
+  Models, credentials, embedding settings and other Qwen clients are unchanged.
 
 Private backups and configuration/retry receipts are under
 `~/.local/state/hindsight/swap-reliability-*/`; the latest validation is recorded
@@ -288,3 +291,33 @@ endpoint with their existing operation IDs, never by reuploading the corpus.
 Queue recovery does not mean corpus processing has finished.
 
 Relevant upstream behavior: [llama-swap v251 configuration](https://github.com/mostlygeek/llama-swap/blob/v251/config.example.yaml).
+
+## Endpoint authentication
+
+The local API requires a Bearer token through the built-in `ApiKeyTenantExtension`;
+the built-in MCP endpoint also requires the token. The dashboard has a separate
+access-key login and authenticates its server-side API requests with the API token.
+Both services remain loopback-only on ports 8888 and 9999; do not expose them or
+send credentials over an untrusted HTTP connection.
+
+Verified protection covers memory-bank API routes, built-in MCP, dashboard pages
+and dashboard data routes. Upstream intentionally leaves `/health`, `/metrics`,
+`/docs` and `/openapi.json` unauthenticated; these remain reachable only on loopback.
+Do not describe this configuration as authentication on every HTTP route.
+
+Private credentials are in `~/.config/hindsight/credentials.json`: `api_key` for
+API clients and `dashboard_access_key` for the login page at
+`http://127.0.0.1:9999/`. Open that file locally to retrieve a key; never paste
+credentials into chat, command arguments, logs, Git, or Hindsight memory.
+
+The Codex Hindsight plugin uses `apiToken` in `~/.hindsight/coding-agent.json`;
+the CLI uses `api_key` in `~/.hindsight/config`. Hooks reload config each invocation;
+the installed MCP client refreshes its token after a 401. Keep the single `shared`
+bank. Standalone import scripts must explicitly load the API token inside their
+process before making requests; accepted background jobs do not need re-uploading.
+
+Private settings and credentials are owner-readable/writable. Rotating the API
+key requires updating the server tenant/MCP keys, dashboard dataplane key, plugin
+and CLI together, then restarting only `hindsight.service`. Rotate the dashboard
+key separately to revoke dashboard sessions. Authentication is independent of the
+hook's 25-second reflection limit and does not fix that timeout.
