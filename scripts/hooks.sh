@@ -10,7 +10,7 @@ source "${SCRIPT_DIR}/delib.sh"
 
 usage() {
 	cat <<'EOF'
-Usage: ./scripts/install-git-hooks.sh
+Usage: ./scripts/hooks.sh <install|update|uninstall|check>
 
 Installs repository-local git hooks from .githooks.
 EOF
@@ -55,4 +55,4 @@ main() {
 	install_hooks
 }
 
-main "$@"
+lifecycle_dispatch hooks "$@"

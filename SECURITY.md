@@ -43,7 +43,7 @@ the renderer. Runtime SQLite exports and private values must not be staged;
 Run once per clone:
 
 ```bash
-./scripts/install-git-hooks.sh
+./scripts/hooks.sh install
 ```
 
 Or manually:

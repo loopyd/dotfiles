@@ -30,7 +30,7 @@ BLENDER_TMP_DIR=""
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-blender.sh [options]
+Usage: ./scripts/blender.sh <install|update|uninstall|check> [options]
 
 Options:
   --version <ver>         Blender version (default: 5.0.1)
@@ -187,5 +187,5 @@ main() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main "$@"
+    lifecycle_dispatch blender "$@"
 fi

@@ -30,7 +30,7 @@
 
 ## Repository fit notes
 
-- `scripts/install-ollama.sh` exposes both script and manual modes.
+- `scripts/ollama.sh` exposes both script and manual modes.
 - Default behavior aligns with service-first operation and includes user
   creation plus service enable/start.
 

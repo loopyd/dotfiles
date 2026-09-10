@@ -15,7 +15,7 @@ LIST_URL="https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-contain
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-nvidia-container-toolkit.sh [--skip-driver-check]
+Usage: ./scripts/nvidia.sh <install|update|uninstall|check> [--skip-driver-check]
 
 Options:
   --skip-driver-check   Skip nvidia-smi driver preflight
@@ -104,4 +104,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch nvidia "$@"

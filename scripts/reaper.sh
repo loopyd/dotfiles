@@ -35,7 +35,7 @@ TEMP_WDL=""
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-reaper.sh [options]
+Usage: ./scripts/reaper.sh <install|update|uninstall|check> [options]
 
 Options:
   --version <ver>             REAPER version build number (default: 761)
@@ -182,7 +182,7 @@ install_reaper() {
 
     require_commands curl mktemp tar sha256sum awk cp ln
 
-    if safe_sudo test -x "${REAPER_INSTALL_DIR}/reaper"; then
+    if [[ "${LIFECYCLE_ACTION:-install}" == install ]] && safe_sudo test -x "${REAPER_INSTALL_DIR}/reaper"; then
         log "REAPER already installed at ${REAPER_INSTALL_DIR}"
         return 0
     fi
@@ -278,5 +278,5 @@ main() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main "$@"
+    lifecycle_dispatch reaper "$@"
 fi

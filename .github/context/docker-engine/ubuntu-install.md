@@ -29,7 +29,7 @@
 
 ## Repository fit notes
 
-- `scripts/install-docker-engine.sh` currently uses a `.list` source entry with
+- `scripts/docker.sh` currently uses a `.list` source entry with
   `signed-by`, which is still compatible with apt-secure expectations.
 - Official docs now showcase a `.sources` style entry. Migration is optional,
   not required for correctness.

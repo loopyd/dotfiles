@@ -7,22 +7,22 @@ My system configuration
 Run full setup with defaults (includes Docker + NVIDIA toolkit, Neovim source build, Ollama systemd mode):
 
 ```bash
-./bootstrap.sh
+./bootstrap.sh install
 ```
 
 Preview actions without executing:
 
 ```bash
-./bootstrap.sh --dry-run
+./bootstrap.sh install --dry-run
 ```
 
 Common profile flags:
 
 ```bash
-./bootstrap.sh --no-gpu
-./bootstrap.sh --no-apps
-./bootstrap.sh --no-ollama
-./bootstrap.sh --with-8bitdo
+./bootstrap.sh install --no-gpu
+./bootstrap.sh install --no-apps
+./bootstrap.sh install --no-ollama
+./bootstrap.sh install --with-8bitdo
 ```
 
 An allowlisted reproducibility sync from host paths into `root/` was completed as a one-time capture. Current `bootstrap.sh` runs do not execute a recurring sync phase.
@@ -55,19 +55,19 @@ commit or paste that file. On another machine, fill a private copy of
 `templates/values.example.json`. Python 3.11 or newer is required.
 
 ```bash
-python3 scripts/setup-dotfiles.py
-python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
-./bootstrap.sh --with-dotfiles --dotfiles-values /private/path/values.json --dry-run
+python3 scripts/dotfiles.py check
+python3 scripts/dotfiles.py install --values /private/path/values.json
+./bootstrap.sh install --with-dotfiles --dotfiles-values /private/path/values.json --dry-run
 ```
 
-Rendering previews by default, validates all inputs before writing, refuses path
+Use `check` or `install --dry-run` to preview. Rendering validates inputs, refuses path
 traversal and symlink escapes, and backs up replaced files beneath the target
 home's `.local/state/dotfiles/`. It creates empty Hindsight data directories and
 owned user-unit enablement links, but does not install packages or start services.
 Run as the destination user; reload the user systemd manager after review.
 
 To restore 9router routing, initialize the same compatible 9router version once,
-stop it, then add `--restore-router --apply`. Only the exported configuration
+stop it, then add `--restore-router` to `dotfiles.py install`. Only the exported configuration
 tables are replaced in one transaction, after a private SQLite backup; request
 history and usage tables are untouched. OAuth connections require a fresh login.
 
@@ -106,17 +106,59 @@ only `hindsight.service`; the renderer does not restart it automatically. Existi
 imports remain in the separate persistent database. Services stay loopback-only;
 upstream health, metrics and API-documentation routes remain unauthenticated.
 
-## Installer scripts
+## Lifecycle commands
 
-- `scripts/install-herdr.sh` restores herdr/plugins and enables its user unit; `scripts/install-alacritty.sh` restores the terminal build, font and desktop integration.
-- `scripts/install-mise.sh` installs checksum-verified mise; `scripts/install-user-tools.sh` restores user toolchains and versionless packages.
-- `scripts/install-hindsight.sh` installs the pinned CLI/runtime and activates the captured Docker-backed user units (details below).
-- `scripts/install-core-cli.sh` installs base apt tooling and fish (install-only).
-- `scripts/install-gh-cli.sh` configures the official GitHub CLI apt repo and installs `gh`.
-- `scripts/install-neovim-latest.sh` builds and installs latest tagged Neovim from source.
-- `scripts/install-docker-engine.sh` configures official Docker apt repo and installs Docker Engine packages.
-- `scripts/install-nvidia-container-toolkit.sh` installs and configures NVIDIA Container Toolkit for Docker.
-- `scripts/install-ollama.sh` installs Ollama and enables systemd service mode by default.
+Component entry points use noun filenames and require an explicit action:
+
+```bash
+./scripts/alacritty.sh install --no-deps
+./scripts/alacritty.sh update --no-deps
+./scripts/alacritty.sh check
+./bootstrap.sh update --only alacritty,herdr --dry-run
+./bootstrap.sh uninstall --only alacritty,herdr --dry-run
+./bootstrap.sh check --only herdr,mise
+```
+
+`install` creates/converges the selected component; `update` upgrades its apt
+packages or reapplies its configured source/version pins, never silently choosing
+a new upstream version. User-package updates refresh versionless packages while
+keeping configured runtime selectors. `check` is read-only; `--dry-run` works for
+every action and never downloads or changes files/services. There are no legacy
+action-prefixed aliases. Bootstrap sorts dependencies, validates every selected
+uninstall receipt before mutation, then removes dependents first. Uninstall
+requires explicit `--only` selection; it never implies removing the whole system.
+
+Successful component installs record their declared payload files and packages
+in `~/.local/state/dotfiles/lifecycle/`. This adopts matching existing payloads;
+review the install selection first. Uninstall refuses unmanaged installations,
+changed payloads, paths outside the selected component and apt dependency
+cascades. Use the same custom path options used during installation. It removes
+only recorded files, not directory trees, and does not purge configuration,
+credentials, database volumes, models or unrelated dependencies. Stop/removal of
+Hindsight leaves its shared coding-agent runtime and settings available for reuse.
+User-tools removal targets managed npm/uv/Cargo commands; shared language
+runtimes, Python libraries, local Go builds and retired Pi packages are retained.
+
+`dotfiles.py install|update` renders settings; `check` validates templates and
+private values. Its `uninstall` deliberately retains configuration and backups:
+the renderer has no installed runtime. `desktop.sh` consolidates desktop
+`install|update|check|export`; `uninstall --input <backup>` restores an explicit
+pre-install snapshot rather than resetting unrelated preferences. Capture it
+first with `desktop.sh export --output ~/.local/state/dotfiles/desktop/before`.
+Bootstrap includes it through `--with-desktop` or `--only desktop`; removal
+requires `--desktop-backup <backup>`. Shared libraries and developer
+utilities (`delib`, `lifecycle`, `guard`, `snapshot`, `packages`, `terminal`,
+`hindsight`) retain their domain-specific helper commands, not fake installers.
+
+- `scripts/herdr.sh` restores herdr/plugins and enables its user unit; `scripts/alacritty.sh` restores the terminal build, font and desktop integration.
+- `scripts/mise.sh` installs checksum-verified mise; `scripts/tools.sh` restores user toolchains and versionless packages.
+- `scripts/hindsight.sh` installs the pinned CLI/runtime and activates the captured Docker-backed user units (details below).
+- `scripts/core.sh` installs base apt tooling and fish.
+- `scripts/gh.sh` configures the official GitHub CLI apt repo and installs `gh`.
+- `scripts/neovim.sh` builds and installs latest tagged Neovim from source.
+- `scripts/docker.sh` configures official Docker apt repo and installs Docker Engine packages.
+- `scripts/nvidia.sh` installs and configures NVIDIA Container Toolkit for Docker.
+- `scripts/ollama.sh` installs Ollama and enables systemd service mode by default.
 - Existing app installers remain available in `scripts/` for Blender, Ghidra, REAPER, and optional 8BitDo setup.
 
 ### Hindsight installation and activation
@@ -126,13 +168,13 @@ First install Docker/Compose, Node >=22.15 with npm, and Python >=3.11. Restore
 the private templates, then install and activate Hindsight:
 
 ```bash
-python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
-./scripts/install-hindsight.sh --dry-run
-./scripts/install-hindsight.sh
-./scripts/install-hindsight.sh --check
+python3 scripts/dotfiles.py install --values /private/path/values.json
+./scripts/hindsight.sh install --dry-run
+./scripts/hindsight.sh install
+./scripts/hindsight.sh check
 ```
 
-Alternatively, use `./bootstrap.sh --with-dotfiles --with-hindsight` with your
+Alternatively, use `./bootstrap.sh install --with-dotfiles --with-hindsight` with your
 private `--dotfiles-values` path. Hindsight is opt-in; when requested, bootstrap
 installs Docker even with `--no-gpu` or the minimal profile. Node/npm and running
 9router/EasyLlama remain prerequisites. Add `--with-user-tools` to restore Node/npm
@@ -150,8 +192,10 @@ images from the rendered Compose configuration, reloads the user service manager
 enables both units for login, then starts `hindsight-db.service` before
 `hindsight.service`. The app also requires the database unit; both units check the
 system Docker daemon. `--no-start` enables the user units without starting them;
-`--check` validates configuration and authenticated endpoints without mutation.
-Existing active units are not restarted. No database/volume is deleted, credentials
+`check` validates configuration and authenticated endpoints without mutation.
+Install leaves active units running. Update stops the app, restarts the database,
+then restarts the app to apply configured container pins; `--no-start` suppresses
+this activation. No database/volume is deleted, credentials
 are not rotated, and lingering is not enabled. Back up database contents separately.
 
 The CLI checksum pins come from the official
@@ -172,10 +216,10 @@ mise tools install without changing global defaults. uv becomes a global mise
 tool instead of restoring its old standalone binary/installation receipt.
 
 ```bash
-python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
-./scripts/install-user-tools.sh --dry-run
-./scripts/install-user-tools.sh
-./bootstrap.sh --with-dotfiles --with-user-tools --with-hindsight --dry-run
+python3 scripts/dotfiles.py install --values /private/path/values.json
+./scripts/tools.sh install --dry-run
+./scripts/tools.sh install
+./bootstrap.sh install --with-dotfiles --with-user-tools --with-hindsight --dry-run
 ```
 
 Run as the destination user; no sudo or system Python writes. Python distributions
@@ -209,16 +253,18 @@ use checksums from the official [mise v2026.5.0 release](https://github.com/jdx/
 ### Herdr and Alacritty
 
 ```bash
-./scripts/install-herdr.sh --dry-run
-./scripts/install-alacritty.sh --dry-run
-./bootstrap.sh --with-dotfiles --with-user-tools --with-terminals --dry-run
+./scripts/herdr.sh install --dry-run
+./scripts/alacritty.sh install --dry-run
+./bootstrap.sh install --with-dotfiles --with-user-tools --with-terminals --dry-run
 ```
 
 Remove `--dry-run` only after reviewing rendered configuration. Herdr fresh installs
 use checksum-pinned upstream `0.8.2`; existing binaries are preserved even when
-mise's directory name is stale. The installer enables its user unit for login and
+mise's directory name is stale; `update` replaces the user launcher with the pinned
+binary without following an old mise symlink. The installer enables its user unit for login and
 starts it without restarting an active server. `--no-start`, `--no-plugins` and
-read-only `--check` are available. Existing sessions and workspaces are untouched.
+read-only `check` are available. Existing sessions and workspaces are untouched.
+An active herdr server picks up an updated binary on its next deliberate restart.
 
 Herdr theme, keybindings, terminal/remote preferences and user unit are captured.
 The complete plugin registry is archived as
@@ -231,15 +277,16 @@ Plugin build dependencies (Rust, Bun/Node, etc.) must be available; use user-too
 restoration first. Logs, session history, locks, release-note caches and installed
 plugin payloads are excluded. Plugin code stays in its original repositories.
 
-Alacritty preserves the installed `0.18.0-dev` source revision
+Alacritty always compiles the captured `0.18.0-dev` source revision
 `f99dc71708d31d5c32d4b3fa611f9a87bf22657e`, rather than substituting a stable
-release. It installs into `~/.local/bin`, with user terminfo, icon, manuals, shell
+release. Install and update never reuse an existing binary; the build must report
+`alacritty 0.18.0-dev (f99dc717)` before installation. It installs into `~/.local/bin`, with user terminfo, icon, manuals, shell
 completions and the verified DepartureMono Nerd Font asset used on this machine.
 The rendered desktop launcher targets that user binary. Font size, theme imports,
 keyboard/mouse bindings, OSC52 and other terminal preferences remain configured.
 The existing source checkout and `/usr/local/bin/alacritty` are not modified.
 Rust/Cargo are prerequisites; `--no-deps` skips the apt build dependencies and
-`--check` validates configuration without compiling or opening a window. Zsh users
+`check` validates configuration without compiling or opening a window. Zsh users
 should include `~/.zsh_functions` in their `fpath` to use the installed completion.
 
 Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v0.8.2),

@@ -175,7 +175,7 @@ def validate(manifest):
     require(all(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', entry['package']) for entry in manifest['go']), 'Invalid Go package identifier')
 
 
-def restore(manifest, dry_run, include_retired_pi):
+def restore(manifest, dry_run, include_retired_pi, update=False):
     home = Path.home()
     config_path = home / '.config/mise/config.toml'
     config = tomllib.loads((ROOT / 'root/home/user/.config/mise/config.toml.tmpl').read_text()) if dry_run else configuration()
@@ -196,6 +196,8 @@ def restore(manifest, dry_run, include_retired_pi):
 
     run([mise, 'trust', str(config_path)])
     run([mise, 'install'])
+    if update:
+        run([mise, 'upgrade'])
     if not dry_run:
         node = subprocess.run([mise, 'where', 'node'], cwd=home, env=environment, text=True, capture_output=True, check=True)
         node_path = Path(node.stdout.strip()).resolve()
@@ -235,13 +237,13 @@ def restore(manifest, dry_run, include_retired_pi):
         sources = {entry['name'] for entry in group['sources']}
         packages = [name for name in group['packages'] if name not in sources and name != 'pip']
         if packages:
-            run([mise, 'exec', '--', 'uv', 'pip', 'install', '--python', str(python_path), '--', *packages])
+            run([mise, 'exec', '--', 'uv', 'pip', 'install', *(['--upgrade'] if update else []), '--python', str(python_path), '--', *packages])
         for entry in group['sources']:
             print('MANUAL: restore Python source package ' + entry['name'] + ' from ' + entry.get('source', entry.get('reason', 'original source')))
     for minor, group in manifest['python_user'].items():
         run([mise, 'exec', '--', 'uv', 'python', 'install', minor])
         if group['packages']:
-            run([mise, 'exec', '--', 'uv', 'pip', 'install', '--python', minor, '--target', str(home / '.local/lib' / ('python' + minor) / 'site-packages'), '--', *group['packages']])
+            run([mise, 'exec', '--', 'uv', 'pip', 'install', *(['--upgrade'] if update else []), '--python', minor, '--target', str(home / '.local/lib' / ('python' + minor) / 'site-packages'), '--', *group['packages']])
     cli_tools = set(manifest['uv_tools'])
     for group in manifest['python_user'].values():
         cli_tools.update(name for name in group['requested'] if name in {'ruff', 'sqlfluff', 'yamllint'})
@@ -259,9 +261,49 @@ def restore(manifest, dry_run, include_retired_pi):
     run([mise, 'reshim'])
 
 
+def uninstall(manifest, dry_run):
+    home = Path.home()
+    mise = str(home / '.local/bin/mise')
+    environment = dict(os.environ, CARGO_HOME=str(home / '.cargo'), RUSTUP_HOME=str(home / '.rustup'), UV_TOOL_DIR=str(home / '.local/share/uv/tools'), UV_TOOL_BIN_DIR=str(home / '.local/bin'), NPM_CONFIG_USERCONFIG=str(home / '.npmrc'))
+    if not dry_run:
+        result = subprocess.run([mise, 'where', 'node'], cwd=home, capture_output=True, text=True, check=True)
+        prefix = Path(result.stdout.strip()).resolve()
+        require(prefix.is_relative_to(home), 'Npm prefix must remain in the user account')
+        environment['NPM_CONFIG_PREFIX'] = str(prefix)
+    commands = []
+    selected = [name for name in manifest['npm'] if name != 'npm' and name not in manifest['retired_pi']]
+    if selected:
+        commands.append([mise, 'exec', '--', 'npm', 'uninstall', '--global', '--', *selected])
+    cli_tools = set(manifest['uv_tools'])
+    for group in manifest['python_user'].values():
+        cli_tools.update(name for name in group['requested'] if name in {'ruff', 'sqlfluff', 'yamllint'})
+    for package in sorted(cli_tools):
+        if dry_run or (home / '.local/share/uv/tools' / package).is_dir():
+            commands.append([mise, 'exec', '--', 'uv', 'tool', 'uninstall', package])
+    cargo_receipt = home / '.cargo/.crates.toml'
+    cargo_installed = tomllib.loads(cargo_receipt.read_text()).get('v1', {}) if cargo_receipt.exists() else {}
+    for package in manifest['cargo']:
+        if dry_run or any(identity.split()[0] == package for identity in cargo_installed):
+            commands.append([mise, 'exec', '--', 'cargo', 'uninstall', package])
+    for command in commands:
+        print(('DRY-RUN: ' if dry_run else 'RUN: ') + shlex.join(command), flush=True)
+        if not dry_run:
+            subprocess.run(command, cwd=home, env=environment, check=True)
+    print('Shared mise/Rust/Python runtimes, library dependencies, local Go builds, Pi packages and configuration retained')
+
+
+def check(manifest):
+    configuration()
+    mise = Path.home() / '.local/bin/mise'
+    require(mise.is_file(), 'Mise is missing')
+    result = subprocess.run([str(mise), 'ls', '--current', '--missing', '--json'], cwd=Path.home(), env=dict(os.environ, MISE_OFFLINE='true', MISE_SELF_UPDATE_AVAILABLE='false'), capture_output=True, text=True, check=True)
+    require(not json.loads(result.stdout), 'Configured mise runtimes are missing')
+    print('Package manifest, configuration and configured runtime availability validated')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Snapshot or restore versionless user packages without copying binaries or credentials')
-    parser.add_argument('command', choices=['snapshot', 'validate', 'restore'])
+    parser.add_argument('command', choices=['snapshot', 'validate', 'install', 'update', 'uninstall', 'check'])
     parser.add_argument('--manifest', type=Path, default=ROOT / 'templates/packages.json')
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--include-retired-pi', action='store_true')
@@ -278,9 +320,14 @@ def main():
         if args.command == 'validate':
             configuration()
             print('Package manifest and rendered mise configuration validated')
+        elif args.command == 'check':
+            check(manifest)
+        elif args.command == 'uninstall':
+            require(args.dry_run or os.geteuid() != 0, 'Run as the destination user, not root')
+            uninstall(manifest, args.dry_run)
         else:
             require(args.dry_run or os.geteuid() != 0, 'Run as the destination user, not root')
-            restore(manifest, args.dry_run, args.include_retired_pi)
+            restore(manifest, args.dry_run, args.include_retired_pi, args.command == 'update')
     except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError):
         print('User-tool operation failed; check prerequisites, rendered mise config and package manifest. Credential-bearing details withheld.', file=sys.stderr)
         raise SystemExit(1)

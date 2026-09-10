@@ -12,6 +12,16 @@ Concise repository terms used across .github/context.
 - Meaning: Rebuildable filesystem/config snapshot captured in repository structure.
 - References: [PROJECT/system-context.md](PROJECT/system-context.md)
 
+## lifecycle command
+
+- Meaning: Noun-named component entry point with install, update, uninstall and read-only check actions, coordinated by bootstrap.
+- References: [PROJECT/coding-standards.md#lifecycle-interface](PROJECT/coding-standards.md#lifecycle-interface)
+
+## payload receipt
+
+- Meaning: Local installation record used to refuse unmanaged, modified or dependency-cascading removal while preserving configuration and persistent data.
+- References: [PROJECT/coding-standards.md#lifecycle-interface](PROJECT/coding-standards.md#lifecycle-interface)
+
 ## symlink policy
 
 - Meaning: Host-derived symlinks are not stored in overlay; recreate via scripts/bootstrap.

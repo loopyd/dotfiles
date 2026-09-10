@@ -9,7 +9,7 @@ source "${SCRIPT_DIR}/delib.sh"
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-core-cli.sh
+Usage: ./scripts/core.sh <install|update|uninstall|check>
 
 Installs baseline CLI/toolchain packages required by bootstrap.
 EOF
@@ -58,4 +58,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch core "$@"

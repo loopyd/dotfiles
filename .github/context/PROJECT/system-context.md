@@ -82,12 +82,12 @@ This file is the planning context for:
 
 ### Proposed Script Surfaces
 
-1. `scripts/export-desktop-preferences.sh`
+1. `scripts/desktop.sh export` (implementation: `scripts/desktop/capture.sh`)
 - Reads targeted keys from available schemas/backends.
 - Emits deterministic text artifacts under overlay capture paths.
 - Does not export opaque binary/session stores.
 
-2. `scripts/import-desktop-preferences.sh`
+2. `scripts/desktop.sh install` (implementation: `scripts/desktop/preferences.sh`)
 - Applies only keys that are present in exported artifacts and supported on host.
 - Skips unsupported schemas/keys with clear warnings (non-fatal).
 - Supports dry-run mode for preview before mutation.
@@ -162,15 +162,15 @@ This file is the planning context for:
 - Implement deterministic desktop preference export/import scripts for Cinnamon/GNOME-compatible hosts using targeted key lists and text-only artifacts.
 
 2. Approved decisions
-- Script surfaces: `scripts/export-desktop-preferences.sh` and `scripts/import-desktop-preferences.sh`.
+- Script surface: `scripts/desktop.sh` with export and lifecycle nodes; capture/preferences implementations live under `scripts/desktop/`.
 - Scope: display/scaling, theme/icon/cursor/font, wallpaper URI/path.
 - Storage: `root/home/user/.config/repro/desktop-preferences/` text artifacts only.
 - Exclusions: dconf binary DB and all secret/session/account stores.
 - Behavior: schema-aware best-effort mode with optional strict failure mode.
 
 3. Target files
-- `scripts/export-desktop-preferences.sh` (new)
-- `scripts/import-desktop-preferences.sh` (new)
+- `scripts/desktop/capture.sh` (new)
+- `scripts/desktop/preferences.sh` (new)
 - `scripts/delib.sh` (only if shared helper additions are required)
 - `README.md` (usage notes only if requested by Project Manager)
 
@@ -202,7 +202,7 @@ This file is the planning context for:
 ## Remaining Reconstruction/Refactor Gaps
 
 1. Standards drift in legacy installers
-- `scripts/install-blender.sh`, `scripts/install-reaper.sh`, `scripts/install-gidra.sh`, and `scripts/8bitdo.sh` still duplicate helper logic instead of using `scripts/delib.sh` consistently.
+- `scripts/blender.sh`, `scripts/reaper.sh`, `scripts/ghidra.sh`, and `scripts/8bitdo.sh` still duplicate helper logic instead of using `scripts/delib.sh` consistently.
 - `scripts/8bitdo.sh` still has shell robustness gaps relative to coding standards.
 
 2. Bootstrap phase drift
@@ -247,16 +247,16 @@ This file is the planning context for:
 - `scripts/delib.sh`
 - `bootstrap.sh`
 - `scripts/8bitdo.sh`
-- `scripts/install-blender.sh`
-- `scripts/install-core-cli.sh`
-- `scripts/install-docker-engine.sh`
-- `scripts/install-gh-cli.sh`
-- `scripts/install-gidra.sh`
-- `scripts/install-git-hooks.sh`
-- `scripts/install-neovim-latest.sh`
-- `scripts/install-nvidia-container-toolkit.sh`
-- `scripts/install-ollama.sh`
-- `scripts/install-reaper.sh`
+- `scripts/blender.sh`
+- `scripts/core.sh`
+- `scripts/docker.sh`
+- `scripts/gh.sh`
+- `scripts/ghidra.sh`
+- `scripts/hooks.sh`
+- `scripts/neovim.sh`
+- `scripts/nvidia.sh`
+- `scripts/ollama.sh`
+- `scripts/reaper.sh`
 
 ## Overlay/Security Guardrails And Exclusions
 

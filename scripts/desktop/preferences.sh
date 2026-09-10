@@ -5,10 +5,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export INSTALL_LIB_TAG="desktop-import"
 # shellcheck source=scripts/delib.sh
-source "${SCRIPT_DIR}/delib.sh"
+source "${SCRIPT_DIR}/../delib.sh"
 
 DEFAULT_INPUT_DIR_REL="root/home/user/.config/repro/desktop-preferences"
-REPO_ROOT="$(resolve_abs_path_safe "${SCRIPT_DIR}/..")"
+REPO_ROOT="$(resolve_abs_path_safe "${SCRIPT_DIR}/../..")"
 DEFAULT_INPUT_DIR="$(resolve_abs_path_safe "${REPO_ROOT}/${DEFAULT_INPUT_DIR_REL}")"
 
 INPUT_DIR="${DEFAULT_INPUT_DIR}"
@@ -31,7 +31,7 @@ declare -a FAILED_KEYS=()
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/import-desktop-preferences.sh [OPTIONS]
+Usage: ./scripts/desktop.sh <install|update|uninstall|check> [OPTIONS]
 
 Imports deterministic desktop preference keys via gsettings from keys.dconf.ini.
 
@@ -121,6 +121,7 @@ build_allowed_input_prefixes() {
     # shellcheck disable=SC2034
     DESKTOP_PREF_ALLOWED_PREFIXES=()
     append_unique_item DESKTOP_PREF_ALLOWED_PREFIXES "${DEFAULT_INPUT_DIR}"
+    append_unique_item DESKTOP_PREF_ALLOWED_PREFIXES "${HOME}/.local/state/dotfiles/desktop"
 
     for prefix in "${DELIB_SAFE_TEMP_PREFIXES[@]}"; do
         resolved_prefix="$(resolve_abs_path_safe "${prefix}" || true)"
@@ -301,6 +302,7 @@ process_manifest() {
 }
 
 write_report() {
+    [[ "${DRY_RUN}" != true ]] || return 0
     local report_path="${INPUT_DIR}/last-import-report.log"
     local report_content=""
     local item=""
@@ -382,5 +384,3 @@ main() {
 
     exit "${status}"
 }
-
-main "$@"

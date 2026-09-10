@@ -16,7 +16,7 @@ SERVICE_PATH="/etc/systemd/system/8bitdo-ultimate-xinput@.service"
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/8bitdo.sh [options]
+Usage: ./scripts/8bitdo.sh <install|update|uninstall|check> [options]
 
 Options:
   --skip-systemd-service   Skip systemd service creation/wiring
@@ -124,4 +124,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch 8bitdo "$@"

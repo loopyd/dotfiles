@@ -13,7 +13,7 @@ KEYRING_URL="https://cli.github.com/packages/githubcli-archive-keyring.gpg"
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-gh-cli.sh
+Usage: ./scripts/gh.sh <install|update|uninstall|check>
 
 Installs GitHub CLI from the official apt repository.
 EOF
@@ -77,4 +77,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch gh "$@"

@@ -25,7 +25,7 @@ declare -a OLLAMA_ALLOWED_INSTALL_PREFIXES=(
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-ollama.sh [options]
+Usage: ./scripts/ollama.sh <install|update|uninstall|check> [options]
 
 Options:
   --mode <script|manual>   Install mode (default: script)
@@ -208,4 +208,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch ollama "$@"

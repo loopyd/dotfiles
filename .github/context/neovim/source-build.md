@@ -28,7 +28,7 @@
 
 ## Repository fit notes
 
-- `scripts/install-neovim-latest.sh` follows the tag checkout + source build
+- `scripts/neovim.sh` follows the tag checkout + source build
   pattern and validates installed version.
 
 ## Sources

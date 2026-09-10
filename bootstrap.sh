@@ -1,337 +1,166 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-export INSTALL_LIB_TAG="bootstrap"
-# shellcheck source=./scripts/delib.sh
+export INSTALL_LIB_TAG=bootstrap
 source "${SCRIPTS_DIR}/delib.sh"
 
-PROFILE="default"
-DRY_RUN="false"
-
-WITH_GPU="true"
-WITH_8BITDO="false"
-WITH_APPS="true"
-WITH_OLLAMA="true"
-WITH_GIT_HOOKS="true"
-WITH_DOTFILES="false"
-WITH_HINDSIGHT="false"
-WITH_USER_TOOLS="false"
-WITH_TERMINALS="false"
+ACTION=""
+PROFILE=default
+DRY_RUN=false
+ONLY=""
+WITH_GPU=""
+WITH_APPS=""
+WITH_OLLAMA=""
+WITH_GIT_HOOKS=true
+WITH_8BITDO=false
+WITH_DOTFILES=false
+WITH_HINDSIGHT=false
+WITH_USER_TOOLS=false
+WITH_TERMINALS=false
+WITH_DESKTOP=false
+DESKTOP_BACKUP=""
 DOTFILES_VALUES="${HOME}/.config/dotfiles/values.json"
-
-OVERRIDE_GPU=""
-OVERRIDE_8BITDO=""
-OVERRIDE_APPS=""
-OVERRIDE_OLLAMA=""
-OVERRIDE_GIT_HOOKS=""
+COMPONENTS=()
 
 usage() {
-	cat <<'EOF'
-Usage: ./bootstrap.sh [options]
+    cat <<'EOF'
+Usage: ./bootstrap.sh <install|update|uninstall|check> [options]
 
-Options:
-	--profile <default|minimal>  Execution profile (default: default)
-  --dry-run          Print actions without running them
-  --no-gpu           Skip Docker + NVIDIA toolkit installers
-  --with-8bitdo      Run optional 8BitDo setup
-  --no-apps          Skip Blender/Ghidra/REAPER installers
-  --no-ollama        Skip Ollama installer
-  --no-git-hooks     Skip repository hook installation
-  --with-dotfiles    Render user configuration after installers
-  --with-hindsight   Install Hindsight and activate its user services after rendering
-  --with-user-tools  Install mise and restore user packages after rendering
-  --with-terminals   Install Alacritty and herdr with user-service activation
-  --dotfiles-values <path>  Private JSON values outside the repository
-  -h, --help         Show this help
+  --only <names>       Comma-separated component nouns; required for uninstall
+  --profile <name>     default or minimal (core, gh, hooks, neovim)
+  --dry-run            Preview order without executing component commands
+  --no-gpu             Skip Docker/NVIDIA unless Hindsight needs Docker
+  --no-apps            Skip Blender/Ghidra/REAPER
+  --no-ollama          Skip Ollama
+  --no-git-hooks       Skip repository hooks
+  --with-8bitdo        Include controller support
+  --with-dotfiles      Render configuration before user software
+  --with-user-tools    Include mise-managed runtimes and user packages
+  --with-hindsight     Include Hindsight (Docker prerequisite)
+  --with-terminals     Include Alacritty and herdr
+  --with-desktop       Include selected desktop preferences
+  --desktop-backup <path>  Explicit pre-install settings snapshot for removal
+  --dotfiles-values <path>  Private renderer values outside the repository
+
+Names: core, gh, docker, nvidia, hooks, neovim, ghidra, blender, reaper,
+ollama, 8bitdo, dotfiles, desktop, mise, tools, alacritty, herdr, hindsight.
+Install/update follow dependency order; uninstall verifies receipts first
+and reverses that order. Check never installs prerequisites.
 EOF
 }
 
-run_installer() {
-	local script_name="${1}"
-	shift
-	local script_path="${SCRIPTS_DIR}/${script_name}"
-	run_script_maybe_dry "${script_path}" "$@"
-}
-
-apply_profile_defaults() {
-	case "${PROFILE}" in
-		default)
-			WITH_GPU="true"
-			WITH_8BITDO="false"
-			WITH_APPS="true"
-			WITH_OLLAMA="true"
-			WITH_GIT_HOOKS="true"
-			;;
-		minimal)
-			WITH_GPU="false"
-			WITH_8BITDO="false"
-			WITH_APPS="false"
-			WITH_OLLAMA="false"
-			WITH_GIT_HOOKS="true"
-			;;
-		*)
-			err "Unknown profile: ${PROFILE}"
-			usage
-			exit 1
-			;;
-	esac
-}
-
-apply_flag_overrides() {
-	if [[ -n "${OVERRIDE_GPU}" ]]; then
-		WITH_GPU="${OVERRIDE_GPU}"
-	fi
-	if [[ -n "${OVERRIDE_8BITDO}" ]]; then
-		WITH_8BITDO="${OVERRIDE_8BITDO}"
-	fi
-	if [[ -n "${OVERRIDE_APPS}" ]]; then
-		WITH_APPS="${OVERRIDE_APPS}"
-	fi
-	if [[ -n "${OVERRIDE_OLLAMA}" ]]; then
-		WITH_OLLAMA="${OVERRIDE_OLLAMA}"
-	fi
-	if [[ -n "${OVERRIDE_GIT_HOOKS}" ]]; then
-		WITH_GIT_HOOKS="${OVERRIDE_GIT_HOOKS}"
-	fi
-}
-
-phase_0_preflight() {
-	log 'Phase 0: preflight checks'
-	require_command bash || {
-		err 'bash is required'
-		exit 1
-	}
-	require_command uname || {
-		err 'uname is required'
-		exit 1
-	}
-	require_command apt-get || {
-		err 'apt-get is required (Debian/Ubuntu family expected)'
-		exit 1
-	}
-	if [[ ! -r /etc/os-release ]]; then
-		err '/etc/os-release is required for distro detection'
-		exit 1
-	fi
-	if [[ "${EUID}" -ne 0 ]] && [[ "${DRY_RUN}" != "true" ]] && ! command -v sudo >/dev/null 2>&1; then
-		err 'sudo is required for non-root execution'
-		exit 1
-	fi
-	if [[ ( "${WITH_HINDSIGHT}" == "true" || "${WITH_USER_TOOLS}" == "true" || "${WITH_TERMINALS}" == "true" ) && "${DRY_RUN}" != "true" ]]; then
-		if [[ "${EUID}" -eq 0 ]]; then
-			err 'User tools, Hindsight and terminals require the destination user; do not run bootstrap with sudo'
-			exit 1
-		fi
-		require_commands python3
-		if [[ "${WITH_HINDSIGHT}" == "true" && "${WITH_USER_TOOLS}" != "true" ]]; then
-			require_commands node npm
-		fi
-	fi
-
-	local arch distro codename
-	arch="$(uname -m)"
-	distro="$(. /etc/os-release && echo "${ID}:${VERSION_ID}")"
-	codename="$(. /etc/os-release && echo "${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}")"
-	log "Host detected: ${distro} codename=${codename} (${arch})"
-	if [[ "${PROFILE}" == "minimal" ]]; then
-		log 'Using minimal profile'
-	else
-		log 'Using default profile'
-	fi
-}
-
-phase_1_base_prereqs() {
-	log 'Phase 1: base prerequisites'
-	run_installer install-core-cli.sh
-}
-
-phase_2_repo_keyring_setup() {
-	log 'Phase 2: repository and keyring capable installers'
-	run_installer install-gh-cli.sh
-	if [[ "${WITH_GPU}" == "true" ]]; then
-		run_installer install-docker-engine.sh
-		run_installer install-nvidia-container-toolkit.sh
-	else
-		if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
-			run_installer install-docker-engine.sh
-			log 'Skipping NVIDIA toolkit by configuration'
-		else
-			log 'Skipping Docker + NVIDIA toolkit by configuration'
-		fi
-	fi
-}
-
-phase_3_core_tools() {
-	log 'Phase 3: core tool installation'
-	if [[ "${WITH_GIT_HOOKS}" == "true" ]]; then
-		run_installer install-git-hooks.sh
-	else
-		log 'Skipping git hooks by configuration'
-	fi
-
-	run_installer install-neovim-latest.sh
-}
-
-phase_4_specialized_installers() {
-	log 'Phase 4: specialized installer delegation'
-
-	if [[ "${WITH_APPS}" == "true" ]]; then
-		run_installer install-gidra.sh install
-		run_installer install-blender.sh
-		run_installer install-reaper.sh
-	else
-		log 'Skipping Blender/Ghidra/REAPER by configuration'
-	fi
-
-	if [[ "${WITH_OLLAMA}" == "true" ]]; then
-		run_installer install-ollama.sh --mode script
-	else
-		log 'Skipping Ollama by configuration'
-	fi
-
-	if [[ "${WITH_8BITDO}" == "true" ]]; then
-		run_installer 8bitdo.sh
-	else
-		log 'Skipping 8BitDo setup by configuration'
-	fi
-}
-
-phase_5_validation() {
-	log 'Phase 5: validation'
-	if [[ "${DRY_RUN}" == "true" ]]; then
-		log 'Dry-run mode enabled; skipping runtime validation checks'
-		return 0
-	fi
-
-	local -a checks=(
-		gh
-		nvim
-	)
-	if [[ "${WITH_OLLAMA}" == "true" ]]; then
-		checks+=(ollama)
-	fi
-	if [[ "${WITH_GPU}" == "true" ]]; then
-		checks+=(docker nvidia-ctk)
-	fi
-	local tool
-	for tool in "${checks[@]}"; do
-		if command -v "${tool}" >/dev/null 2>&1; then
-			log "Validation passed: ${tool} is installed"
-		else
-			err "Validation failed: ${tool} is missing"
-			exit 1
-		fi
-	done
-
-	if [[ "${WITH_OLLAMA}" == "true" ]] && command -v systemctl >/dev/null 2>&1; then
-		if systemctl is-enabled ollama >/dev/null 2>&1; then
-			log 'Validation passed: ollama service is enabled'
-		else
-			err 'Validation warning: ollama service is not enabled'
-		fi
-	fi
-}
-
-phase_dotfiles() {
-	if [[ "${WITH_DOTFILES}" == "true" ]]; then
-		run_maybe_dry python3 "${SCRIPTS_DIR}/setup-dotfiles.py" --values "${DOTFILES_VALUES}" --apply
-	fi
-	if [[ "${WITH_USER_TOOLS}" == "true" ]]; then
-		run_installer install-user-tools.sh
-		export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:${PATH}"
-	fi
-	if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
-		run_installer install-hindsight.sh
-	fi
-	if [[ "${WITH_TERMINALS}" == "true" ]]; then
-		run_installer install-alacritty.sh
-		run_installer install-herdr.sh
-	fi
-}
-
 parse_args() {
-	while [[ "$#" -gt 0 ]]; do
-		if is_help_token "$1"; then
-			usage
-			exit 0
-		fi
+    ACTION="${1:-}"
+    case "${ACTION}" in
+        install|update|uninstall|check) shift ;;
+        -h|--help|help) usage; exit 0 ;;
+        *) usage; exit 2 ;;
+    esac
+    while [[ "$#" -gt 0 ]]; do
+        case "$1" in
+            --profile|--only|--dotfiles-values|--desktop-backup)
+                require_option_value "$1" "${2-}"
+                case "$1" in
+                    --profile) PROFILE="$2" ;;
+                    --only) ONLY="$2" ;;
+                    --dotfiles-values) DOTFILES_VALUES="$2" ;;
+                    --desktop-backup) DESKTOP_BACKUP="$2" ;;
+                esac
+                shift 2 ;;
+            --dry-run) DRY_RUN=true; shift ;;
+            --no-gpu) WITH_GPU=false; shift ;;
+            --no-apps) WITH_APPS=false; shift ;;
+            --no-ollama) WITH_OLLAMA=false; shift ;;
+            --no-git-hooks) WITH_GIT_HOOKS=false; shift ;;
+            --with-8bitdo) WITH_8BITDO=true; shift ;;
+            --with-dotfiles) WITH_DOTFILES=true; shift ;;
+            --with-hindsight) WITH_HINDSIGHT=true; shift ;;
+            --with-user-tools) WITH_USER_TOOLS=true; shift ;;
+            --with-terminals) WITH_TERMINALS=true; shift ;;
+            --with-desktop) WITH_DESKTOP=true; shift ;;
+            -h|--help) usage; exit 0 ;;
+            *) err "Unknown option: $1"; return 2 ;;
+        esac
+    done
+    [[ "${PROFILE}" == default || "${PROFILE}" == minimal ]] || { err 'Unknown profile'; return 2; }
+    [[ "${ACTION}" != uninstall || -n "${ONLY}" ]] || { err 'Uninstall requires --only; no implicit full-system removal'; return 2; }
+}
 
-		case "$1" in
-			--profile)
-				require_option_value "$1" "${2-}" || exit 1
-				PROFILE="${2}"
-				shift 2
-				;;
-			--dry-run)
-				DRY_RUN="true"
-				shift
-				;;
-			--no-gpu)
-				OVERRIDE_GPU="false"
-				shift
-				;;
-			--with-8bitdo)
-				OVERRIDE_8BITDO="true"
-				shift
-				;;
-			--no-apps)
-				OVERRIDE_APPS="false"
-				shift
-				;;
-			--no-ollama)
-				OVERRIDE_OLLAMA="false"
-				shift
-				;;
-			--no-git-hooks)
-				OVERRIDE_GIT_HOOKS="false"
-				shift
-				;;
-			--with-dotfiles)
-				WITH_DOTFILES="true"
-				shift
-				;;
-			--with-hindsight)
-				WITH_HINDSIGHT="true"
-				shift
-				;;
-			--with-user-tools)
-				WITH_USER_TOOLS="true"
-				shift
-				;;
-			--with-terminals)
-				WITH_TERMINALS="true"
-				shift
-				;;
-			--dotfiles-values)
-				require_option_value "$1" "${2-}" || exit 1
-				DOTFILES_VALUES="$2"
-				shift 2
-				;;
-			*)
-				err "Unknown option: $1"
-				usage
-				exit 1
-				;;
-		esac
-	done
+select_components() {
+    local component defaults=false
+    local -A selected=()
+    local -a requested=()
+    if [[ -n "${ONLY}" ]]; then
+        [[ "${ONLY}" =~ ^[a-z0-9-]+(,[a-z0-9-]+)*$ ]] || { err 'Invalid component list'; return 2; }
+        IFS=, read -r -a requested <<< "${ONLY}"
+    else
+        [[ "${PROFILE}" != default ]] || defaults=true
+        requested=(core gh neovim)
+        [[ "${WITH_GIT_HOOKS}" != true ]] || requested+=(hooks)
+        [[ "${WITH_GPU:-${defaults}}" != true ]] || requested+=(docker nvidia)
+        [[ "${WITH_APPS:-${defaults}}" != true ]] || requested+=(ghidra blender reaper)
+        [[ "${WITH_OLLAMA:-${defaults}}" != true ]] || requested+=(ollama)
+        [[ "${WITH_8BITDO}" != true ]] || requested+=(8bitdo)
+        [[ "${WITH_DOTFILES}" != true ]] || requested+=(dotfiles)
+        [[ "${WITH_USER_TOOLS}" != true ]] || requested+=(tools)
+        [[ "${WITH_HINDSIGHT}" != true ]] || requested+=(hindsight)
+        [[ "${WITH_TERMINALS}" != true ]] || requested+=(alacritty herdr)
+        [[ "${WITH_DESKTOP}" != true ]] || requested+=(desktop)
+    fi
+    for component in "${requested[@]}"; do
+        case "${component}" in
+            core|gh|docker|nvidia|hooks|neovim|ghidra|blender|reaper|ollama|8bitdo|dotfiles|desktop|mise|tools|alacritty|herdr|hindsight) selected["${component}"]=true ;;
+            *) err "Unknown component: ${component}"; return 2 ;;
+        esac
+    done
+    if [[ "${ACTION}" == install || "${ACTION}" == update ]]; then
+        if [[ -n "${selected[hindsight]:-}${selected[nvidia]:-}" ]]; then selected[docker]=true; fi
+    fi
+    if [[ "${ACTION}" == uninstall && -n "${selected[desktop]:-}" && -z "${DESKTOP_BACKUP}" ]]; then
+        err 'Desktop removal requires --desktop-backup'; return 2
+    fi
+    for component in core gh docker nvidia hooks neovim ghidra blender reaper ollama 8bitdo dotfiles desktop mise tools alacritty herdr hindsight; do
+        [[ -z "${selected[${component}]:-}" ]] || COMPONENTS+=("${component}")
+    done
+}
+
+run_component() {
+    local component="$1" action="$2"
+    shift 2
+    if [[ "${component}" == dotfiles ]]; then
+        run_maybe_dry python3 "${SCRIPTS_DIR}/dotfiles.py" "${action}" --values "${DOTFILES_VALUES}"
+    elif [[ "${component}" == desktop && "${action}" == uninstall ]]; then
+        local -a options=(--input "${DESKTOP_BACKUP}")
+        [[ "${1:-}" != --verify ]] || options+=(--dry-run)
+        run_maybe_dry bash "${SCRIPTS_DIR}/desktop.sh" uninstall "${options[@]}"
+    else
+        run_maybe_dry bash "${SCRIPTS_DIR}/${component}.sh" "${action}" "$@"
+    fi
 }
 
 main() {
-	parse_args "$@"
-	apply_profile_defaults
-	apply_flag_overrides
-	set_dry_run_mode "${DRY_RUN}"
-	phase_0_preflight
-	phase_1_base_prereqs
-	phase_2_repo_keyring_setup
-	phase_3_core_tools
-	phase_4_specialized_installers
-	phase_dotfiles
-	phase_5_validation
-	log 'Bootstrap completed'
+    parse_args "$@"
+    select_components
+    set_dry_run_mode "${DRY_RUN}"
+    local component index
+    if [[ "${ACTION}" == uninstall ]]; then
+        for component in "${COMPONENTS[@]}"; do
+            [[ "${component}" == dotfiles ]] || run_component "${component}" uninstall --verify
+        done
+        for ((index=${#COMPONENTS[@]}-1; index>=0; index--)); do
+            run_component "${COMPONENTS[index]}" uninstall
+        done
+    else
+        for component in "${COMPONENTS[@]}"; do
+            run_component "${component}" "${ACTION}"
+            if [[ "${component}" == tools || "${component}" == mise ]]; then
+                export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:${PATH}"
+            fi
+        done
+    fi
+    log "${ACTION} completed for: ${COMPONENTS[*]}"
 }
 
 main "$@"

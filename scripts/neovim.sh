@@ -12,7 +12,7 @@ NEOVIM_REPO="https://github.com/neovim/neovim.git"
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-neovim-latest.sh
+Usage: ./scripts/neovim.sh <install|update|uninstall|check>
 
 Builds and installs the latest tagged Neovim release from source.
 EOF
@@ -105,4 +105,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch neovim "$@"

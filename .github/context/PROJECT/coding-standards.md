@@ -8,7 +8,29 @@ Use it when creating, updating, or refactoring shell scripts, especially install
 ## Scope
 
 - Applies to `bootstrap.sh` and `scripts/*.sh`.
-- Strongly applies to installer scripts named `scripts/install-*.sh`.
+- Applies to noun-based component commands in `scripts/` and their shared helpers.
+
+## Lifecycle Interface
+
+- Name entry points after their component (`alacritty.sh`, `herdr.sh`), not an
+  action or release channel. Keep shell/Python extensions; remove redundant
+  action prefixes and suffixes. Utilities and libraries use noun categories too.
+- Every component exposes `install`, `update`, `uninstall`, `check` and common
+  `--dry-run` handling. Require an explicit action; reject invalid input before
+  side effects. Retain useful domain nodes, such as Ghidra `run` or desktop `export`.
+- Route lifecycle parsing, receipts and common checks through `delib.sh` and
+  `lifecycle.py`; keep component installation policy in its noun file. Helpers
+  need meaningful domain commands, not artificial lifecycle no-ops.
+- Update converges to configured pins; only explicitly versionless packages
+  track new releases. Build Alacritty from its exact development revision and
+  verify the produced version before installing, never copy an existing binary.
+- Check is read-only. Dry-run never downloads, installs, writes reports, acquires
+  sudo or changes services. Removal verifies receipts and hashes, refuses apt
+  dependency cascades and preserves configuration and persistent data.
+- Bootstrap forwards the selected action in dependency order, verifies all
+  selected removals first and uninstalls in reverse order. Require explicit
+  component selection for uninstall. Update callers/docs when moving scripts;
+  do not leave old command aliases or duplicate implementations behind.
 
 ## Context Documentation Compaction Policy
 

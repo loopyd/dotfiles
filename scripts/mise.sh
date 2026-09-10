@@ -12,7 +12,7 @@ TEMP_ARCHIVE=""
 TEMP_BINARY=""
 
 usage() {
-    printf '%s\n' 'Usage: ./scripts/install-mise.sh [--dry-run]' \
+    printf '%s\n' 'Usage: ./scripts/mise.sh <install|update|uninstall|check> [--dry-run]' \
         'Install the checksum-pinned official mise binary into ~/.local/bin.' \
         'Existing mise installations are preserved; tool installation is separate.'
 }
@@ -46,7 +46,7 @@ main() {
         return
     fi
     [[ "${EUID}" -ne 0 ]] || { err 'Run as the destination user, not root'; return 1; }
-    if [[ -x "${HOME}/.local/bin/mise" ]]; then
+    if [[ -x "${HOME}/.local/bin/mise" && "${LIFECYCLE_ACTION}" == install ]]; then
         "${HOME}/.local/bin/mise" --version
         log 'Existing mise preserved'
         return
@@ -59,8 +59,9 @@ main() {
         "https://github.com/jdx/mise/releases/download/v${VERSION}/mise-v${VERSION}-linux-${architecture}.tar.xz" -o "${TEMP_ARCHIVE}"
     verify_file_sha256 "${TEMP_ARCHIVE}" "${checksum}" 'mise archive'
     tar -xJOf "${TEMP_ARCHIVE}" mise/bin/mise > "${TEMP_BINARY}"
-    install -Dm0755 "${TEMP_BINARY}" "${HOME}/.local/bin/mise"
+    [[ ! -d "${HOME}/.local/bin/mise" ]] || { err 'Existing mise directory needs manual review'; return 1; }
+    install --remove-destination -Dm0755 "${TEMP_BINARY}" "${HOME}/.local/bin/mise"
     "${HOME}/.local/bin/mise" --version
 }
 
-main "$@"
+lifecycle_dispatch mise "$@"

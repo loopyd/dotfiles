@@ -14,7 +14,7 @@ DOCKER_GPG_URL="https://download.docker.com/linux/ubuntu/gpg"
 
 usage() {
     cat <<'EOF'
-Usage: ./scripts/install-docker-engine.sh [--skip-group]
+Usage: ./scripts/docker.sh <install|update|uninstall|check> [--skip-group]
 
 Options:
   --skip-group   Do not add current user to docker group
@@ -119,4 +119,4 @@ main() {
     log "Completed"
 }
 
-main "$@"
+lifecycle_dispatch docker "$@"

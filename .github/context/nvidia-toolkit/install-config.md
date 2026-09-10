@@ -30,7 +30,7 @@
 
 ## Repository fit notes
 
-- `scripts/install-nvidia-container-toolkit.sh` follows the documented apt
+- `scripts/nvidia.sh` follows the documented apt
   keyring + repo + `nvidia-ctk` runtime configure flow.
 - Optional package version pinning is available upstream and can improve
   reproducibility across hosts.

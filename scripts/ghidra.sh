@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "${BASH_SOURCE[0]}.d" ]]; then SCRIPT_DIR="${BASH_SOURCE[0]}.d"; fi
 export INSTALL_LIB_TAG="ghidra"
 # shellcheck source=scripts/delib.sh
 source "${SCRIPT_DIR}/delib.sh"
@@ -849,6 +850,9 @@ install_self() {
     local source_script=""
 
     source_script="$(readlink -f "${BASH_SOURCE[0]}")"
+    if [[ "${source_script}" == "$(readlink -f "${SYSTEM_LAUNCHER}" 2>/dev/null || true)" ]]; then return 0; fi
+    safe_sudo install -Dm0644 "${SCRIPT_DIR}/delib.sh" "${SYSTEM_LAUNCHER}.d/delib.sh"
+    safe_sudo install -Dm0644 "${SCRIPT_DIR}/lifecycle.py" "${SYSTEM_LAUNCHER}.d/lifecycle.py"
     info "Installing launcher script to ${SYSTEM_LAUNCHER}..."
     safe_sudo install -m 0755 "${source_script}" "${SYSTEM_LAUNCHER}" || {
         error "Failed to install launcher script to ${SYSTEM_LAUNCHER}"
@@ -1559,5 +1563,5 @@ main() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    main "$@"
+    lifecycle_dispatch ghidra "$@"
 fi

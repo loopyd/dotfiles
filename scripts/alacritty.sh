@@ -8,11 +8,10 @@ REVISION=f99dc71708d31d5c32d4b3fa611f9a87bf22657e
 FONT_SHA256=f099f71bc240fb59ffeaba50d26206b32df7e54051e49d6837a1702e4d3b4f3f
 DRY_RUN=false
 DEPS=true
-CHECK=false
 BUILD_DIR=""
 
 usage() {
-    printf '%s\n' 'Usage: ./scripts/install-alacritty.sh [--dry-run] [--no-deps] [--check]' \
+    printf '%s\n' 'Usage: ./scripts/alacritty.sh <install|update|uninstall|check> [--dry-run] [--no-deps] ' \
         'Build the captured Alacritty revision into ~/.local/bin; install font and terminal integration.' \
         'Render configuration first. Rust/Cargo are prerequisites; apt build dependencies are optional.'
 }
@@ -22,7 +21,6 @@ parse_args() {
         case "$1" in
             --dry-run) DRY_RUN=true ;;
             --no-deps) DEPS=false ;;
-            --check) CHECK=true ;;
             -h|--help) usage; exit 0 ;;
             *) err "Unknown option: $1"; usage; exit 1 ;;
         esac
@@ -43,10 +41,6 @@ main() {
         require_commands python3
     fi
     run_maybe_dry python3 "${SCRIPT_DIR}/terminal.py" check-alacritty
-    if [[ "${CHECK}" == true ]]; then
-        run_maybe_dry alacritty --version
-        return
-    fi
     if [[ "${DEPS}" == true ]]; then
         if [[ "${DRY_RUN}" != true ]]; then
             require_apt_environment
@@ -63,24 +57,16 @@ main() {
     trap cleanup EXIT
     mktemp_dir_var BUILD_DIR '/tmp/alacritty-build.XXXXXX'
     git init --quiet "${BUILD_DIR}/source"
+    git -C "${BUILD_DIR}/source" config core.abbrev 8
     git -C "${BUILD_DIR}/source" remote add origin https://github.com/alacritty/alacritty.git
     git -C "${BUILD_DIR}/source" fetch --quiet --depth 1 origin "${REVISION}"
     git -C "${BUILD_DIR}/source" checkout --quiet --detach FETCH_HEAD
     [[ "$(git -C "${BUILD_DIR}/source" rev-parse HEAD)" == "${REVISION}" ]] || { err 'Source revision mismatch'; return 1; }
-    local existing="" binary target="${HOME}/.local/bin/alacritty"
-    if command -v alacritty >/dev/null 2>&1 && [[ "$(alacritty --version)" == *"${REVISION:0:8}"* ]]; then
-        existing="$(command -v alacritty)"
-    fi
-    if [[ -n "${existing}" ]]; then
-        binary="${existing}"
-    else
-        CARGO_TARGET_DIR="${BUILD_DIR}/target" cargo build --manifest-path "${BUILD_DIR}/source/Cargo.toml" --package alacritty --release --locked
-        binary="${BUILD_DIR}/target/release/alacritty"
-    fi
-    if [[ "${binary}" != "${target}" ]]; then
-        [[ ! -L "${target}" ]] || { err 'Existing Alacritty symlink needs manual review'; return 1; }
-        install -Dm0755 "${binary}" "${target}"
-    fi
+    local binary="${BUILD_DIR}/target/release/alacritty" target="${HOME}/.local/bin/alacritty"
+    [[ ! -L "${target}" ]] || { err 'Existing Alacritty symlink needs manual review'; return 1; }
+    CARGO_TARGET_DIR="${BUILD_DIR}/target" cargo build --manifest-path "${BUILD_DIR}/source/Cargo.toml" --package alacritty --release --locked
+    [[ "$("${binary}" --version)" == "alacritty 0.18.0-dev (${REVISION:0:8})" ]] || { err 'Built Alacritty version does not match the captured development revision'; return 1; }
+    install -Dm0755 "${binary}" "${target}"
     tic -x -e alacritty,alacritty-direct -o "${HOME}/.terminfo" "${BUILD_DIR}/source/extra/alacritty.info"
     install -Dm0644 "${BUILD_DIR}/source/extra/logo/alacritty-term.svg" "${HOME}/.local/share/icons/hicolor/scalable/apps/Alacritty.svg"
     install -Dm0644 "${BUILD_DIR}/source/extra/completions/alacritty.bash" "${HOME}/.local/share/bash-completion/completions/alacritty"
@@ -107,4 +93,4 @@ main() {
     log 'Installed user terminal integration; no terminal or agent session launched'
 }
 
-main "$@"
+lifecycle_dispatch alacritty "$@"

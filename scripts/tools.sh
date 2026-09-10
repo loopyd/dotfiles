@@ -10,7 +10,7 @@ DRY_RUN=false
 INCLUDE_RETIRED_PI=false
 
 usage() {
-    printf '%s\n' 'Usage: ./scripts/install-user-tools.sh [--dry-run] [--include-retired-pi]' \
+    printf '%s\n' 'Usage: ./scripts/tools.sh <install|update|uninstall|check> [--dry-run] [--include-retired-pi]' \
         'Restore configured mise runtimes and versionless user packages after rendering dotfiles.' \
         'No sudo, system package writes, project virtualenv changes or automatic local Go rebuilds.'
 }
@@ -32,17 +32,17 @@ main() {
     require_commands python3
     local -a options=()
     if [[ "${DRY_RUN}" == true ]]; then
-        bash "${SCRIPT_DIR}/install-mise.sh" --dry-run
+        bash "${SCRIPT_DIR}/mise.sh" "${LIFECYCLE_ACTION}" --dry-run
         options+=(--dry-run)
     else
         [[ "${EUID}" -ne 0 ]] || { err 'Run as the destination user, not root'; return 1; }
         python3 "${SCRIPT_DIR}/packages.py" validate
-        bash "${SCRIPT_DIR}/install-mise.sh"
+        bash "${SCRIPT_DIR}/mise.sh" "${LIFECYCLE_ACTION}"
     fi
     if [[ "${INCLUDE_RETIRED_PI}" == true ]]; then
         options+=(--include-retired-pi)
     fi
-    python3 "${SCRIPT_DIR}/packages.py" restore "${options[@]}"
+    python3 "${SCRIPT_DIR}/packages.py" "${LIFECYCLE_ACTION}" "${options[@]}"
 }
 
-main "$@"
+lifecycle_dispatch tools "$@"

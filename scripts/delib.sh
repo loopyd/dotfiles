@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Shared installer helpers for scripts/install-*.sh files.
+# Shared lifecycle helpers for noun-based component commands.
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     echo "scripts/delib.sh is a library and must be sourced, not executed." >&2
     exit 1
@@ -163,7 +163,7 @@ apt_install_missing() {
 
     for pkg in "$@"; do
         status="$(dpkg-query -W -f='${db:Status-Status}\n' "${pkg}" 2>/dev/null || true)"
-        if [[ "${status}" != "installed" ]]; then
+        if [[ "${status}" != "installed" || "${LIFECYCLE_ACTION:-install}" == update ]]; then
             missing+=("${pkg}")
         fi
     done
@@ -176,6 +176,154 @@ apt_install_missing() {
     apt_update_once
     log "Installing packages: ${missing[*]}"
     safe_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
+}
+
+lifecycle_usage() {
+    printf 'Usage: %s <install|update|uninstall|check> [--dry-run] [component options]\n' "$0"
+    printf '%s\n' 'Update converges to configured pins. Uninstall requires an installation receipt and preserves user data.'
+}
+
+lifecycle_payload() {
+    LIFECYCLE_PATHS=()
+    LIFECYCLE_PACKAGES=()
+    case "${LIFECYCLE_COMPONENT}" in
+        core) LIFECYCLE_PACKAGES=(ca-certificates curl git wget unzip xz-utils build-essential pkg-config gnupg lsb-release software-properties-common apt-transport-https fish) ;;
+        gh) LIFECYCLE_PACKAGES=(gh) ;;
+        docker) LIFECYCLE_PACKAGES=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin) ;;
+        nvidia) LIFECYCLE_PACKAGES=(nvidia-container-toolkit nvidia-container-toolkit-base libnvidia-container-tools libnvidia-container1) ;;
+        8bitdo)
+            LIFECYCLE_PACKAGES=(xboxdrv)
+            [[ "${INSTALL_JSTEST}" != true ]] || LIFECYCLE_PACKAGES+=(jstest-gtk)
+            LIFECYCLE_PATHS=("${BLACKLIST_PATH}" "${UDEV_RULES_PATH}" "${SERVICE_PATH}") ;;
+        blender) LIFECYCLE_PATHS=("${INSTALL_DIR}" "${SYMLINK_PATH}" "${DESKTOP_ENTRY_PATH}") ;;
+        reaper) LIFECYCLE_PATHS=("${INSTALL_PREFIX}/REAPER" /usr/local/bin/reaper "${REAPER_DESKTOP_ENTRY}") ;;
+        ghidra) LIFECYCLE_PATHS=("${INSTALL_DIR}" "${SYSTEM_LAUNCHER}" "${SYSTEM_LAUNCHER}.d" "${GHIDRA_DESKTOP_ENTRY}" "${HOME}/.local/share/applications/ghidra.desktop") ;;
+        neovim) LIFECYCLE_PATHS=(/usr/local/bin/nvim /usr/local/share/nvim /usr/local/share/man/man1/nvim.1) ;;
+        ollama) LIFECYCLE_PATHS=("${INSTALL_DIR}/bin/ollama" "${INSTALL_DIR}/lib/ollama") ;;
+        mise|herdr) LIFECYCLE_PATHS=("${HOME}/.local/bin/${LIFECYCLE_COMPONENT}") ;;
+        hindsight) LIFECYCLE_PATHS=("${HOME}/.local/bin/hindsight") ;;
+        alacritty)
+            LIFECYCLE_PATHS=("${HOME}/.local/bin/alacritty" "${HOME}/.local/share/icons/hicolor/scalable/apps/Alacritty.svg"
+                "${HOME}/.local/share/bash-completion/completions/alacritty" "${HOME}/.config/fish/completions/alacritty.fish"
+                "${HOME}/.zsh_functions/_alacritty" "${HOME}/.local/share/fonts/DepartureMono"
+                "${HOME}/.terminfo/a/alacritty" "${HOME}/.terminfo/a/alacritty-direct"
+                "${HOME}/.local/share/man/man1/alacritty.1.gz" "${HOME}/.local/share/man/man5/alacritty.5.gz"
+                "${HOME}/.local/share/man/man5/alacritty-bindings.5.gz" "${HOME}/.local/share/man/man1/alacritty-msg.1.gz"
+                "${HOME}/.local/share/man/man7/alacritty-escapes.7.gz") ;;
+        hooks|tools) ;;
+        *) err "Unknown component: ${LIFECYCLE_COMPONENT}"; return 1 ;;
+    esac
+}
+
+lifecycle_receipt() {
+    local operation="$1" path package
+    local -a options=()
+    for path in "${LIFECYCLE_PATHS[@]}"; do options+=(--path "${path}"); done
+    for package in "${LIFECYCLE_PACKAGES[@]}"; do options+=(--package "${package}"); done
+    python3 "${SCRIPT_DIR}/lifecycle.py" "${operation}" "${LIFECYCLE_COMPONENT}" "${options[@]}"
+}
+
+lifecycle_check() {
+    local package
+    for package in "${LIFECYCLE_PACKAGES[@]}"; do
+        [[ "$(dpkg-query -W -f='${db:Status-Status}' "${package}" 2>/dev/null)" == installed ]] || { err "Missing package: ${package}"; return 1; }
+    done
+    case "${LIFECYCLE_COMPONENT}" in
+        alacritty)
+            python3 "${SCRIPT_DIR}/terminal.py" check-alacritty
+            [[ "$("${HOME}/.local/bin/alacritty" --version)" == "alacritty 0.18.0-dev (${REVISION:0:8})" ]] || { err 'Pinned user Alacritty development build is missing'; return 1; } ;;
+        herdr) python3 "${SCRIPT_DIR}/terminal.py" check-herdr; "${HOME}/.local/bin/herdr" --version ;;
+        hindsight) python3 "${SCRIPT_DIR}/hindsight.py" preflight; python3 "${SCRIPT_DIR}/hindsight.py" health ;;
+        tools) python3 "${SCRIPT_DIR}/packages.py" check ;;
+        mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
+        hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;
+        blender) "${INSTALL_DIR}/blender" --version ;;
+        reaper) test -x "${INSTALL_PREFIX}/REAPER/reaper" ;;
+        ghidra) test -x "${INSTALL_DIR}/ghidraRun" ;;
+        neovim) /usr/local/bin/nvim --version ;;
+        ollama) test -x "${INSTALL_DIR}/bin/ollama" ;;
+        8bitdo) test -f "${UDEV_RULES_PATH}" ;;
+    esac
+    log "${LIFECYCLE_COMPONENT}: check passed"
+}
+
+lifecycle_uninstall() {
+    lifecycle_receipt verify
+    case "${LIFECYCLE_COMPONENT}" in
+        herdr) systemctl --user disable --now herdr.service ;;
+        hindsight)
+            systemctl --user disable --now hindsight.service
+            systemctl --user disable --now hindsight-db.service
+            "${COMPOSE[@]}" down ;;
+        ollama) safe_sudo systemctl disable --now ollama.service ;;
+        8bitdo) safe_sudo systemctl stop '8bitdo-ultimate-xinput@*.service' ;;
+        hooks)
+            if [[ "$(git -C "${SCRIPT_DIR}/.." config --local --get core.hooksPath || true)" == .githooks ]]; then
+                git -C "${SCRIPT_DIR}/.." config --local --unset core.hooksPath
+            fi ;;
+        tools) python3 "${SCRIPT_DIR}/packages.py" uninstall ;;
+    esac
+    lifecycle_receipt remove
+    if [[ "${LIFECYCLE_COMPONENT}" == 8bitdo ]]; then
+        safe_sudo systemctl daemon-reload
+        reload_udev_rules_if_available
+    fi
+    log 'Removed recorded software only; configuration, credentials, models, databases and shared dependencies retained'
+}
+
+lifecycle_dispatch() {
+    LIFECYCLE_COMPONENT="$1"
+    shift
+    LIFECYCLE_ACTION="${1:-}"
+    if [[ "${LIFECYCLE_COMPONENT}" == ghidra && "${LIFECYCLE_ACTION}" == run ]]; then
+        main "$@"
+        return
+    fi
+    case "${LIFECYCLE_ACTION}" in
+        install|update|uninstall|check) shift ;;
+        -h|--help|help) lifecycle_usage; usage; return ;;
+        *) lifecycle_usage; return 2 ;;
+    esac
+    export LIFECYCLE_ACTION
+    local argument dry_run=false verify=false
+    local -a arguments=()
+    for argument in "$@"; do
+        case "${argument}" in
+            --dry-run) dry_run=true ;;
+            --verify) verify=true ;;
+            -h|--help) lifecycle_usage; usage; return ;;
+            *) arguments+=("${argument}") ;;
+        esac
+    done
+    [[ "${verify}" != true || "${LIFECYCLE_ACTION}" == uninstall ]] || { err '--verify is only valid with uninstall'; return 2; }
+    if [[ "${LIFECYCLE_COMPONENT}" == ghidra ]]; then
+        if [[ "${LIFECYCLE_ACTION}" == uninstall || "${LIFECYCLE_ACTION}" == check ]]; then load_config; fi
+        parse_args install "${arguments[@]}"
+    else
+        parse_args "${arguments[@]}"
+    fi
+    lifecycle_payload
+    if [[ "${dry_run}" == true ]]; then
+        log "DRY-RUN: ${LIFECYCLE_ACTION} ${LIFECYCLE_COMPONENT}; no downloads, writes or service changes"
+        case "${LIFECYCLE_ACTION}" in
+            uninstall) log 'Verify ownership receipt and unchanged files; stop component services; remove recorded payload without configuration/data' ;;
+            check) log 'Read-only component validation' ;;
+            *)
+                if [[ "${LIFECYCLE_COMPONENT}" == alacritty ]]; then
+                    log "Compile ${REVISION}: cargo build --release --locked; verify 0.18.0-dev (${REVISION:0:8})"
+                fi ;;
+        esac
+        return
+    fi
+    require_commands python3
+    if [[ "${verify}" == true ]]; then lifecycle_receipt verify; return; fi
+    case "${LIFECYCLE_ACTION}" in
+        check) lifecycle_check ;;
+        uninstall) lifecycle_uninstall ;;
+        install|update)
+            if [[ "${LIFECYCLE_COMPONENT}" == ghidra ]]; then main install "${arguments[@]}"; else main "${arguments[@]}"; fi
+            lifecycle_receipt record ;;
+    esac
 }
 
 resolve_ubuntu_codename() {

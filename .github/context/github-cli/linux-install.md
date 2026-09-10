@@ -21,7 +21,7 @@
 
 ## Repository fit notes
 
-- `scripts/install-gh-cli.sh` already follows the official apt keyring and
+- `scripts/gh.sh` already follows the official apt keyring and
   signed repository pattern.
 
 ## Sources

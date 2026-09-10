@@ -85,13 +85,20 @@ def restore_router(home, backup, port):
 
 def main():
     parser = argparse.ArgumentParser(description='Preview or render captured configuration; never start services or install packages.')
+    parser.add_argument('action', choices=['install', 'update', 'uninstall', 'check'])
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--home', type=Path, default=Path.home())
     parser.add_argument('--values', type=Path, default=Path.home() / '.config/dotfiles/values.json')
-    parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--restore-router', action='store_true')
     parser.add_argument('--router-port', type=int, default=20128)
     args = parser.parse_args()
+    args.apply = args.action in {'install', 'update'} and not args.dry_run
+    if args.restore_router and not args.apply:
+        parser.error('--restore-router requires a non-dry install or update')
+    if args.action == 'uninstall':
+        print('Configuration renderer has no installed runtime; user configuration and rollback backups are preserved.')
+        return
     if not 1 <= args.router_port <= 65535:
         raise ValueError('Router port must be between 1 and 65535')
     root = args.repo.resolve()
@@ -120,11 +127,11 @@ def main():
         missing.update(name for name in MARKER.findall(text) if not isinstance(values.get(name), str))
         plans.append((entry, target, text))
     print(json.dumps({'files': len(plans), 'unit_links': len(manifest['symlinks']), 'missing_values': sorted(missing), 'apply': args.apply}, indent=2))
-    if not args.apply:
-        return
     if missing:
         raise ValueError('Missing private values; no files written')
     rendered = [(entry, target, materialize(text, values, target)) for entry, target, text in plans]
+    if not args.apply:
+        return
     link_plans = []
     for entry in manifest['symlinks']:
         target = beneath(home, entry['target'])

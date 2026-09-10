@@ -7,12 +7,11 @@ source "${SCRIPT_DIR}/delib.sh"
 DRY_RUN=false
 START=true
 PLUGINS=true
-CHECK=false
 TEMP_BINARY=""
 VERSION=0.8.2
 
 usage() {
-    printf '%s\n' 'Usage: ./scripts/install-herdr.sh [--dry-run] [--no-start] [--no-plugins] [--check]' \
+    printf '%s\n' 'Usage: ./scripts/herdr.sh <install|update|uninstall|check> [--dry-run] [--no-start] [--no-plugins] ' \
         'Install herdr for the logged-in user, restore non-Pi plugins and enable its user unit.' \
         'Render private dotfiles first; existing binaries, sessions and active services are preserved.'
 }
@@ -23,7 +22,6 @@ parse_args() {
             --dry-run) DRY_RUN=true ;;
             --no-start) START=false ;;
             --no-plugins) PLUGINS=false ;;
-            --check) CHECK=true ;;
             -h|--help) usage; exit 0 ;;
             *) err "Unknown option: $1"; usage; exit 1 ;;
         esac
@@ -50,23 +48,19 @@ main() {
         require_commands python3 systemctl
     fi
     run_maybe_dry python3 "${SCRIPT_DIR}/terminal.py" check-herdr
-    if [[ "${CHECK}" == true ]]; then
-        run_maybe_dry "${HOME}/.local/bin/herdr" --version
-        return
-    fi
     if [[ "${DRY_RUN}" == true ]]; then
         log "DRY-RUN: install verified herdr ${VERSION} (${architecture}) into ~/.local/bin when absent"
-    elif [[ -x "${HOME}/.local/bin/herdr" ]]; then
+    elif [[ -x "${HOME}/.local/bin/herdr" && "${LIFECYCLE_ACTION}" == install ]]; then
         log 'Existing herdr binary preserved'
     else
-        [[ ! -e "${HOME}/.local/bin/herdr" && ! -L "${HOME}/.local/bin/herdr" ]] || { err 'Existing herdr path needs manual review'; return 1; }
+        [[ ! -d "${HOME}/.local/bin/herdr" ]] || { err 'Existing herdr directory needs manual review'; return 1; }
         require_commands curl sha256sum awk install mktemp
         trap cleanup EXIT
         mktemp_file_var TEMP_BINARY '/tmp/herdr-install.XXXXXX'
         curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
             "https://github.com/herdrdev/herdr/releases/download/v${VERSION}/herdr-linux-${architecture}" -o "${TEMP_BINARY}"
         verify_file_sha256 "${TEMP_BINARY}" "${checksum}" herdr
-        install -Dm0755 "${TEMP_BINARY}" "${HOME}/.local/bin/herdr"
+        install --remove-destination -Dm0755 "${TEMP_BINARY}" "${HOME}/.local/bin/herdr"
     fi
     if [[ "${PLUGINS}" == true ]]; then
         if [[ "${DRY_RUN}" == true ]]; then
@@ -84,4 +78,4 @@ main() {
     log 'No active service restart, workspace restoration or Pi plugin changes requested'
 }
 
-main "$@"
+lifecycle_dispatch herdr "$@"
