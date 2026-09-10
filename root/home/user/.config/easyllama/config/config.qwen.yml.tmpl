@@ -1,0 +1,84 @@
+globalTTL: 1800
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        gpu:
+          swap: true
+          exclusive: true
+          members:
+          - qwen3-chat
+          - qwen3-embeddings
+macros:
+  qwen3_chat_target_hf: 0bserverx/Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF:RVN-Q4_K_M-multilingual-mtp.gguf
+  pi_emb_hf_model: Qwen/Qwen3-Embedding-8B-GGUF:Q5_K_M
+models:
+  qwen3-chat:
+    concurrencyLimit: 0
+    name: Qwen3.8 Chat 27B RVN Heretic Q4_K_M MTP
+    description: Primary thinking/tool-use model; multilingual RVN Heretic Q4_K_M with embedded MTP served by llama.cpp
+    cmd: '${server_bin}
+      server
+      qwen
+      --bin /app/bin/llama-server-qwen
+      --host 0.0.0.0
+      --port ${PORT}
+      -hf ${qwen3_chat_target_hf}
+      --no-mmproj
+      --ctx-size 262144
+      --n-predict 32768
+      --n-gpu-layers all
+      --fit off
+      --parallel 4
+      --kv-unified
+      --spec-type draft-mtp
+      --spec-draft-n-max 2
+      --spec-draft-n-min 0
+      --spec-draft-type-k q8_0
+      --spec-draft-type-v q8_0
+      --flash-attn on
+      --cache-type-k q8_0
+      --cache-type-v q8_0
+      --batch-size 4096
+      --ubatch-size 1024
+      --cache-prompt
+      --cache-ram 16384
+      --ctx-checkpoints 32
+      --load-mode mmap
+      --no-warmup
+      --no-webui
+      --jinja
+      --chat-template-file /chat_template/qwen3.8.jinja
+      --reasoning auto
+      --reasoning-preserve
+      --temp 1.0
+      --top-p 0.95
+      --top-k 20
+      --min-p 0.0
+      --repeat-penalty 1.0
+      '
+    cmdStop: /bin/kill -TERM ${PID}
+  qwen3-embeddings:
+    concurrencyLimit: 0
+    name: Qwen3 Embeddings 8B
+    description: Dense embedding model for vector search, RAG, similarity
+    cmd: '${server_bin}
+      server
+      qwen
+      --bin /app/bin/llama-server-qwen
+      --host 0.0.0.0
+      --port ${PORT}
+      -hf ${pi_emb_hf_model}
+      --ctx-size 163840
+      --batch-size 1024
+      --ubatch-size 1024
+      --parallel 4
+      --flash-attn on
+      --cache-type-k f16
+      --cache-type-v f16
+      --no-mmap
+      --no-warmup
+      --embedding
+      '
+    cmdStop: /bin/kill -TERM ${PID}

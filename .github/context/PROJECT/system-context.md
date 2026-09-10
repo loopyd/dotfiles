@@ -15,6 +15,12 @@ This file is the planning context for:
 - Keep findings evidence-based and credential-safe.
 - Treat /etc and /usr as read-only inventory references.
 - Store plans and recommendations only.
+- Games are excluded from deployment/capture: no game servers, Steam/other game
+  launchers, emulator settings, game desktop/service links or game package lists.
+  `scripts/scope.py` enforces the shared boundary; APT candidates must have complete
+  refreshed metadata and must not belong to `games`. Keep developer tools, GPU
+  drivers and audio settings, but omit remembered game-node positions. Exclusion
+  never authorizes uninstalling games or editing their live configuration.
 - If this or any context markdown document exceeds 25K tokens, compact it in place while preserving critical facts, source traceability, and canonical policy references.
 
 ## Current Status (Compacted)

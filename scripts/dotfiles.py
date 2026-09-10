@@ -13,9 +13,12 @@ from xml.sax.saxutils import escape
 
 from snapshot import MARKER, private_write
 from network import decode_tables, restore_tables
+from scope import game_document, game_path
 
 
 def beneath(root, relative):
+    if game_path(relative):
+        raise ValueError('Game configuration is outside dotfiles scope')
     path = Path(relative)
     if path.is_absolute() or '..' in path.parts:
         raise ValueError('Unsafe manifest path: ' + relative)
@@ -102,6 +105,8 @@ def main():
             raise ValueError('Duplicate or symlink target: ' + entry['target'])
         targets.add(target)
         text = source.read_bytes().decode('utf-8')
+        if game_document(entry['target'], text):
+            raise ValueError('Game launchers are outside dotfiles scope')
         if entry['mode'] not in {'0600', '0644', '0700', '0755'}:
             raise ValueError('Unsupported file mode: ' + entry['source'])
         if hashlib.sha256(text.encode()).hexdigest() != entry['sha256']:
@@ -112,17 +117,19 @@ def main():
     if missing:
         raise ValueError('Missing private values; no files written')
     rendered = [(entry, target, materialize(text, values, target)) for entry, target, text in plans]
-    if not args.apply:
-        return
     link_plans = []
     for entry in manifest['symlinks']:
         target = beneath(home, entry['target'])
         resolved = (target.parent / entry['link']).resolve()
+        if game_path(resolved.relative_to(home) if resolved.is_relative_to(home) else resolved):
+            raise ValueError('Game unit destinations are outside dotfiles scope')
         if not str(entry['target']).startswith('.config/systemd/user/') or not resolved.is_relative_to(home / '.config/systemd/user'):
             raise ValueError('Only internal user-unit links may be restored')
         if target.exists() and not target.is_symlink():
             raise ValueError('Refusing to replace a regular file with a unit link')
         link_plans.append((entry, target))
+    if not args.apply:
+        return
     backup = home / '.local/state/dotfiles' / datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     backup.mkdir(parents=True, mode=0o700)
     for relative in ('.local/share/hindsight/postgres', '.local/share/hindsight/cache', '.local/state/hindsight'):

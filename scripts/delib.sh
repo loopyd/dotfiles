@@ -168,12 +168,15 @@ apt_install_missing() {
         fi
     done
 
+    if [[ "${#missing[@]}" -gt 0 ]]; then
+        apt_update_once
+    fi
+    python3 "${SCRIPT_DIR}/scope.py" apt "$@" || return 1
     if [[ "${#missing[@]}" -eq 0 ]]; then
         log "All requested packages are already installed"
         return 0
     fi
 
-    apt_update_once
     log "Installing packages: ${missing[*]}"
     safe_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
 }
@@ -211,6 +214,7 @@ lifecycle_payload() {
                 "${HOME}/.local/share/man/man5/alacritty-bindings.5.gz" "${HOME}/.local/share/man/man1/alacritty-msg.1.gz"
                 "${HOME}/.local/share/man/man7/alacritty-escapes.7.gz") ;;
         router) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/router.py") ;;
+        easyllama) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/easyllama.py") ;;
         tailscale) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/tailscale.py") ;;
         hooks|tools) ;;
         *) err "Unknown component: ${LIFECYCLE_COMPONENT}"; return 1 ;;
@@ -238,6 +242,7 @@ lifecycle_check() {
         hindsight) python3 "${SCRIPT_DIR}/hindsight.py" preflight; python3 "${SCRIPT_DIR}/hindsight.py" health ;;
         tools) python3 "${SCRIPT_DIR}/packages.py" check ;;
         router) python3 "${SCRIPT_DIR}/router.py" check ;;
+        easyllama) python3 "${SCRIPT_DIR}/easyllama.py" check ;;
         tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;
         mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
         hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;
@@ -255,6 +260,7 @@ lifecycle_uninstall() {
     lifecycle_receipt verify
     case "${LIFECYCLE_COMPONENT}" in
         herdr) systemctl --user disable --now herdr.service ;;
+        easyllama) systemctl --user disable --now easyllama.service ;;
         router)
             systemctl --user disable --now 9router.service
             "${COMPOSE[@]}" down ;;

@@ -12,6 +12,7 @@ import stat
 import tomllib
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
+from scope import clean_document, game_document, game_path
 
 
 MARKER = re.compile(r'@@DOTFILES:([A-Z0-9_]+)@@')
@@ -119,6 +120,8 @@ class Scrubber:
             text = text.replace(json.dumps(value, ensure_ascii=False)[1:-1], marker)
             text = text.replace(escape(value, {'"': '&quot;', "'": '&apos;'}), marker)
             text = text.replace(value, marker)
+        if label.startswith('.config/easyllama/') and self.values.get('EASYLLAMA_ROOT'):
+            text = text.replace(self.values['EASYLLAMA_ROOT'], '@@DOTFILES:EASYLLAMA_ROOT@@')
         text = text.replace(str(self.home), '@@DOTFILES:HOME@@')
         text = text.replace('/run/user/' + str(os.getuid()), '/run/user/@@DOTFILES:UID@@')
         if label in {'.config/hindsight/compose.yaml', '.config/9router/compose.yaml'}:
@@ -129,6 +132,8 @@ class Scrubber:
 
 
 def reason(path, is_dir=False):
+    if game_path(path):
+        return 'game configuration or launcher'
     parts = path.parts
     lowered = [part.lower() for part in parts]
     name = path.name.lower()
@@ -153,7 +158,7 @@ def reason(path, is_dir=False):
         return 'credential store'
     if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3', '.jsonl', '.bak', '.save', '.log', '.pem', '.p12', '.pfx', '.kdbx', '.rk', '.key', '.gpg'} or re.search(r'\.(?:bak|save|backup)[.-]', name):
         return 'database/secret/backup'
-    if path.suffix and path.suffix.lower() not in EXTENSIONS and str(path) not in ROOT_FILES:
+    if path.suffix and path.suffix.lower() not in EXTENSIONS | {'.jinja'} and str(path) not in ROOT_FILES:
         return 'not configuration text'
     return None
 
@@ -195,6 +200,8 @@ def capture(args):
     collected = {}
     private_network = {'.config/9router/identity.json', '.config/9router/restore.json', '.config/tailscale/identity.json'}
     existing_values = json.loads(values_path.read_text()) if values_path.exists() else {}
+    if isinstance(existing_values.get('EASYLLAMA_ROOT'), str):
+        scrubber.values['EASYLLAMA_ROOT'] = existing_values['EASYLLAMA_ROOT']
     network_keys = {'SECRET_ROUTER_IDENTITY', 'SECRET_ROUTER_TABLES', 'SECRET_TAILSCALE_IDENTITY'}
     preserve_network = network_keys.issubset(existing_values)
     if preserve_network:
@@ -222,6 +229,9 @@ def capture(args):
             continue
         excluded = reason(relative)
         if source.is_symlink():
+            if game_path(relative) or game_path(os.readlink(source)) or game_path(source.resolve().relative_to(home) if source.resolve().is_relative_to(home) else source.resolve()):
+                exclusions['game service link'] += 1
+                continue
             if str(relative).startswith('.config/systemd/user/') and '.wants/' in str(relative) and source.resolve().is_relative_to(home / '.config/systemd/user'):
                 links.append({'target': str(relative), 'link': os.path.relpath(source.resolve(), source.parent)})
             exclusions['symlink (recorded when owned user unit)'] += 1
@@ -249,6 +259,10 @@ def capture(args):
         if private_material(text, documentation=source.suffix == '.md'):
             exclusions['private key block'] += 1
             continue
+        if game_document(relative, text):
+            exclusions['game launcher'] += 1
+            continue
+        text = clean_document(relative, text)
         scrubber.inspect(text, str(relative))
         collected[str(relative)] = (text, bool(source.stat().st_mode & stat.S_IXUSR))
     exported = None if preserve_network else router_export(home)

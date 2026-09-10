@@ -39,6 +39,13 @@ Checksum automation note: installer integrity checks remain environment-driven u
 
 ## Configuration templates
 
+Games are outside this repository's deployment scope. Game/server configs,
+launchers, emulator settings and game package entries are excluded from capture
+and restoration, including Unity Horizon/DreadZone and Steam. System-package
+installs also reject APT's `games` section. Graphics drivers, developer tools,
+audio configuration and unrelated Horizon-named themes/effects remain supported.
+These exclusions never uninstall games or alter their live configuration.
+
 The public snapshot contains user settings from `.config`, terminal/shell files,
 Codex configuration and rules, `.agents` skills, Hindsight integration settings,
 authored local launchers, desktop entries and user systemd units. 9router's
@@ -180,7 +187,8 @@ python3 scripts/dotfiles.py install --values /private/path/values.json
 Alternatively, use `./bootstrap.sh install --with-dotfiles --with-hindsight` with your
 private `--dotfiles-values` path. Hindsight is opt-in; when requested, bootstrap
 installs Docker even with `--no-gpu` or the minimal profile. Node/npm and running
-9router/EasyLlama remain prerequisites. Add `--with-user-tools` to restore Node/npm
+The captured local stack now selects EasyLlama, 9router and their Docker/NVIDIA
+prerequisites in order. Add `--with-user-tools` to restore Node/npm
 and your other user tools before Hindsight. A newly granted Docker group membership
 requires a fresh login before the Hindsight installer can proceed.
 
@@ -297,6 +305,20 @@ Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v
 [Nerd Fonts release](https://github.com/ryanoasis/nerd-fonts/releases/tag/v3.4.0).
 
 ### Network services
+
+`scripts/easyllama.sh install|update|uninstall|check` restores the captured Qwen
+Docker stack with its **0.6.0 source revision and immutable local image IDs**.
+Use `--with-easyllama` or `--only easyllama` in bootstrap; Hindsight and 9router
+select it automatically for install/update. The user supervisor adopts matching
+running containers without model reload, starts them at login and stops them on
+unit shutdown. Dependency ordering and restart propagation cover the local stack.
+
+Captured configuration, mode profiles and chat templates live under
+`~/.config/easyllama`; `EASYLLAMA_ROOT` preserves the existing model/cache root.
+Credentials remain private renderer values. Locally built images require the
+explicit archive/load workflow documented in
+[network service operations](.github/context/PROJECT/network-services.md#easyllama-snapshot);
+they are not silently rebuilt or pulled from an assumed public registry.
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions
 as other components; bootstrap selects them with `--with-network` or

@@ -1,7 +1,8 @@
 [Unit]
 Description=9router gateway (Docker Compose)
-After=tailscale.service
-Requires=tailscale.service
+After=tailscale.service easyllama.service
+Requires=tailscale.service easyllama.service
+PartOf=easyllama.service
 
 [Service]
 Type=simple

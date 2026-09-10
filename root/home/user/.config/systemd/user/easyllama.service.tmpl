@@ -1,0 +1,19 @@
+[Unit]
+Description=EasyLlama pinned Qwen Docker stack
+Before=9router.service hindsight.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
+ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py run
+ExecStartPost=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py wait
+ExecStopPost=-/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py stop
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=240
+TimeoutStopSec=200
+UMask=0077
+
+[Install]
+WantedBy=default.target

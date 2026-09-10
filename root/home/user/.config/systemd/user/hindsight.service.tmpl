@@ -1,6 +1,7 @@
 [Unit]
-Requires=hindsight-db.service
-After=hindsight-db.service
+Requires=hindsight-db.service 9router.service
+After=hindsight-db.service 9router.service
+PartOf=9router.service
 Description=Hindsight local memory server and dashboard (Docker)
 Documentation=https://hindsight.vectorize.io/developer/installation
 

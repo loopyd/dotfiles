@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tomllib
 from urllib.parse import unquote, urlsplit
+from scope import game_package, without_games
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -129,7 +130,7 @@ def snapshot():
                 url = urlsplit(value)
                 require(url.scheme == 'https' and url.hostname and not url.username and not url.password and not url.query, 'Registry URL needs private review')
             npm_config[key] = value
-    return {
+    return without_games({
         'format': 1,
         'captured_on': datetime.date.today().isoformat(),
         'mise_installed': sorted(mise),
@@ -144,8 +145,8 @@ def snapshot():
         'rust_components': sorted(components),
         'rust_targets': sorted(targets),
         'go': sorted(go.values(), key=lambda entry: entry['package']),
-        'exclusions': ['package versions and duplicate runtime installations', 'system packages and project virtual environments', 'caches, compiled artifacts, registry credentials and telemetry'],
-    }
+        'exclusions': ['package versions and duplicate runtime installations', 'system packages and project virtual environments', 'games, game servers, launchers and emulator packages', 'caches, compiled artifacts, registry credentials and telemetry'],
+    })
 
 
 def configuration():
@@ -156,6 +157,7 @@ def configuration():
     require(not config.get('settings', {}).get('trusted_config_paths'), 'Remove blanket mise trust from the restored config; do not trust the whole filesystem')
     require('node' in config.get('tools', {}) and 'uv' in config['tools'], 'Rendered mise config must include Node and uv')
     require(all(isinstance(value, str) and value and not value.startswith('-') for value in config['tools'].values()), 'Review complex mise tool configuration manually')
+    require(not any(game_package(name) for name in config['tools']), 'Configured mise game tools are outside dotfiles scope')
     return config
 
 
@@ -169,6 +171,8 @@ def validate(manifest):
     for packages in manifest['alternate_node_managers'].values():
         names += packages
     require(all(isinstance(name, str) and NAME.fullmatch(name) for name in names), 'Invalid package name')
+    require(not any(game_package(name) for name in names + manifest['mise_installed']), 'Game packages are outside dotfiles scope')
+    require(not any(game_package(entry['binary']) for entry in manifest['go']), 'Game binaries are outside dotfiles scope')
     require(all(re.fullmatch(r'3\.\d+', minor) for minor in manifest['python_user']), 'Invalid Python runtime selector')
     require(all(re.fullmatch(r'3\.\d+', minor) for minor in manifest['python_managed']), 'Invalid managed Python runtime selector')
     require(all(isinstance(tool, str) and not tool.startswith('-') and not any(character.isspace() for character in tool) for tool in manifest['mise_installed']), 'Invalid mise tool identifier')
@@ -179,6 +183,7 @@ def restore(manifest, dry_run, include_retired_pi, update=False):
     home = Path.home()
     config_path = home / '.config/mise/config.toml'
     config = tomllib.loads((ROOT / 'root/home/user/.config/mise/config.toml.tmpl').read_text()) if dry_run else configuration()
+    require(not any(game_package(name) for name in config['tools']), 'Configured mise game tools are outside dotfiles scope')
     mise = str(home / '.local/bin/mise')
     environment = dict(os.environ)
     environment['PATH'] = str(home / '.local/bin') + ':' + str(home / '.cargo/bin') + ':' + environment.get('PATH', '')

@@ -1,0 +1,38 @@
+{
+  "version": "0.6.0",
+  "revision": "94166edbd5e74a9e89741d889483b12bdb82907c",
+  "repository": "https://github.com/loopyd/easyllama.git",
+  "root": "@@DOTFILES:EASYLLAMA_ROOT@@",
+  "mode": "qwen",
+  "images": {
+    "proxy": {
+      "id": "sha256:32e59ba7cacceeb30523e78259e3d1d62c6330c50d776867d2852e26b9b934fb",
+      "reference": "easyllama@sha256:32e59ba7cacceeb30523e78259e3d1d62c6330c50d776867d2852e26b9b934fb",
+      "archive": "proxy-32e59ba7cacceeb3.tar"
+    },
+    "chat": {
+      "id": "sha256:22da284f1b87f7a44012043658c5da2e5e282d04a1539a20f491960d95f47676",
+      "reference": "easyllama@sha256:22da284f1b87f7a44012043658c5da2e5e282d04a1539a20f491960d95f47676",
+      "archive": "chat-22da284f1b87f7a4.tar"
+    },
+    "embeddings": {
+      "id": "sha256:22da284f1b87f7a44012043658c5da2e5e282d04a1539a20f491960d95f47676",
+      "reference": "easyllama@sha256:22da284f1b87f7a44012043658c5da2e5e282d04a1539a20f491960d95f47676",
+      "archive": "embeddings-22da284f1b87f7a4.tar"
+    }
+  },
+  "chat_templates": {
+    "qwen3.5.jinja": {
+      "sha256": "5c7d524b9e4b14f355dc1df03ba9e3f725886df134dc703fc1e0f9c7bbf35a47",
+      "final_newline": false
+    },
+    "qwen3.6.jinja": {
+      "sha256": "01cb259b5134ffca8178f839475f44b8e2fce90a5a07d61d00b3481abd440af2",
+      "final_newline": false
+    },
+    "qwen3.8.jinja": {
+      "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce",
+      "final_newline": false
+    }
+  }
+}

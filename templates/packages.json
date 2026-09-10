@@ -337,6 +337,7 @@
   "exclusions": [
     "package versions and duplicate runtime installations",
     "system packages and project virtual environments",
-    "caches, compiled artifacts, registry credentials and telemetry"
+    "caches, compiled artifacts, registry credentials and telemetry",
+    "games, game servers, launchers and emulator packages"
   ]
 }

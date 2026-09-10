@@ -1,0 +1,37 @@
+healthCheckTimeout: 1800
+logLevel: info
+sendLoadingState: false
+globalTTL: 1800
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        gpu:
+          swap: true
+          exclusive: true
+          members:
+          - qwen3-chat
+          - qwen3-embeddings
+models:
+  qwen3-chat:
+    concurrencyLimit: 0
+    name: Qwen3.8 Chat 27B RVN Heretic Q4_K_M MTP
+    description: Primary thinking/tool-use model; multilingual RVN Heretic Q4_K_M
+      with embedded MTP served by llama.cpp
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9002/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9002/sleep
+    proxy: http://127.0.0.1:9000
+    checkEndpoint: /v1/models
+    useModelName: qwen3-chat
+  qwen3-embeddings:
+    concurrencyLimit: 0
+    name: Qwen3 Embeddings 8B
+    description: Dense embedding model for vector search, RAG, similarity
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/sleep
+    proxy: http://127.0.0.1:9001
+    checkEndpoint: /v1/models
+    useModelName: qwen3-embeddings
+apiKeys:
+- @@DOTFILES:SECRET_EASYLLAMA_CONFIG_EASYLLAMA_CONFIG_JSON_API_KEY@@

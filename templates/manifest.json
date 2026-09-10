@@ -1046,12 +1046,6 @@
       "sha256": "3bb67592d92fd699bd747a91a4b44b571ed56c828c4cf8fdf838f0a9453e8452"
     },
     {
-      "source": "root/home/user/.config/Archipelago/kivy/config.ini.tmpl",
-      "target": ".config/Archipelago/kivy/config.ini",
-      "mode": "0600",
-      "sha256": "0d43d56e6e9b189844d70303964470b1b43acd244e077e5cfff62f0fad1880e7"
-    },
-    {
       "source": "root/home/user/.config/Cadence/Cadence-Logs.conf.tmpl",
       "target": ".config/Cadence/Cadence-Logs.conf",
       "mode": "0600",
@@ -1544,52 +1538,10 @@
       "sha256": "12f1631247d607b8bc5519915c409c19431f18c6443360bf5cefcbc7dfd7ae7c"
     },
     {
-      "source": "root/home/user/.config/OpenGOAL-Launcher/settings.json.tmpl",
-      "target": ".config/OpenGOAL-Launcher/settings.json",
-      "mode": "0600",
-      "sha256": "a914ff5c2be9e18e39aa40041d45f92f8102689a7a2f365695caacbfe923000a"
-    },
-    {
-      "source": "root/home/user/.config/OpenGOAL/jak1/misc/debug-settings.json.tmpl",
-      "target": ".config/OpenGOAL/jak1/misc/debug-settings.json",
-      "mode": "0600",
-      "sha256": "54da83db88f48f386b45db29ddbd378d8bb1802f8f1b4a2227e10ecb1a6f5eac"
-    },
-    {
-      "source": "root/home/user/.config/OpenGOAL/jak1/settings/display-settings.json.tmpl",
-      "target": ".config/OpenGOAL/jak1/settings/display-settings.json",
-      "mode": "0600",
-      "sha256": "1f39838ed124486f99f4919f35ac3c2503ff4c71697a52ce8df0acda264c7c58"
-    },
-    {
-      "source": "root/home/user/.config/OpenGOAL/jak1/settings/input-settings.json.tmpl",
-      "target": ".config/OpenGOAL/jak1/settings/input-settings.json",
-      "mode": "0600",
-      "sha256": "4b4f58b774adfc10611115ac295f689e1f1d9ad91e49996104559cf57390b4cf"
-    },
-    {
       "source": "root/home/user/.config/OpenRGB/OpenRGB.json.tmpl",
       "target": ".config/OpenRGB/OpenRGB.json",
       "mode": "0600",
       "sha256": "bdea832131b5a04e3d1146fd16ab0cd2111fd673dc03b87b39b75436d46f5f95"
-    },
-    {
-      "source": "root/home/user/.config/PCSX2/inis/PCSX2.ini.tmpl",
-      "target": ".config/PCSX2/inis/PCSX2.ini",
-      "mode": "0600",
-      "sha256": "e8845165afd6caaaf50bd0beb13d214b578cec116a21fd28207181ca59741362"
-    },
-    {
-      "source": "root/home/user/.config/PopTracker/PopTracker.json.tmpl",
-      "target": ".config/PopTracker/PopTracker.json",
-      "mode": "0600",
-      "sha256": "2dbe679bddecc5d7555337d257c078561c10036116c83fbfeb5d4a93c63d8526"
-    },
-    {
-      "source": "root/home/user/.config/PopTracker/pack-conf.json.tmpl",
-      "target": ".config/PopTracker/pack-conf.json",
-      "mode": "0600",
-      "sha256": "ee59fe62739a4988e597e7726d0cb9fefc2af552e5105fe6ff046ed69f623859"
     },
     {
       "source": "root/home/user/.config/QtProject.conf.tmpl",
@@ -4763,103 +4715,7 @@
       "source": "root/home/user/.config/rncbc.org/qpwgraph.conf.tmpl",
       "target": ".config/rncbc.org/qpwgraph.conf",
       "mode": "0600",
-      "sha256": "c6d5a701dcc0b4608357e63891ff010133620ef7250c4e2ff522a872fcbc4d36"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/GuiConfigs/CurrentSettings.ini.tmpl",
-      "target": ".config/rpcs3/GuiConfigs/CurrentSettings.ini",
-      "mode": "0600",
-      "sha256": "ea51fa9c43b511e2301b59acbdba13d6d8869ec7420493040bf26c08cb77b8d6"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/LogitechG27.yml.tmpl",
-      "target": ".config/rpcs3/LogitechG27.yml",
-      "mode": "0600",
-      "sha256": "5f422e4a311c82a04cfad80ce2b565ce59575ecc2bb9aee23ef678216b690306"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/config.yml.tmpl",
-      "target": ".config/rpcs3/config.yml",
-      "mode": "0600",
-      "sha256": "f09ee9e1c27462495e7fed7858d4e69896738858b5c9156d7ec8deb50fee5cd0"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/games.yml.tmpl",
-      "target": ".config/rpcs3/games.yml",
-      "mode": "0600",
-      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/games/Disc Games Can Be Put Here For Automatic Detection.txt.tmpl",
-      "target": ".config/rpcs3/games/Disc Games Can Be Put Here For Automatic Detection.txt",
-      "mode": "0600",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/gem.yml.tmpl",
-      "target": ".config/rpcs3/gem.yml",
-      "mode": "0600",
-      "sha256": "a268b30b4f1def1d8be94ed4985806f309cb7777f410db87aff3995f006acec7"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/gem_mouse.yml.tmpl",
-      "target": ".config/rpcs3/gem_mouse.yml",
-      "mode": "0600",
-      "sha256": "8dcbc3449797b69991f2d1737b1336bd4ab885398826589b43c7627e2766f509"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/gem_real.yml.tmpl",
-      "target": ".config/rpcs3/gem_real.yml",
-      "mode": "0600",
-      "sha256": "1966aeb9d8bd5c541cb3953f9a632a2b02890e8e18c8420ec4313a667590ea90"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/input_configs/active_input_configurations.yml.tmpl",
-      "target": ".config/rpcs3/input_configs/active_input_configurations.yml",
-      "mode": "0600",
-      "sha256": "3711eff568949a76beb4987f8f080065e959ceebe3977f119c64ffe5360def0e"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/input_configs/global/Default.yml.tmpl",
-      "target": ".config/rpcs3/input_configs/global/Default.yml",
-      "mode": "0600",
-      "sha256": "a78339820fa9e61121257719af5303c11aebc49ab716ec375d264e5abb3cb54d"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/recording.yml.tmpl",
-      "target": ".config/rpcs3/recording.yml",
-      "mode": "0600",
-      "sha256": "4779b3a07eb3e361fd7aa331de7bddf318dd1a38dae3a49294922d0a368380ad"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/usio.yml.tmpl",
-      "target": ".config/rpcs3/usio.yml",
-      "mode": "0600",
-      "sha256": "43262c1e3616e75d2fdc358fa0b32f41d266faf1ff7004444dd6182e3a1b9463"
-    },
-    {
-      "source": "root/home/user/.config/rpcs3/uuid.tmpl",
-      "target": ".config/rpcs3/uuid",
-      "mode": "0600",
-      "sha256": "61cd8bee0b9deb02a7f1ec20b622f1b844d4de8359fa0d7d12d3cf011fb7b4d8"
-    },
-    {
-      "source": "root/home/user/.config/starcitizen-lug/firstrun.conf.tmpl",
-      "target": ".config/starcitizen-lug/firstrun.conf",
-      "mode": "0600",
-      "sha256": "2ed27c1421e6928dbe13dbfdb5c59e1045b30341fe7ebe05700006bc5ac572c0"
-    },
-    {
-      "source": "root/home/user/.config/starcitizen-lug/gamedir.conf.tmpl",
-      "target": ".config/starcitizen-lug/gamedir.conf",
-      "mode": "0600",
-      "sha256": "6428b9743914a481e3bb788e943f6d4feec05b5b8945a95bf99b689e821660f7"
-    },
-    {
-      "source": "root/home/user/.config/starcitizen-lug/winedir.conf.tmpl",
-      "target": ".config/starcitizen-lug/winedir.conf",
-      "mode": "0600",
-      "sha256": "2508c34b71cf0c4c9f14d039ea635e225d32932c9ac586d442bfb08af5ba7cee"
+      "sha256": "151b347eed08e8e164896840e9815e54cc35b7f30c577398c23afc68d726742d"
     },
     {
       "source": "root/home/user/.config/systemd/user/headroom-default.service.tmpl",
@@ -4883,103 +4739,13 @@
       "source": "root/home/user/.config/systemd/user/hindsight.service.tmpl",
       "target": ".config/systemd/user/hindsight.service",
       "mode": "0600",
-      "sha256": "b439a94214d6ef59a97003afdbca346c10c13f8c62a1f7561ac54799fa5242a0"
+      "sha256": "233f0516e5f6500875cb72877f883aa0bf3607cdbc0c15484f60659f6e1df5e8"
     },
     {
       "source": "root/home/user/.config/tmux/tmux.conf.tmpl",
       "target": ".config/tmux/tmux.conf",
       "mode": "0600",
       "sha256": "f5e36a1d4cc1834146869fcd696104cde7bc3c6a360d92ca208a9ab338a895f4"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/c.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/c",
-      "mode": "0600",
-      "sha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/e.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/e",
-      "mode": "0600",
-      "sha256": "095c7bb82edff4905da7ce0062198aea2f860cce544de83fc8e617f5c9db309d"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/g.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/g",
-      "mode": "0600",
-      "sha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/s.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127280100002.ca4240f6/s",
-      "mode": "0600",
-      "sha256": "9c87a359b7ebbeb3ac27d482f3eb62c03c00713a1caeafa4e461f0bde89c671f"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/c.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/c",
-      "mode": "0600",
-      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/e.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/e",
-      "mode": "0600",
-      "sha256": "eb5d4dd5f94ec43f8ad9432d0822923734961d4a31f4705de496d1f4b98b03aa"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/g.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/g",
-      "mode": "0600",
-      "sha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/s.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284100001.aa52eac1/s",
-      "mode": "0600",
-      "sha256": "7617b6e301e957c601e7b334effff38b8a674b83cc8b64bd71baeb561cceb08e"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/c.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/c",
-      "mode": "0600",
-      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/e.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/e",
-      "mode": "0600",
-      "sha256": "0031f5743c8d3aeeb329e4859bcc5d0a7c81434fc2e87c257fcc46a1504b420d"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/g.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/g",
-      "mode": "0600",
-      "sha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/s.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/ArchivedEvents/177127284300002.aa52eac1/s",
-      "mode": "0600",
-      "sha256": "7617b6e301e957c601e7b334effff38b8a674b83cc8b64bd71baeb561cceb08e"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/config.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/config",
-      "mode": "0600",
-      "sha256": "83b3f90c4edf1f122c8faf9784ca0aee4dd017c65493ac181c1814211703db96"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/values.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/Unity/222c7b73-4d3d-4991-8d51-fd1a08428df7/Analytics/values",
-      "mode": "0600",
-      "sha256": "25e1659f5038725654cdd580097e90fdf201b51f6a0288547ae261486da67cfb"
-    },
-    {
-      "source": "root/home/user/.config/unity3d/Horizon Private Server/DreadZone Online/prefs.tmpl",
-      "target": ".config/unity3d/Horizon Private Server/DreadZone Online/prefs",
-      "mode": "0600",
-      "sha256": "e500d5a2f0da001985f2e9d3367be1c9079eec33d4e7c31eec4f9fa7a0de64c5"
     },
     {
       "source": "root/home/user/.config/user-dirs.dirs.tmpl",
@@ -5108,12 +4874,6 @@
       "sha256": "33dfa66ec58619dad5ae40f3d0135fd6fbbc6c66ebf3e034becbcf991b9180a9"
     },
     {
-      "source": "root/home/user/.local/share/applications/RPCS3/RPCS3.desktop.tmpl",
-      "target": ".local/share/applications/RPCS3/RPCS3.desktop",
-      "mode": "0600",
-      "sha256": "3ce5bbe7d35598827fde1c17216b2601d645ffe6bc310401e4903e8507896c93"
-    },
-    {
       "source": "root/home/user/.local/share/applications/blender.desktop.tmpl",
       "target": ".local/share/applications/blender.desktop",
       "mode": "0600",
@@ -5132,18 +4892,6 @@
       "sha256": "7193a188003666480af33705a19d80f4b3131d643457c40d679e4201605b1356"
     },
     {
-      "source": "root/home/user/.local/share/applications/discord-424004941485572097.desktop.tmpl",
-      "target": ".local/share/applications/discord-424004941485572097.desktop",
-      "mode": "0600",
-      "sha256": "53c6e0243f12a38847bdb65da129f69358f38c21a5666e4c712309885afed973"
-    },
-    {
-      "source": "root/home/user/.local/share/applications/discord-938876425585434654.desktop.tmpl",
-      "target": ".local/share/applications/discord-938876425585434654.desktop",
-      "mode": "0600",
-      "sha256": "2df76555bf65152ab5f7ae03e9430f83dd219cab48c9ea2de980bd6a79fedc24"
-    },
-    {
       "source": "root/home/user/.local/share/applications/ghidra.desktop.tmpl",
       "target": ".local/share/applications/ghidra.desktop",
       "mode": "0600",
@@ -5160,18 +4908,6 @@
       "target": ".local/share/applications/mimeapps.list",
       "mode": "0600",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "source": "root/home/user/.local/share/applications/rsi launcher.exe.desktop.tmpl",
-      "target": ".local/share/applications/rsi launcher.exe.desktop",
-      "mode": "0700",
-      "sha256": "66541d0aec7e9d009ee3f72215e7e2dd3c48ce44343c1a6c69027bdc666a36b8"
-    },
-    {
-      "source": "root/home/user/.local/share/applications/starcitizen.exe.desktop.tmpl",
-      "target": ".local/share/applications/starcitizen.exe.desktop",
-      "mode": "0600",
-      "sha256": "c21d0486ea88af25e06cb5bd09e240aac9a535046c2a23fbff82c5f32cf5edd6"
     },
     {
       "source": "root/home/user/.local/share/applications/webapp-OnlineChat4519.desktop.tmpl",
@@ -5225,7 +4961,7 @@
       "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
       "target": ".config/systemd/user/9router.service",
       "mode": "0600",
-      "sha256": "df925b485b7603fc342e49ae144a13fdcb0776851e28d7e1dc21f61bc48c0ad2"
+      "sha256": "2a73eaad81c71081d718cba96e3ad9a5b53181b2fa4fbb700393af60696a0326"
     },
     {
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
@@ -5256,6 +4992,84 @@
       "target": ".config/tailscale/identity.json",
       "mode": "0600",
       "sha256": "f1348da2c31f6fc6a921180a827be3ef15021a4cce23e36383205d7ffc001f3e"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config.json.tmpl",
+      "target": ".config/easyllama/config.json",
+      "mode": "0600",
+      "sha256": "d8ab466087ab5e3af16c982faa482fc0e397a2d70af4ca57ddd91e9b0c21418c"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
+      "target": ".config/easyllama/deployment.json",
+      "mode": "0600",
+      "sha256": "2becf32586a50865cb281af623d5e4fc8f7c33796319c73ba4b66da5d52f0e70"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
+      "target": ".config/easyllama/proxy.yaml",
+      "mode": "0600",
+      "sha256": "edacb1ec9e9748355aa8877577183cc487bc9d251b174c43362216502c869281"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
+      "target": ".config/easyllama/compose.yaml",
+      "mode": "0600",
+      "sha256": "18aca747a26f6c3c0e094b0035bd3b7d739631694700be6f5026356bfd42ff79"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
+      "target": ".config/easyllama/config/config.llamacpp.yml",
+      "mode": "0600",
+      "sha256": "2ab51da1a8b8017a41996b5d5a69e32dc33710539d962e0233bc535451470f3d"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config/config.turboquant.yml.tmpl",
+      "target": ".config/easyllama/config/config.turboquant.yml",
+      "mode": "0600",
+      "sha256": "12f97e4a787c9f7ad44d641cc45cfca6c80f7c996678b7f5b577d65e1f2513f0"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config/config.qwen.yml.tmpl",
+      "target": ".config/easyllama/config/config.qwen.yml",
+      "mode": "0600",
+      "sha256": "da5d71dcd418b72f591de39f8c552433ab4fc2fce44cb100b89a214ec8ddba71"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config/config.spiritbuun.yml.tmpl",
+      "target": ".config/easyllama/config/config.spiritbuun.yml",
+      "mode": "0600",
+      "sha256": "e1d04b0c955a2b233fc8e628dc613e565c2460b5f4bc29c0084f814ddbe2c669"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/config/config.lucebox.yml.tmpl",
+      "target": ".config/easyllama/config/config.lucebox.yml",
+      "mode": "0600",
+      "sha256": "9a59a15f4950e459ad221333ea5c080b56cd4b8a8d15125ccedd98a09d0995dd"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/chat_template/qwen3.8.jinja.tmpl",
+      "target": ".config/easyllama/chat_template/qwen3.8.jinja",
+      "mode": "0600",
+      "sha256": "e6cd775ad62be0d2c7c84bb85842ba6a7c4c00a825e23bbe762d22c710c515bf"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/chat_template/qwen3.5.jinja.tmpl",
+      "target": ".config/easyllama/chat_template/qwen3.5.jinja",
+      "mode": "0600",
+      "sha256": "d66254b992662046b8f340b98a3b7d88e20d40b93db4dfb659525e531855cd93"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/chat_template/qwen3.6.jinja.tmpl",
+      "target": ".config/easyllama/chat_template/qwen3.6.jinja",
+      "mode": "0600",
+      "sha256": "a548109fe66ec7022bba4b22f1e4430c1d16abb39d467883b20b526ef7c535fd"
+    },
+    {
+      "source": "root/home/user/.config/systemd/user/easyllama.service.tmpl",
+      "target": ".config/systemd/user/easyllama.service",
+      "mode": "0600",
+      "sha256": "a9ccbe81fbf73eff045516c92c6441d11dee3c38436051f10f8693604640056b"
     }
   ],
   "symlinks": [
@@ -5282,6 +5096,10 @@
     {
       "target": ".config/systemd/user/default.target.wants/tailscale.service",
       "link": "../tailscale.service"
+    },
+    {
+      "target": ".config/systemd/user/default.target.wants/easyllama.service",
+      "link": "../easyllama.service"
     }
   ],
   "excluded_file_counts": {

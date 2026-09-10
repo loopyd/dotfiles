@@ -1,7 +1,10 @@
-# 9router and Tailscale
+# Local AI Services and Tailscale
 
 ## Service Ownership
 
+- `easyllama.sh install|update|uninstall|check` manages the captured Qwen Docker
+  stack through a user supervisor; install can adopt matching running containers
+  without restarting models. Update restarts the stack and active consumers.
 - `router.sh install|update|uninstall|check` manages the user `9router.service`
   and official Docker image through `~/.config/9router/compose.yaml`.
 - `tailscale.sh install|update|uninstall|check` manages the user exposure-check
@@ -12,6 +15,76 @@
   gateway (also selected automatically for `--only router` install/update), and
   removal reverses that order. Hindsight follows the gateway when
   selected. No harness/model process is launched.
+
+Bootstrap selects Docker/NVIDIA → EasyLlama → 9router → Hindsight for the captured
+local AI stack; Tailscale precedes 9router and PostgreSQL precedes Hindsight.
+User-unit `Requires`, `After` and `PartOf` contracts propagate upstream stop/restart
+to active consumers. Database data and its independent unit remain intact.
+
+## EasyLlama Snapshot
+
+- Source release: **0.6.0**, revision
+  `94166edbd5e74a9e89741d889483b12bdb82907c` from
+  [EasyLlama](https://github.com/loopyd/easyllama/tree/94166edbd5e74a9e89741d889483b12bdb82907c).
+  Exact local image IDs, not mutable tags or floating upstream branches, determine
+  the deployed binaries. The image inventory is `deployment.json`.
+- `~/.config/easyllama` contains the original JSON configuration, all five mode
+  profiles, three chat templates, the effective Qwen proxy configuration and
+  Compose deployment. Only the captured **Qwen** stack is activated; the JSON's
+  old default `llamacpp` mode is archival, not the service selector.
+- `EASYLLAMA_ROOT` is a private-renderer path value pointing to the existing
+  `/mnt/LIBRARY/llamacpp` data root. Change it for a replacement machine, create
+  the directory, then render. Existing caches/models are reused, never copied to
+  Git, cleaned, replaced or silently relocated. Referenced weights must be
+  restored privately or downloaded by the existing backend as needed.
+- Captured resource allocations are retained: proxy 2 CPUs/8 GiB memory and
+  backend 24 CPUs/62.5 GiB memory, with 64 MiB shared memory per container.
+  These are EasyLlama's existing GPU-workload limits, not Hindsight/9router's
+  separate 2-CPU/4-GiB-shared-memory limits. NVIDIA GPU access and host networking
+  remain unchanged; the proxy listens on loopback port 8080.
+- The supervisor verifies exact image IDs, commands, environment, mounts and
+  limits before adopting containers. It replaces Docker restart policy with
+  systemd ownership, stops only the verified three containers on shutdown, and
+  restarts on container failure. No upstream EasyLlama source is edited and no
+  native Python/Torch environment is installed.
+- A private adoption journal records immutable IDs and original running/restart
+  states before mutation. New containers are created without starting, labeled
+  with the invocation and recorded before startup. Failed/interrupted adoption
+  restores the previous workload; cleanup/readiness are invocation-bound and
+  serialized. Failed recovery retains its journal for the next attempt. Model
+  chat templates retain their exact pinned bytes, including terminal newlines.
+
+These custom images are **not publicly pullable release artifacts**. On the
+source machine, explicitly save them outside Git:
+
+```bash
+python3 scripts/easyllama.py archive --directory "$HOME/.local/share/easyllama/images"
+```
+
+Transfer that private directory to the destination, render configuration, then:
+
+```bash
+bash scripts/easyllama.sh install --images-dir "$HOME/.local/share/easyllama/images"
+```
+
+Install skips imports when both image IDs already exist; otherwise it loads only
+the named archives and verifies image IDs afterward. It never pulls a substitute
+or rebuilds floating source. Archive export is explicit because images are large;
+model weights and the Hindsight database need separate backups. Uninstall stops
+the service and removes its receipt-owned helper, preserving containers, images,
+configuration and data. Do not concurrently use upstream `run.sh start/stop`.
+
+Profiles are captured evidence; changing them alone does not regenerate the
+effective Docker command/proxy snapshot. Stop the stack and regenerate/review
+those artifacts before deploying profile changes. Routine snapshot refresh keeps
+the data-root placeholder and chat templates portable.
+
+Live verification on 2026-09-10: the EasyLlama user unit adopted all three existing
+containers with unchanged IDs/start timestamps. EasyLlama, 9router, PostgreSQL and
+Hindsight user units are active and enabled; authenticated Hindsight health passes
+and anonymous API/dashboard data access remains rejected. Image archives were not
+exported automatically; the explicit archive command remains the transfer step
+for a fresh host without these locally built images.
 
 ## Preserved Configuration
 
