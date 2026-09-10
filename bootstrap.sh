@@ -17,6 +17,7 @@ WITH_APPS="true"
 WITH_OLLAMA="true"
 WITH_GIT_HOOKS="true"
 WITH_DOTFILES="false"
+WITH_HINDSIGHT="false"
 DOTFILES_VALUES="${HOME}/.config/dotfiles/values.json"
 
 OVERRIDE_GPU=""
@@ -38,6 +39,7 @@ Options:
   --no-ollama        Skip Ollama installer
   --no-git-hooks     Skip repository hook installation
   --with-dotfiles    Render user configuration after installers
+  --with-hindsight   Install Hindsight and activate its user services after rendering
   --dotfiles-values <path>  Private JSON values outside the repository
   -h, --help         Show this help
 EOF
@@ -114,6 +116,13 @@ phase_0_preflight() {
 		err 'sudo is required for non-root execution'
 		exit 1
 	fi
+	if [[ "${WITH_HINDSIGHT}" == "true" && "${DRY_RUN}" != "true" ]]; then
+		if [[ "${EUID}" -eq 0 ]]; then
+			err 'Hindsight requires the logged-in destination user; do not run bootstrap with sudo'
+			exit 1
+		fi
+		require_commands python3 node npm
+	fi
 
 	local arch distro codename
 	arch="$(uname -m)"
@@ -139,7 +148,12 @@ phase_2_repo_keyring_setup() {
 		run_installer install-docker-engine.sh
 		run_installer install-nvidia-container-toolkit.sh
 	else
-		log 'Skipping Docker + NVIDIA toolkit by configuration'
+		if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
+			run_installer install-docker-engine.sh
+			log 'Skipping NVIDIA toolkit by configuration'
+		else
+			log 'Skipping Docker + NVIDIA toolkit by configuration'
+		fi
 	fi
 }
 
@@ -218,6 +232,9 @@ phase_dotfiles() {
 	if [[ "${WITH_DOTFILES}" == "true" ]]; then
 		run_maybe_dry python3 "${SCRIPTS_DIR}/setup-dotfiles.py" --values "${DOTFILES_VALUES}" --apply
 	fi
+	if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
+		run_installer install-hindsight.sh
+	fi
 }
 
 parse_args() {
@@ -259,6 +276,10 @@ parse_args() {
 				;;
 			--with-dotfiles)
 				WITH_DOTFILES="true"
+				shift
+				;;
+			--with-hindsight)
+				WITH_HINDSIGHT="true"
 				shift
 				;;
 			--dotfiles-values)

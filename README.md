@@ -108,6 +108,7 @@ upstream health, metrics and API-documentation routes remain unauthenticated.
 
 ## Installer scripts
 
+- `scripts/install-hindsight.sh` installs the pinned CLI/runtime and activates the captured Docker-backed user units (details below).
 - `scripts/install-core-cli.sh` installs base apt tooling and fish (install-only).
 - `scripts/install-gh-cli.sh` configures the official GitHub CLI apt repo and installs `gh`.
 - `scripts/install-neovim-latest.sh` builds and installs latest tagged Neovim from source.
@@ -115,6 +116,45 @@ upstream health, metrics and API-documentation routes remain unauthenticated.
 - `scripts/install-nvidia-container-toolkit.sh` installs and configures NVIDIA Container Toolkit for Docker.
 - `scripts/install-ollama.sh` installs Ollama and enables systemd service mode by default.
 - Existing app installers remain available in `scripts/` for Blender, Ghidra, REAPER, and optional 8BitDo setup.
+
+### Hindsight installation and activation
+
+Run as the destination user in a logged-in Linux session, never with `sudo`.
+First install Docker/Compose, Node >=22.15 with npm, and Python >=3.11. Restore
+the private templates, then install and activate Hindsight:
+
+```bash
+python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
+./scripts/install-hindsight.sh --dry-run
+./scripts/install-hindsight.sh
+./scripts/install-hindsight.sh --check
+```
+
+Alternatively, use `./bootstrap.sh --with-dotfiles --with-hindsight` with your
+private `--dotfiles-values` path. Hindsight is opt-in; when requested, bootstrap
+installs Docker even with `--no-gpu` or the minimal profile. Node/npm and running
+9router/EasyLlama remain prerequisites. A newly granted Docker group membership
+requires a fresh login before the Hindsight installer can proceed.
+
+The installer verifies SHA256-pinned official CLI 0.9.2 binaries for Linux amd64
+or arm64. It stages the official coding-agent 0.5.3 runtime via npm when missing;
+a newer compatible installed runtime is retained, preserving automatic updates.
+The captured Codex hooks, MCP configuration and skills are restored by the
+renderer, not rewritten by the runtime-only updater. No Codex session is launched.
+
+It enables/starts the system Docker daemon, pulls only missing digest-pinned
+images from the rendered Compose configuration, reloads the user service manager,
+enables both units for login, then starts `hindsight-db.service` before
+`hindsight.service`. The app also requires the database unit; both units check the
+system Docker daemon. `--no-start` enables the user units without starting them;
+`--check` validates configuration and authenticated endpoints without mutation.
+Existing active units are not restarted. No database/volume is deleted, credentials
+are not rotated, and lingering is not enabled. Back up database contents separately.
+
+The CLI checksum pins come from the official
+[Hindsight v0.9.2 release](https://github.com/vectorize-io/hindsight/releases/tag/v0.9.2).
+Changing the CLI version requires reviewing new checksums; container digest changes
+remain explicit template changes rather than automatic upgrades.
 
 ## Security
 
