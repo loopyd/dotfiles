@@ -108,6 +108,7 @@ upstream health, metrics and API-documentation routes remain unauthenticated.
 
 ## Installer scripts
 
+- `scripts/install-herdr.sh` restores herdr/plugins and enables its user unit; `scripts/install-alacritty.sh` restores the terminal build, font and desktop integration.
 - `scripts/install-mise.sh` installs checksum-verified mise; `scripts/install-user-tools.sh` restores user toolchains and versionless packages.
 - `scripts/install-hindsight.sh` installs the pinned CLI/runtime and activates the captured Docker-backed user units (details below).
 - `scripts/install-core-cli.sh` installs base apt tooling and fish (install-only).
@@ -204,6 +205,46 @@ To refresh package names intentionally, run `python3 scripts/packages.py snapsho
 and review the diff. This does not refresh credentials or copy package payloads.
 The mise installer preserves an existing binary; fresh Linux amd64/arm64 installs
 use checksums from the official [mise v2026.5.0 release](https://github.com/jdx/mise/releases/tag/v2026.5.0).
+
+### Herdr and Alacritty
+
+```bash
+./scripts/install-herdr.sh --dry-run
+./scripts/install-alacritty.sh --dry-run
+./bootstrap.sh --with-dotfiles --with-user-tools --with-terminals --dry-run
+```
+
+Remove `--dry-run` only after reviewing rendered configuration. Herdr fresh installs
+use checksum-pinned upstream `0.8.2`; existing binaries are preserved even when
+mise's directory name is stale. The installer enables its user unit for login and
+starts it without restarting an active server. `--no-start`, `--no-plugins` and
+read-only `--check` are available. Existing sessions and workspaces are untouched.
+
+Herdr theme, keybindings, terminal/remote preferences and user unit are captured.
+The complete plugin registry is archived as
+`~/.config/herdr/restore/plugins.json`, not replayed as stale live registry paths.
+The installer preserves present plugins and restores missing GitHub plugins at
+their recorded source commit using herdr's native installer. Local DRPer integration
+requires its source checkout; missing source is reported rather than downloaded
+from a guessed location. Retired `pi-herd` is archived but not installed or changed.
+Plugin build dependencies (Rust, Bun/Node, etc.) must be available; use user-tools
+restoration first. Logs, session history, locks, release-note caches and installed
+plugin payloads are excluded. Plugin code stays in its original repositories.
+
+Alacritty preserves the installed `0.18.0-dev` source revision
+`f99dc71708d31d5c32d4b3fa611f9a87bf22657e`, rather than substituting a stable
+release. It installs into `~/.local/bin`, with user terminfo, icon, manuals, shell
+completions and the verified DepartureMono Nerd Font asset used on this machine.
+The rendered desktop launcher targets that user binary. Font size, theme imports,
+keyboard/mouse bindings, OSC52 and other terminal preferences remain configured.
+The existing source checkout and `/usr/local/bin/alacritty` are not modified.
+Rust/Cargo are prerequisites; `--no-deps` skips the apt build dependencies and
+`--check` validates configuration without compiling or opening a window. Zsh users
+should include `~/.zsh_functions` in their `fpath` to use the installed completion.
+
+Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v0.8.2),
+[Alacritty source](https://github.com/alacritty/alacritty/tree/f99dc71708d31d5c32d4b3fa611f9a87bf22657e),
+[Nerd Fonts release](https://github.com/ryanoasis/nerd-fonts/releases/tag/v3.4.0).
 
 ## Security
 

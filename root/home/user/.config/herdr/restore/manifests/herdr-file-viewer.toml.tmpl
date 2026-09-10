@@ -1,0 +1,46 @@
+# herdr-plugin.toml — manifest for the herdr-file-viewer plugin.
+#
+# A git-aware, read-only file viewer that herdr opens in a split pane beside the
+# user's current work. The viewer appears ONLY in response to an explicit action
+# (its keybinding) — there are no event hooks and no automatic invocation (AC-N4).
+
+id = "herdr-file-viewer"
+name = "herdr-file-viewer"
+version = "1.7.0"
+description = "A git-aware, read-only file viewer: a keyboard-driven TUI in a herdr split pane."
+min_herdr_version = "0.7.0"
+platforms = ["linux", "macos"]
+
+# Build step herdr runs at install time. Fast path: scripts/fetch-or-build.sh downloads the
+# prebuilt binary matching this source's version + platform and verifies its SHA-256. On ANY miss
+# (no matching release, download/checksum failure, unsupported platform) it falls back to building
+# from source with cargo — so installing never gets harder than before, and no Rust toolchain is
+# needed when a matching prebuilt release exists.
+[[build]]
+command = ["/bin/sh", "scripts/fetch-or-build.sh"]
+
+# The viewer pane. herdr performs the split placement on launch (AC-17); the [[actions]]
+# below summon it — declaring placement = "split" is what opens it beside the current pane.
+[[panes]]
+id = "file-viewer"
+title = "Files"
+placement = "split"
+command = ["./target/release/herdr-file-viewer"]
+
+# The action that summons the viewer (bound to a keybinding in herdr config). This is
+# the only way the viewer is opened — there is no [[events]] hook (AC-N4). herdr actions
+# run a `command`; the launcher script opens the [[panes]] entry below as a split.
+[[actions]]
+id = "open-file-viewer"
+title = "Open file viewer"
+description = "Open the git-aware file viewer in a split pane beside the current work."
+command = ["bash", "scripts/open-file-viewer.sh"]
+
+# The same viewer, opened in its own tab instead of a split. Idempotent across tabs: switches
+# to an existing viewer tab rather than duplicating it, and toggles off when already on it.
+# Bind a key to it (e.g. `@@DOTFILES:SECRET_CONFIG_HERDR_CONFIG_TOML_KEY@@`) in ~/.config/herdr/config.toml.
+[[actions]]
+id = "open-file-viewer-tab"
+title = "Open file viewer (tab)"
+description = "Open the git-aware file viewer in its own tab (switch to it if already open)."
+command = ["bash", "scripts/open-file-viewer-tab.sh"]

@@ -134,6 +134,8 @@ def reason(path, is_dir=False):
     name = path.name.lower()
     if str(path).startswith('.config/go/telemetry') or str(path) == '.config/uv/uv-receipt.json':
         return 'tool telemetry/installation receipt'
+    if str(path) in {'.config/herdr/plugins.json', '.config/herdr/release-notes.json'}:
+        return 'herdr live registry/cache (registry archived separately for native restoration)'
     blocked = NOISE - {'plugins'} if parts[:4] == ('.config', 'nvim', 'lua', 'plugins') else NOISE
     if any(part in blocked for part in lowered):
         return 'runtime/cache/dependency'

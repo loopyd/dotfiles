@@ -3182,6 +3182,12 @@
       "sha256": "7bcc57f1ce7b8815d60d1404440649dd16936b7c6f6f7dd2ca018745b6bb1a41"
     },
     {
+      "source": "root/home/user/.config/alacritty/themes/LICENSE.tmpl",
+      "target": ".config/alacritty/themes/LICENSE",
+      "mode": "0600",
+      "sha256": "55713aa5d21868b2aca6da5d6fff02369569811cb035f1ab19bf8ffdd670780f"
+    },
+    {
       "source": "root/home/user/.config/alacritty/themes/README.md.tmpl",
       "target": ".config/alacritty/themes/README.md",
       "mode": "0600",
@@ -4448,16 +4454,28 @@
       "sha256": "1211b9885909b44549b3425b06c867e3613563177becb22058bbf8f5f689c8d4"
     },
     {
-      "source": "root/home/user/.config/herdr/plugins.json.tmpl",
-      "target": ".config/herdr/plugins.json",
+      "source": "root/home/user/.config/herdr/restore/manifests/drper-herdr.toml.tmpl",
+      "target": ".config/herdr/restore/manifests/drper-herdr.toml",
       "mode": "0600",
-      "sha256": "f35b0babbaed021e3326768aa74427d96e4ad655936be6a9313962a05f908c56"
+      "sha256": "03ad043722f35b880866ac604d0c1aca0ff5c8ede95c70a0ae0e42f376f389ad"
     },
     {
-      "source": "root/home/user/.config/herdr/release-notes.json.tmpl",
-      "target": ".config/herdr/release-notes.json",
+      "source": "root/home/user/.config/herdr/restore/manifests/herdr-file-viewer.toml.tmpl",
+      "target": ".config/herdr/restore/manifests/herdr-file-viewer.toml",
       "mode": "0600",
-      "sha256": "d393fa77ff0a9226bb40fff92196469d612df4288a22d294c1a35b849ee9d79f"
+      "sha256": "b66a970422680df3b7c28ca453c5b0b08fc7fec7e1bd8f17ab1cddbedc3eb494"
+    },
+    {
+      "source": "root/home/user/.config/herdr/restore/manifests/ribbons-digital.pi-herd.toml.tmpl",
+      "target": ".config/herdr/restore/manifests/ribbons-digital.pi-herd.toml",
+      "mode": "0600",
+      "sha256": "d974771c92dd219a640f1d3eb3a34062946b3ead4e40535964fb688f7b6ae819"
+    },
+    {
+      "source": "root/home/user/.config/herdr/restore/plugins.json.tmpl",
+      "target": ".config/herdr/restore/plugins.json",
+      "mode": "0600",
+      "sha256": "0c23ed5e98ac58b8ef672f66ac3d0e071c0dfb569a9b95ee129ada36cd4129ce"
     },
     {
       "source": "root/home/user/.config/hindsight/README.md.tmpl",
@@ -5087,7 +5105,7 @@
       "source": "root/home/user/.local/share/applications/Alacritty.desktop.tmpl",
       "target": ".local/share/applications/Alacritty.desktop",
       "mode": "0700",
-      "sha256": "2871b2d965ab6cd0144d157a3cc21aebbbb7a28b8b30c35e4a9766ed63b422d0"
+      "sha256": "33dfa66ec58619dad5ae40f3d0135fd6fbbc6c66ebf3e034becbcf991b9180a9"
     },
     {
       "source": "root/home/user/.local/share/applications/RPCS3/RPCS3.desktop.tmpl",

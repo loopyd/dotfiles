@@ -1,5 +1,8 @@
 {
   "python": ">=3.11",
+  "herdr": "0.8.2 fresh-install binary, existing binary preserved; scripts/install-herdr.sh",
+  "alacritty": "0.18.0-dev source f99dc71708d31d5c32d4b3fa611f9a87bf22657e; scripts/install-alacritty.sh",
+  "departure_mono_nerd_font": "3.4.0, verified against the installed regular font",
   "mise_installer": "2026.5.0 (verified fresh-install binary; existing installations preserved)",
   "user_packages": "templates/packages.json is versionless; scripts/install-user-tools.sh restores it after private rendering. Configured runtime defaults remain in the mise/rustup templates.",
   "9router": "0.5.69",

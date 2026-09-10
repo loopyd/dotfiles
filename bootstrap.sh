@@ -19,6 +19,7 @@ WITH_GIT_HOOKS="true"
 WITH_DOTFILES="false"
 WITH_HINDSIGHT="false"
 WITH_USER_TOOLS="false"
+WITH_TERMINALS="false"
 DOTFILES_VALUES="${HOME}/.config/dotfiles/values.json"
 
 OVERRIDE_GPU=""
@@ -42,6 +43,7 @@ Options:
   --with-dotfiles    Render user configuration after installers
   --with-hindsight   Install Hindsight and activate its user services after rendering
   --with-user-tools  Install mise and restore user packages after rendering
+  --with-terminals   Install Alacritty and herdr with user-service activation
   --dotfiles-values <path>  Private JSON values outside the repository
   -h, --help         Show this help
 EOF
@@ -118,13 +120,13 @@ phase_0_preflight() {
 		err 'sudo is required for non-root execution'
 		exit 1
 	fi
-	if [[ ( "${WITH_HINDSIGHT}" == "true" || "${WITH_USER_TOOLS}" == "true" ) && "${DRY_RUN}" != "true" ]]; then
+	if [[ ( "${WITH_HINDSIGHT}" == "true" || "${WITH_USER_TOOLS}" == "true" || "${WITH_TERMINALS}" == "true" ) && "${DRY_RUN}" != "true" ]]; then
 		if [[ "${EUID}" -eq 0 ]]; then
-			err 'User tools and Hindsight require the destination user; do not run bootstrap with sudo'
+			err 'User tools, Hindsight and terminals require the destination user; do not run bootstrap with sudo'
 			exit 1
 		fi
 		require_commands python3
-		if [[ "${WITH_USER_TOOLS}" != "true" ]]; then
+		if [[ "${WITH_HINDSIGHT}" == "true" && "${WITH_USER_TOOLS}" != "true" ]]; then
 			require_commands node npm
 		fi
 	fi
@@ -244,6 +246,10 @@ phase_dotfiles() {
 	if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
 		run_installer install-hindsight.sh
 	fi
+	if [[ "${WITH_TERMINALS}" == "true" ]]; then
+		run_installer install-alacritty.sh
+		run_installer install-herdr.sh
+	fi
 }
 
 parse_args() {
@@ -293,6 +299,10 @@ parse_args() {
 				;;
 			--with-user-tools)
 				WITH_USER_TOOLS="true"
+				shift
+				;;
+			--with-terminals)
+				WITH_TERMINALS="true"
 				shift
 				;;
 			--dotfiles-values)

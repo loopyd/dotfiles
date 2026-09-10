@@ -1,0 +1,29 @@
+id = "drper-herdr"
+name = "DRPer Herdr Bridge"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Forwards Herdr lifecycle context to the local DRPer API."
+platforms = ["linux", "macos"]
+
+[[startup]]
+command = ["bun", "run", "src/event.ts"]
+
+[[events]]
+on = "workspace.created"
+command = ["bun", "run", "src/event.ts"]
+
+[[events]]
+on = "workspace.updated"
+command = ["bun", "run", "src/event.ts"]
+
+[[events]]
+on = "workspace.closed"
+command = ["bun", "run", "src/event.ts"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["bun", "run", "src/event.ts"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["bun", "run", "src/event.ts"]
