@@ -1,0 +1,252 @@
+[
+  {
+    "plugin_id": "drper-herdr",
+    "name": "DRPer Herdr Bridge",
+    "version": "0.1.0",
+    "min_herdr_version": "0.7.0",
+    "description": "Forwards Herdr lifecycle context to the local DRPer API.",
+    "manifest_path": "/mnt/PROJECTS/repos/drper/plugins/herdr-plugin/herdr-plugin.toml",
+    "plugin_root": "/mnt/PROJECTS/repos/drper/plugins/herdr-plugin",
+    "enabled": true,
+    "platforms": [
+      "linux",
+      "macos"
+    ],
+    "startup": [
+      {
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "on": "pane.agent_detected",
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      },
+      {
+        "on": "pane.agent_status_changed",
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      },
+      {
+        "on": "workspace.closed",
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      },
+      {
+        "on": "workspace.created",
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      },
+      {
+        "on": "workspace.updated",
+        "command": [
+          "bun",
+          "run",
+          "src/event.ts"
+        ]
+      }
+    ],
+    "source": {
+      "kind": "local"
+    }
+  },
+  {
+    "plugin_id": "herdr-file-viewer",
+    "name": "herdr-file-viewer",
+    "version": "1.7.0",
+    "min_herdr_version": "0.7.0",
+    "description": "A git-aware, read-only file viewer: a keyboard-driven TUI in a herdr split pane.",
+    "manifest_path": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/herdr-file-viewer-c993314e2614/herdr-plugin.toml",
+    "plugin_root": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/herdr-file-viewer-c993314e2614",
+    "enabled": true,
+    "platforms": [
+      "linux",
+      "macos"
+    ],
+    "build": [
+      {
+        "command": [
+          "/bin/sh",
+          "scripts/fetch-or-build.sh"
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "open-file-viewer",
+        "title": "Open file viewer",
+        "description": "Open the git-aware file viewer in a split pane beside the current work.",
+        "command": [
+          "bash",
+          "scripts/open-file-viewer.sh"
+        ]
+      },
+      {
+        "id": "open-file-viewer-tab",
+        "title": "Open file viewer (tab)",
+        "description": "Open the git-aware file viewer in its own tab (switch to it if already open).",
+        "command": [
+          "bash",
+          "scripts/open-file-viewer-tab.sh"
+        ]
+      }
+    ],
+    "panes": [
+      {
+        "id": "file-viewer",
+        "title": "Files",
+        "placement": "split",
+        "command": [
+          "./target/release/herdr-file-viewer"
+        ]
+      }
+    ],
+    "source": {
+      "kind": "github",
+      "owner": "smarzban",
+      "repo": "herdr-file-viewer",
+      "resolved_commit": "0394fb6bb4bc04d5c70fa7cde82783fcaf25ceb7",
+      "managed_path": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/herdr-file-viewer-c993314e2614",
+      "installed_unix_ms": 1783189748627
+    }
+  },
+  {
+    "plugin_id": "ribbons-digital.pi-herd",
+    "name": "pi-herd",
+    "version": "0.1.0",
+    "min_herdr_version": "0.7.1",
+    "description": "Visible Pi session orchestration with Herdr panes and git worktrees.",
+    "manifest_path": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/ribbons-digital.pi-herd-235cccf27ab0/herdr-plugin.toml",
+    "plugin_root": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/ribbons-digital.pi-herd-235cccf27ab0",
+    "enabled": true,
+    "platforms": [
+      "linux",
+      "macos",
+      "windows"
+    ],
+    "build": [
+      {
+        "command": [
+          "pnpm",
+          "install",
+          "--frozen-lockfile"
+        ]
+      },
+      {
+        "command": [
+          "pnpm",
+          "build"
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "cleanup",
+        "title": "pi-herd cleanup report",
+        "contexts": [
+          "workspace",
+          "tab",
+          "pane"
+        ],
+        "command": [
+          "node",
+          "dist/herdr-plugin-action.js",
+          "cleanup"
+        ]
+      },
+      {
+        "id": "collect",
+        "title": "pi-herd collect",
+        "contexts": [
+          "workspace",
+          "tab",
+          "pane"
+        ],
+        "command": [
+          "node",
+          "dist/herdr-plugin-action.js",
+          "collect"
+        ]
+      },
+      {
+        "id": "doctor",
+        "title": "pi-herd doctor",
+        "contexts": [
+          "workspace",
+          "tab",
+          "pane"
+        ],
+        "command": [
+          "node",
+          "dist/herdr-plugin-action.js",
+          "doctor"
+        ]
+      },
+      {
+        "id": "start",
+        "title": "pi-herd start usage",
+        "contexts": [
+          "workspace",
+          "tab",
+          "pane"
+        ],
+        "command": [
+          "node",
+          "dist/herdr-plugin-action.js",
+          "start-help"
+        ]
+      },
+      {
+        "id": "status",
+        "title": "pi-herd status",
+        "contexts": [
+          "workspace",
+          "tab",
+          "pane"
+        ],
+        "command": [
+          "node",
+          "dist/herdr-plugin-action.js",
+          "status"
+        ]
+      }
+    ],
+    "panes": [
+      {
+        "id": "run-board",
+        "title": "pi-herd run board",
+        "placement": "overlay",
+        "command": [
+          "node",
+          "dist/herdr-plugin-pane.js",
+          "run-board"
+        ]
+      }
+    ],
+    "source": {
+      "kind": "github",
+      "owner": "ribbons-digital",
+      "repo": "pi-herd",
+      "resolved_commit": "23f4b4dea0715ebfc65b03aba9771e7a117209a9",
+      "managed_path": "@@DOTFILES:HOME@@/.config/herdr/plugins/github/ribbons-digital.pi-herd-235cccf27ab0",
+      "installed_unix_ms": 1783196066749
+    }
+  }
+]

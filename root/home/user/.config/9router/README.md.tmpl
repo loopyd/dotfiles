@@ -1,0 +1,32 @@
+# Local 9router client
+
+The official hub skill is installed at `~/.agents/skills/9router/SKILL.md` and
+links to capability instructions for chat, embeddings and other endpoints.
+
+Private settings are in `~/.config/9router/client.env`:
+
+- `NINEROUTER_URL=http://127.0.0.1:20128` (no trailing `/v1`).
+- `NINEROUTER_KEY` is the user-authorized active local API credential. Read it only
+  inside a requesting process; never print it, put it in command arguments, or
+  retain it in repository or memory documents.
+
+Use `${NINEROUTER_URL}/v1/...` with the Bearer credential. The selected Hindsight
+models remain `qwen-combo` and `qwen3-chat/qwen3-embeddings`. Authenticated health
+and model discovery pass; the same key is already configured for Hindsight.
+
+`verification.json` records configuration checks. `inference-check.json` records
+bounded synthetic probes, which exposed an intermittent chat 503 and an embedding
+timeout. Do not mistake discovery/authentication success for healthy inference.
+Do not silently change models, disable authentication or alter approval settings.
+
+## Swap-aware startup
+
+Use `~/.local/bin/9router-local --tray --skip-update`; login autostart already
+uses this launcher. It loads `~/.config/9router/runtime.env`, setting fetch,
+first-chunk and stall deadlines to 600 seconds before starting the installed
+CLI. The package and provider credentials are unchanged. Direct bare `9router`
+launches do not load these overrides unless the environment is already set.
+
+The earlier `inference-check.json` is historical. Current swap diagnosis,
+queue limits and rollback guidance live in `~/.config/hindsight/README.md`;
+current validation is in `~/.local/state/hindsight/swap-reliability-verification.json`.

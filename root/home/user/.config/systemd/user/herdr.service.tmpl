@@ -1,0 +1,17 @@
+[Unit]
+Description=Herdr terminal workspace manager
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/herdr server
+ExecStop=%h/.local/bin/herdr server stop
+Restart=always
+RestartSec=3
+TimeoutStopSec=10
+KillMode=mixed
+Environment=HOME=%h
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,60 @@
+<!DOCTYPE patchbay>
+<patchbay name="patchbay_persist" version="0.9.13">
+ <output-sockets>
+  <socket name="System Audio" client="system" exclusive="off" type="jack-audio">
+   <plug>capture_1</plug>
+   <plug>capture_2</plug>
+  </socket>
+  <socket name="REAPER Audio" client="REAPER" exclusive="off" type="jack-audio">
+   <plug>out1</plug>
+   <plug>out2</plug>
+  </socket>
+  <socket name="PipeWire Audio" client="PipeWire" exclusive="off" type="jack-audio">
+   <plug>playback_FL</plug>
+   <plug>playback_FR</plug>
+  </socket>
+  <socket name="ALSA Midi Through" client="Midi\ Through" exclusive="off" type="alsa-midi">
+   <plug>Midi\ Through\ Port\-0</plug>
+  </socket>
+  <socket name="a2j Sink" client="a2j" exclusive="off" type="jack-midi">
+   <plug>Midi\ Through\ \[14\]\ \(capture\)\:\ \[0\]\ Midi\ Through\ Port\-0</plug>
+  </socket>
+  <socket name="PipeWire MIDI" client="PipeWire" exclusive="off" type="jack-midi">
+   <plug>playback_0</plug>
+  </socket>
+ </output-sockets>
+ <input-sockets>
+  <socket name="PipeWire Capture" client="PipeWire" exclusive="off" type="jack-audio">
+   <plug>capture_FL</plug>
+   <plug>capture_FR</plug>
+  </socket>
+  <socket name="Meter" client="M" exclusive="off" type="jack-audio">
+   <plug>in1</plug>
+   <plug>in2</plug>
+  </socket>
+  <socket name="System Audio" client="system" exclusive="off" type="jack-audio">
+   <plug>playback_1</plug>
+   <plug>playback_2</plug>
+  </socket>
+  <socket name="ALSA MIDI Through" client="Midi\ Through" exclusive="off" type="alsa-midi">
+   <plug>Midi\ Through\ Port\-0</plug>
+  </socket>
+  <socket name="a2j Sink" client="a2j" exclusive="off" type="jack-midi">
+   <plug>Midi\ Through\ \[14\]\ \(playback\)\:\ \[0\]\ Midi\ Through\ Port\-0</plug>
+  </socket>
+  <socket name="PipeWire MIDI" client="PipeWire" exclusive="off" type="jack-midi">
+   <plug>capture_0</plug>
+  </socket>
+ </input-sockets>
+ <slots/>
+ <cables>
+  <cable input="PipeWire Capture" output="REAPER Audio" type="jack-audio"/>
+  <cable input="System Audio" output="PipeWire Audio" type="jack-audio"/>
+  <cable input="Meter" output="PipeWire Audio" type="jack-audio"/>
+  <cable input="ALSA MIDI Through" output="ALSA Midi Through" type="alsa-midi"/>
+  <cable input="PipeWire MIDI" output="a2j Sink" type="jack-midi"/>
+  <cable input="a2j Sink" output="PipeWire MIDI" type="jack-midi"/>
+  <cable input="PipeWire Capture" output="System Audio" type="jack-audio"/>
+ </cables>
+</patchbay>
+

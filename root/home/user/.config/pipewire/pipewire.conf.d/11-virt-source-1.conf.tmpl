@@ -1,0 +1,13 @@
+context.objects = [
+	{
+		factory = adapter
+		args = {
+			factory.name = support.null-audio-sink
+			node.name = "Microphone FX"
+			media.class = Audio/Duplex
+			audio.position = [ MONO ]
+			monitor.channel-volumes = true
+			monitor.passthrough = true
+		}
+	}
+]

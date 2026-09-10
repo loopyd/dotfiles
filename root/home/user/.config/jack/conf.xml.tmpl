@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!--
+JACK settings, as persisted by D-Bus object.
+You probably don't want to edit this because
+it will be overwritten next time jackdbus saves.
+-->
+<!-- Fri Feb 20 15:52:11 2026 -->
+<jack>
+ <engine>
+  <option name="driver">alsa</option>
+  <option name="realtime">true</option>
+  <option name="realtime-@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@">10</option>
+  <option name="verbose">false</option>
+  <option name="clock-source">115</option>
+  <option name="port-max">512</option>
+  <option name="sync">false</option>
+  <option name="self-connect-mode">E</option>
+ </engine>
+ <drivers>
+  <driver name="alsa">
+   <option name="device">hw:Audio</option>
+   <option name="capture">hw:Audio</option>
+   <option name="playback">hw:Audio</option>
+   <option name="rate">48000</option>
+   <option name="period">256</option>
+   <option name="hwmon">false</option>
+   <option name="hwmeter">false</option>
+   <option name="duplex">true</option>
+   <option name="softmode">false</option>
+   <option name="monitor">false</option>
+   <option name="dither">n</option>
+   <option name="inchannels">2</option>
+   <option name="outchannels">2</option>
+   <option name="shorts">false</option>
+   <option name="midi-driver">raw</option>
+  </driver>
+  <driver name="alsarawmidi">
+  </driver>
+  <driver name="netone">
+  </driver>
+  <driver name="dummy">
+  </driver>
+  <driver name="firewire">
+  </driver>
+  <driver name="net">
+  </driver>
+  <driver name="proxy">
+  </driver>
+  <driver name="loopback">
+  </driver>
+ </drivers>
+ <internals>
+  <internal name="netmanager">
+  </internal>
+  <internal name="audioadapter">
+  </internal>
+  <internal name="netadapter">
+  </internal>
+  <internal name="profiler">
+  </internal>
+ </internals>
+</jack>

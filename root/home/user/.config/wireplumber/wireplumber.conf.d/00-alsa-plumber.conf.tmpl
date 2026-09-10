@@ -1,0 +1,59 @@
+monitor.alsa = {
+  enabled = true
+
+  properties = {
+    # ["alsa.jack-device"] = false
+
+    ["alsa.reserve"] = true
+    # ["alsa.reserve.@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@"] = -20
+    # ["alsa.reserve.application-name"] = "WirePlumber"
+
+    ["alsa.midi"] = true
+    ["alsa.midi.monitoring"] = true
+
+    ["alsa.midi.node-properties"] = {
+      ["node.name"] = "Midi-Bridge"
+      # ["api.alsa.disable-longname"] = true
+      ["@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@.session"] = 100
+      ["@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@.driver"] = 1
+    }
+
+    ["vm.node.defaults"] = {
+      ["api.alsa.period-size"] = 1024
+      ["api.alsa.headroom"] = 8192
+    }
+  }
+
+  rules = [
+    {
+      matches = [
+        {
+          ["device.name"] = "alsa_card.*"
+        }
+      ]
+
+      apply_properties = {
+        ["api.alsa.use-acp"] = true
+        # ["api.alsa.use-ucm"] = true
+        # ["api.alsa.soft-mixer"] = false
+        # ["api.alsa.ignore-dB"] = false
+        # ["device.profile-set"] = "profileset-name"
+        # ["device.profile"] = "default profile name"
+        ["api.acp.auto-profile"] = false
+        ["api.acp.auto-port"] = false
+        # ["device.nick"] = "My Device"
+      }
+    }
+
+    {
+      matches = [
+        { ["node.name"] = "alsa_input.*" },
+        { ["node.name"] = "alsa_output.*" }
+      ]
+
+      apply_properties = {
+        # (empty; your Lua block only has commented examples)
+      }
+    }
+  ]
+}

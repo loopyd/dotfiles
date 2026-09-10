@@ -1,0 +1,16 @@
+pulse.rules = [
+	{
+		matches = [
+			{ application.process.binary = "chrome" }
+			{ application.process.binary = "firefox" }
+			{ application.process.binary = "Chromium Input" }
+			{ application.process.binary = "OBS" }
+			{ application.process.binary = "Discord" }
+			{ application.process.binary = "Vesktop" }
+			{ application.process.binary = "Zoom" }
+			{ application.process.binary = "teams" }
+			{ application.process.binary = "skypeforlinux" }
+		]
+		actions = { quirks = [ block-source-volume ] }
+	}
+]

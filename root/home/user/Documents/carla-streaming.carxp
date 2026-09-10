@@ -1,0 +1,555 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE CARLA-PROJECT>
+<CARLA-PROJECT VERSION='2.5'>
+ <EngineSettings>
+  <ForceStereo>false</ForceStereo>
+  <PreferPluginBridges>false</PreferPluginBridges>
+  <PreferUiBridges>true</PreferUiBridges>
+  <UIsAlwaysOnTop>false</UIsAlwaysOnTop>
+  <MaxParameters>200</MaxParameters>
+  <UIBridgesTimeout>4000</UIBridgesTimeout>
+ </EngineSettings>
+
+ <Transport>
+  <BeatsPerMinute>120</BeatsPerMinute>
+ </Transport>
+
+ <!-- Calf Compressor -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Compressor</Name>
+   <URI>http://calf.sourceforge.net/plugins/Compressor</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Input</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Threshold</Name>
+    <Symbol>threshold</Symbol>
+    <Value>0.0151977371424437</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>Ratio</Name>
+    <Symbol>ratio</Symbol>
+    <Value>3.47904682159424</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Attack</Name>
+    <Symbol>attack</Symbol>
+    <Value>45.8669624328613</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Release</Name>
+    <Symbol>release</Symbol>
+    <Value>33.7731132507324</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Makeup Gain</Name>
+    <Symbol>makeup</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Knee</Name>
+    <Symbol>knee</Symbol>
+    <Value>3.57018756866455</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Detection</Name>
+    <Symbol>detection</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Stereo Link</Name>
+    <Symbol>stereo_link</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>Mix</Name>
+    <Symbol>mix</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Gate -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Gate</Name>
+   <URI>http://calf.sourceforge.net/plugins/Gate</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Input</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>6</Index>
+    <Name>Max Gain Reduction</Name>
+    <Symbol>range</Symbol>
+    <Value>0.0612500011920929</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>7</Index>
+    <Name>Threshold</Name>
+    <Symbol>threshold</Symbol>
+    <Value>0.230047002434731</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>8</Index>
+    <Name>Ratio</Name>
+    <Symbol>ratio</Symbol>
+    <Value>2.12986278533936</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>9</Index>
+    <Name>Attack</Name>
+    <Symbol>attack</Symbol>
+    <Value>61.4786834716797</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>10</Index>
+    <Name>Release</Name>
+    <Symbol>release</Symbol>
+    <Value>132.521423339844</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>Makeup Gain</Name>
+    <Symbol>makeup</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>Knee</Name>
+    <Symbol>knee</Symbol>
+    <Value>2.01112079620361</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>Detection</Name>
+    <Symbol>detection</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>Stereo Link</Name>
+    <Symbol>stereo_link</Symbol>
+    <Value>0</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <!-- Calf Equalizer 8 Band -->
+ <Plugin>
+  <Info>
+   <Type>LV2</Type>
+   <Name>Calf Equalizer 8 Band</Name>
+   <URI>http://calf.sourceforge.net/plugins/Equalizer8Band</URI>
+  </Info>
+
+  <Data>
+   <Active>Yes</Active>
+   <ControlChannel>1</ControlChannel>
+   <Options>0x3f1</Options>
+
+   <Parameter>
+    <Index>0</Index>
+    <Name>Bypass</Name>
+    <Symbol>bypass</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>1</Index>
+    <Name>Input Gain</Name>
+    <Symbol>level_in</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>2</Index>
+    <Name>Output Gain</Name>
+    <Symbol>level_out</Symbol>
+    <Value>2.45547103881836</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>11</Index>
+    <Name>HP Active</Name>
+    <Symbol>hp_active</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>12</Index>
+    <Name>HP Freq</Name>
+    <Symbol>hp_freq</Symbol>
+    <Value>10</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>13</Index>
+    <Name>HP Mode</Name>
+    <Symbol>hp_mode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>14</Index>
+    <Name>HP Q</Name>
+    <Symbol>hp_q</Symbol>
+    <Value>0.480196952819824</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>15</Index>
+    <Name>LP Active</Name>
+    <Symbol>lp_active</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>16</Index>
+    <Name>LP Freq</Name>
+    <Symbol>lp_freq</Symbol>
+    <Value>18000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>17</Index>
+    <Name>LP Mode</Name>
+    <Symbol>lp_mode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>18</Index>
+    <Name>LP Q</Name>
+    <Symbol>lp_q</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>19</Index>
+    <Name>LS Active</Name>
+    <Symbol>ls_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>20</Index>
+    <Name>Level L</Name>
+    <Symbol>ls_level</Symbol>
+    <Value>0.239152058959007</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>21</Index>
+    <Name>Freq L</Name>
+    <Symbol>ls_freq</Symbol>
+    <Value>100</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>22</Index>
+    <Name>LS Q</Name>
+    <Symbol>ls_q</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>23</Index>
+    <Name>HS Active</Name>
+    <Symbol>hs_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>24</Index>
+    <Name>Level H</Name>
+    <Symbol>hs_level</Symbol>
+    <Value>3.31268239021301</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>25</Index>
+    <Name>Freq H</Name>
+    <Symbol>hs_freq</Symbol>
+    <Value>1352.67321777344</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>26</Index>
+    <Name>HS Q</Name>
+    <Symbol>hs_q</Symbol>
+    <Value>0.707000017166138</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>27</Index>
+    <Name>F1 Active</Name>
+    <Symbol>p1_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>28</Index>
+    <Name>Level 1</Name>
+    <Symbol>p1_level</Symbol>
+    <Value>2.14949750900269</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>29</Index>
+    <Name>Freq 1</Name>
+    <Symbol>p1_freq</Symbol>
+    <Value>100</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>30</Index>
+    <Name>Q 1</Name>
+    <Symbol>p1_q</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>31</Index>
+    <Name>F2 Active</Name>
+    <Symbol>p2_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>32</Index>
+    <Name>Level 2</Name>
+    <Symbol>p2_level</Symbol>
+    <Value>0.216434121131897</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>33</Index>
+    <Name>Freq 2</Name>
+    <Symbol>p2_freq</Symbol>
+    <Value>500</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>34</Index>
+    <Name>Q 2</Name>
+    <Symbol>p2_q</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>35</Index>
+    <Name>F3 Active</Name>
+    <Symbol>p3_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>36</Index>
+    <Name>Level 3</Name>
+    <Symbol>p3_level</Symbol>
+    <Value>0.693515300750732</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>37</Index>
+    <Name>Freq 3</Name>
+    <Symbol>p3_freq</Symbol>
+    <Value>2000</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>38</Index>
+    <Name>Q 3</Name>
+    <Symbol>p3_q</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>39</Index>
+    <Name>F4 Active</Name>
+    <Symbol>p4_active</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>40</Index>
+    <Name>Level 4</Name>
+    <Symbol>p4_level</Symbol>
+    <Value>0.015625</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>41</Index>
+    <Name>Freq 4</Name>
+    <Symbol>p4_freq</Symbol>
+    <Value>3367.568359375</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>42</Index>
+    <Name>Q 4</Name>
+    <Symbol>p4_q</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>43</Index>
+    <Name>Individual Filters</Name>
+    <Symbol>individuals</Symbol>
+    <Value>1</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>44</Index>
+    <Name>Zoom</Name>
+    <Symbol>zoom</Symbol>
+    <Value>0.25</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>45</Index>
+    <Name>Analyzer Active</Name>
+    <Symbol>analyzer</Symbol>
+    <Value>0</Value>
+   </Parameter>
+
+   <Parameter>
+    <Index>46</Index>
+    <Name>Analyzer Mode</Name>
+    <Symbol>analyzer_mode</Symbol>
+    <Value>1</Value>
+   </Parameter>
+  </Data>
+ </Plugin>
+
+ <ExternalPatchbay>
+  <Connection>
+   <Source>HyperX QuadCast 2 S Analog Stereo:capture_FL</Source>
+   <Target>Calf Gate:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>HyperX QuadCast 2 S Analog Stereo:capture_FR</Source>
+   <Target>Calf Gate:In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Compressor:Out L</Source>
+   <Target>Calf Equalizer 8 Band:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Compressor:Out R</Source>
+   <Target>Calf Equalizer 8 Band:In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Gate:Out L</Source>
+   <Target>Calf Compressor:In L</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Gate:Out R</Source>
+   <Target>Calf Compressor:In R</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Equalizer 8 Band:Out L</Source>
+   <Target>Microphone FX:playback_MONO</Target>
+  </Connection>
+  <Connection>
+   <Source>Calf Equalizer 8 Band:Out R</Source>
+   <Target>Microphone FX:playback_MONO</Target>
+  </Connection>
+  <Connection>
+   <Source>Main Audio:monitor_FL</Source>
+   <Target>USB Audio Front Headphones:playback_FL</Target>
+  </Connection>
+  <Connection>
+   <Source>Main Audio:monitor_FR</Source>
+   <Target>USB Audio Front Headphones:playback_FR</Target>
+  </Connection>
+  <Connection>
+   <Source>Midi-Bridge:Midi Through:(capture_0) Midi Through Port-0</Source>
+   <Target>Midi-Bridge:Midi Through:(playback_0) Midi Through Port-0</Target>
+  </Connection>
+  <Positions>
+   <Position x1="1288" y1="1206" x2="2104" y2="1274">
+    <Name>HyperX QuadCast 2 S Analog Stereo</Name>
+   </Position>
+   <Position x1="1550" y1="1718" x2="2126" y2="1468">
+    <Name>USB Audio Front Headphones</Name>
+   </Position>
+   <Position x1="2158" y1="1182">
+    <Name>Microphone FX</Name>
+   </Position>
+   <Position x1="1758" y1="1167" pluginId="0">
+    <Name>Calf Compressor</Name>
+   </Position>
+   <Position x1="1572" y1="1163" pluginId="1">
+    <Name>Calf Gate</Name>
+   </Position>
+   <Position x1="1949" y1="1187" pluginId="2">
+    <Name>Calf Equalizer 8 Band</Name>
+   </Position>
+  </Positions>
+ </ExternalPatchbay>
+</CARLA-PROJECT>

@@ -1,0 +1,20 @@
+[Unit]
+Requires=hindsight-db.service
+After=hindsight-db.service
+Description=Hindsight local memory server and dashboard (Docker)
+Documentation=https://hindsight.vectorize.io/developer/installation
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
+ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStart=/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml up --no-build --pull never --no-deps --abort-on-container-exit app
+ExecStop=/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml stop --timeout 60 app
+ExecStopPost=-/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml stop --timeout 60 app
+SuccessExitStatus=130
+Restart=always
+RestartSec=15
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

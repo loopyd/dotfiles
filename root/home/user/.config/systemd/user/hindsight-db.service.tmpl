@@ -1,0 +1,22 @@
+[Unit]
+Description=Hindsight persistent VectorChord PostgreSQL database (Docker)
+Documentation=https://docs.vectorchord.ai/
+ConditionPathIsDirectory=%h/.local/share/hindsight/postgres
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.local/share/hindsight/postgres
+ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
+ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStart=/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml up --no-build --pull never --no-deps --abort-on-container-exit database
+ExecStartPost=/usr/bin/timeout 120 /bin/sh -c 'until /usr/bin/docker exec hindsight-db pg_isready -q -U postgres -d hindsight; do /usr/bin/sleep 1; done'
+ExecStop=/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml stop --timeout 60 database
+ExecStopPost=-/usr/bin/docker compose --project-name hindsight --file %h/.config/hindsight/compose.yaml stop --timeout 60 database
+SuccessExitStatus=130
+Restart=always
+RestartSec=15
+TimeoutStartSec=150
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

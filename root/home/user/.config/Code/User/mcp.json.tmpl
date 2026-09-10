@@ -1,0 +1,66 @@
+{
+	"servers": {
+		"microsoft/markitdown": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"markitdown-mcp@0.0.1a4"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		},
+		"io.github.upstash/context7": {
+			"type": "stdio",
+			"command": "@@DOTFILES:HOME@@/.local/share/mise/installs/node/25.9.0/bin/npx",
+			"args": [
+				"@upstash/context7-mcp@1.0.31"
+			],
+			"env": {
+				"PATH": "@@DOTFILES:HOME@@/.local/share/mise/installs/node/25.9.0/bin:${env:PATH}",
+				"CONTEXT7_API_KEY": "@@DOTFILES:SECRET_CONFIG_CODE_USER_MCP_JSON_CONTEXT7_API_KEY@@"
+			},
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.31"
+		},
+		"io.github.wonderwhy-er/desktop-commander": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"--registry",
+				"https://registry.npmjs.org",
+				"@wonderwhy-er/desktop-commander@0.2.38"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.2.38"
+		},
+		"io.github.github/github-mcp-server": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/",
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.3"
+		},
+		"oraios/serena": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"--from",
+				"git+https://github.com/oraios/serena",
+				"serena",
+				"start-mcp-server",
+				"serena@latest",
+				"--context",
+				"ide-assistant"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		}
+	},
+	"inputs": [
+		{
+			"id": "CONTEXT7_API_KEY",
+			"type": "promptString",
+			"description": "API key for authentication",
+			"password": @@DOTFILES:SECRET_CONFIG_CODE_USER_MCP_JSON_PASSWORD@@
+		}
+	]
+}

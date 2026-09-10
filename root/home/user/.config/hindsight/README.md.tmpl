@@ -1,0 +1,290 @@
+# Local Hindsight
+
+Dashboard: http://localhost:9999. API: http://localhost:8888.
+
+## CLI client
+
+The official `hindsight` CLI 0.9.2 is installed at `~/.local/bin/hindsight`,
+already on PATH. Its user configuration at `~/.hindsight/config` points to
+`http://127.0.0.1:8888`. No client API key is configured for this loopback-only
+deployment; the server's 9router credentials remain separate.
+
+```sh
+hindsight --version
+hindsight bank list --output json
+hindsight --help
+```
+
+`HINDSIGHT_API_URL` and `HINDSIGHT_API_KEY` override saved settings. Named
+profiles can also select another deployment; neither override is configured here.
+The global `hindsight-docs` skill at `~/.agents/skills/hindsight-docs/` is discovered
+by Codex. Automatic ingestion is provided separately by the coding-agent integration.
+
+## Codex shared memory
+
+The official `@vectorize-io/hindsight-coding-agents` runtime is installed under
+`~/.hindsight/coding-agents/`, initially version 0.5.3, through its supported npx
+update path. It connects only to `http://127.0.0.1:8888` and uses the single
+`shared` bank across projects. Project tags/metadata retain provenance without
+creating separate banks. Settings live in `~/.hindsight/coding-agent.json`.
+
+- Global `~/.codex/hooks.json` registers SessionStart, UserPromptSubmit and Stop.
+  Automatic context and transcript write-back begin in a new Codex session.
+- `~/.codex/config.toml` enables hooks and registers the integration's stdio MCP
+  adapter as `hindsight`; it replaces the initial generic HTTP registration.
+- `~/.codex/AGENTS.md` describes the authorized shared-memory workflow. Both
+  `hindsight-docs` and `hindsight-coding-agent` are global Codex skills under
+  `~/.agents/skills/`. Codex's internal memory implementation is not replaced.
+- `retainSessions=true`, `autoSeed=true`, `gitIngest="full"`: live conversations
+  and progressive recent Git history are captured automatically. Upstream 0.5.3
+  limits automatic Git deepening to the newest 300 commits, 50 diffs per run;
+  this is not an unlimited import of all historical commits or conversations.
+- `autoUpdate=true`: session starts check at most daily and update only the
+  Hindsight coding-agent runtime through npx. Container images remain pinned.
+- `codebaseSurvey=true`: memory-only headless surveys use the configured Codex
+  model with a read-only sandbox. Survey children keep MCP access but disable
+  automatic hooks to prevent recursion. This does not authorize adding model
+  launchers back to the BOF3 harness or disabling approval controls.
+- `maxParallelRetains=2`, shared observation scope, low reflect budget. Automatic
+  capture can contain sensitive conversation text; do not paste secrets into it.
+
+MCP initialization and bank routing were verified from two different workspaces.
+A synthetic Stop-hook transcript was retained, recalled and then deleted.
+Receipts and private pre-change backups are in `~/.local/state/hindsight/`.
+Restart Codex to load the new MCP connection, hooks and global instructions.
+
+## One-time Pi/docs migration
+
+The requested import uses `~/.local/share/hindsight/imports/pi-docs-20260910/`.
+Its `manifest.sqlite3` holds source hashes, normalized documents and stable batch
+operation IDs; `receipt.json` distinguishes accepted uploads from completed server
+processing. The original Pi files and project documents are not modified.
+
+Sources are both `.pi/memory/memory.db` stores, this project's `docs/`, this
+project's `.pi/sessions/`, and `~/.pi/agent/sessions/`, including nested history.
+SQLite snapshots preserve audit events and tombstoned lessons without reactivating
+deleted memories. Conversation conversion keeps user/assistant text and saved
+compaction/branch summaries, with timestamps and parent-entry provenance; reasoning,
+tool-output dumps, binary attachments and injected custom context are omitted.
+Recognizable credentials are redacted, but pattern matching is not a guarantee that
+every sensitive natural-language detail is removed.
+
+```sh
+python3 ~/.local/share/hindsight/imports/pi-docs-20260910/migration.py report
+python3 ~/.local/share/hindsight/imports/pi-docs-20260910/migration.py status
+python3 ~/.local/share/hindsight/imports/pi-docs-20260910/migration.py upload
+```
+
+`upload` resumes only unacknowledged batches; fixed operation IDs prevent duplicate
+queueing after a lost acknowledgement. It queues work for Hindsight's asynchronous
+worker rather than claiming extraction has finished. This migration does not scan
+unrelated home files or bulk-import old Codex conversations.
+
+## BOF3js/EasyLlama documentation import
+
+`~/.local/share/hindsight/imports/bof3js-easyllama-20260910/` holds a separate
+resumable import into the same `shared` bank: 225 BOF3js reference documents and
+structured research files, plus 21 EasyLlama guides and prepared research/review
+documents. Two exact normalized-text duplicates and one empty file are recorded
+without uploading them again. The conversion produces 337 records.
+
+Sources remain unchanged at `/mnt/PROJECTS/repos/bof3js` and
+`/mnt/LIBRARY/llamacpp`. HTML becomes body text, links and image captions; JSON
+retains its fields. Image pixels, model caches, credentials/runtime configuration,
+application source, benchmark fixtures and raw logs are outside this docs import.
+BOF3 evidence is explicitly labeled EU `SLES_013.04`, not assumed to establish
+facts about another executable or target. Historical research is not an instruction.
+
+```sh
+python3 ~/.local/share/hindsight/imports/bof3js-easyllama-20260910/migration.py report
+python3 ~/.local/share/hindsight/imports/bof3js-easyllama-20260910/migration.py status
+python3 ~/.local/share/hindsight/imports/bof3js-easyllama-20260910/migration.py upload
+```
+
+The private manifest records source hashes, provenance, redactions and stable
+operation IDs. `upload` resumes only unacknowledged batches; acceptance means queued
+for asynchronous processing, not completed extraction. `processing.json` records the
+last server status check.
+
+## Login services
+
+`hindsight-db.service` owns persistent VectorChord PostgreSQL.
+`hindsight.service` owns the API/dashboard and requires the database unit to
+finish its readiness check first. Both are enabled at user login; lingering is
+not enabled. Both check the running system Docker daemon and its API before
+starting, retrying every 15 seconds when unavailable. User units cannot declare
+cross-manager `Requires=docker.service`; the existing system daemon is already
+enabled and was not reconfigured.
+
+The API, dashboard and PostgreSQL bind directly to IPv4 loopback using Docker
+host networking. The former socket proxies are retired; Docker port publishing
+is neither needed nor used.
+
+```sh
+systemctl --user status hindsight-db.service hindsight.service
+systemctl --user restart hindsight.service
+systemctl --user stop hindsight.service
+systemctl --user stop hindsight-db.service
+systemctl --user start hindsight.service
+journalctl --user -u hindsight.service -u hindsight-db.service -n 100
+```
+
+Stopping Hindsight leaves the database running. Stopping the required database
+also stops Hindsight. Starting Hindsight starts its required database. Data is
+never deleted by these operations. Use PostgreSQL backup tools, or stop the
+database before taking a filesystem copy.
+
+## Home directories
+
+| Path | Purpose |
+| --- | --- |
+| `~/.config/hindsight/compose.yaml` | Digest-pinned official container definitions |
+| `~/.config/hindsight/server.env` | App/model configuration and private credentials |
+| `~/.config/hindsight/postgres.env` | Separate private database administrator credentials |
+| `~/.config/hindsight/initdb/` | First-initialization SQL and application-role credentials |
+| `~/.config/systemd/user/hindsight*` | User service lifecycle definitions |
+| `~/.local/share/hindsight/postgres/` | Active persistent PostgreSQL data |
+| `~/.local/share/hindsight/cache/` | Persistent FlashRank/tokenizer caches |
+| `~/.local/share/hindsight/legacy-pg0/` | Preserved initial embedded-DB setup; inactive |
+| `~/.local/state/hindsight/` | Installation/lifecycle verification receipts |
+| `~/.agents/skills/hindsight-docs/` | Global Codex documentation skill |
+
+Environment edits require container recreation, not merely `docker restart`.
+The user units run `docker compose up` to reconcile configuration changes. Do not
+run a separate detached Compose controller alongside them. Never delete the data
+directory while recreating containers. Initialization SQL runs only on an empty
+database; credential rotation later requires SQL changes as well as file updates.
+Do not print, share or commit environment/initialization files. Upgrades are manual.
+
+## Models and database
+
+- LLM: `qwen-combo` through local 9router's OpenAI-compatible API.
+- Embeddings: `qwen3-chat/qwen3-embeddings`, preserving all 4096 dimensions.
+- Reranker: local FlashRank `ms-marco-MiniLM-L-12-v2`.
+- Database: VectorChord 1.1.1 / PostgreSQL 18, configured as `vchord`.
+- Hindsight: official 0.9.2 image; both container digests are pinned in Compose.
+
+The sole enabled existing 9router key is reused for the two model clients. No
+Codex OAuth credentials are copied or mounted. The skill supplies documentation;
+it does not automatically ingest project files. The unsuccessful embedded-DB
+index-threshold workaround is removed, not bypassed.
+
+## Isolation
+
+Both Hindsight containers use `network_mode: host` by explicit user request.
+API `127.0.0.1:8888`, dashboard `127.0.0.1:9999` and PostgreSQL
+`127.0.0.1:5432` listen only on loopback. Model clients reach the host 9router
+at `http://127.0.0.1:20128/v1`; the database URL also uses `127.0.0.1`.
+Host networking removes network-namespace/egress isolation: containers can
+reach host listeners and host-routed networks. Do not describe this as an
+internal isolated Docker network. Private backups under
+`~/.local/state/hindsight/host-network-*/` retain the former configuration.
+
+Both containers run as the unprivileged host UID/GID with all capabilities
+dropped, no-new-privileges, read-only root filesystems, scoped writable bind
+mounts/tmpfs, and CPU/memory/PID limits. Each container has a 4 GiB `/dev/shm`
+ceiling and a two-CPU quota. Shared memory is allocated on demand, not reserved;
+it also counts toward the unchanged total-memory limits (app 3 GiB, database
+2 GiB), so the full shared-memory ceiling is not usable within those limits.
+Hindsight's database role is not a
+superuser; bootstrap administration has a separate credential. Docker remains a
+privileged host service: users with Docker access can inspect container secrets.
+
+The optional upstream unauthenticated dependency wait is disabled; ordinary
+authenticated provider validation remains enabled. Do not misdeclare embedding
+dimensions or switch to incompatible pgvector HNSW settings.
+
+The attached Compose controllers return 130 when interrupted during an orderly
+systemd stop, even when their containers exit 0. Both units recognize that
+controller status as successful; unexpected exits still restart the controllers.
+
+## Recursive repository import: explicitly authorized
+
+The prepared corpus is private and local at
+`~/.local/share/hindsight/imports/repositories-20260910/`:
+26,750 unique files across 77 repository roots, packed into 10,346 records.
+Another 274 files were covered by earlier accepted imports and 3,118 exact
+duplicates were excluded. Sources were not modified.
+
+Approval review initially blocked upload because the configured 9router/Qwen route
+could forward code or documentation to an external provider. After that risk was
+explained, the user explicitly authorized uploading this full corpus. The original
+resumable uploader was then approved, without changing any safety settings or using
+an alternate transport. `authorization.json` records this scope; `receipt.json`
+records acknowledged batches and `processing.json` records the last extraction
+status check. Earlier acknowledged imports are separate.
+
+The local inventory, exclusion policy, converted data, source hashes, provenance
+and redaction counts remain in `inventory.sqlite3`, `policy.py`,
+`manifest.sqlite3` and `receipt.json`. `migration.py report` reads the local
+receipt data. Preparation and queue acceptance must not be described as completed
+extraction; existing Qwen inference probes also exposed intermittent failures.
+
+## 9router client
+
+The official hub skill is installed globally at `~/.agents/skills/9router/`.
+Private settings live in `~/.config/9router/client.env` with the base URL
+`http://127.0.0.1:20128`. Never print the key or store it in source/memory content.
+Authenticated health/model discovery pass, and Hindsight already uses the same
+active credential. `verification.json` records those checks;
+`inference-check.json` separately records the bounded model probes.
+
+## Qwen host networking
+
+The three existing EasyLlama containers (llama-swap, Qwen chat and embeddings)
+also use host networking. Their owner remains `/mnt/LIBRARY/llamacpp/run.sh`;
+the launcher now supports `docker.network_mode`, selected as `host` in its
+local `config.json`. Restarting through that launcher preserves this choice.
+The proxy binds to `127.0.0.1:8080`, model ports to 9000/9001 and lifecycle
+ports to 9002/9003, all on loopback. Images, GPU allocations, resource limits
+and model caches were preserved. Private rollback copies are under
+`~/.local/state/hindsight/qwen-host-network-*/`. Unrelated containers were
+not modified. 9router remains its existing host process on port 20128.
+
+For the dashboard, `HINDSIGHT_CP_HOSTNAME=localhost` and
+`NODE_OPTIONS=--dns-result-order=ipv4first` keep its listener on IPv4 loopback
+without the shipped locale middleware redirect loop seen with a numeric
+hostname. A temporary loopback probe reproduced and verified this fix.
+
+`host-network-verification.json` records topology, health, 30 passing existing
+EasyLlama unit tests, and successful synthetic chat/4096-dimensional embedding
+requests from Hindsight through 9router, in separate probe rounds. Startup
+returned chat 503 with embeddings 200; a later probe returned chat 200 but
+timed out on embeddings after 30 seconds. Those were pre-fix observations;
+see the swap reliability section for the current settings and validation.
+Network success does not mean every queued import has finished.
+
+## Swap reliability
+
+Qwen chat and embeddings share one GPU through llama-swap. Three settings
+previously combined into failures: the four-request admission limit counted
+waiting requests, 9router allowed only 60 seconds for upstream headers, and the
+Qwen template defaulted to extra-high reasoning during structured extraction.
+
+- EasyLlama's live and example Qwen profiles now set `concurrencyLimit: 0` for
+  both models. Requests queue instead of immediately receiving 429; backend
+  `--parallel 4` and the mutually exclusive model group are unchanged. This is
+  unbounded admission, not unbounded inference: keep client workloads bounded.
+- `~/.config/9router/runtime.env` sets fetch-connect, first-chunk and stall
+  deadlines to 600 seconds. `~/.local/bin/9router-local` loads this file and
+  starts the installed CLI without modifying its package. Desktop login uses
+  that launcher; use `9router-local --tray --skip-update` for manual startup.
+- Hindsight uses one worker with no reserved consolidation slot, one LLM call
+  per scope, one retain chunk per LLM call, and one embedding batch request with
+  at most 16 items. LLM timeout is 900 seconds; retry backoff starts at 5 seconds
+  and caps at 60 seconds. These conservative settings favor progress over bulk
+  throughput on a swapping GPU; monitor before increasing concurrency.
+- Only retain calls disable thinking, using
+  `HINDSIGHT_API_RETAIN_LLM_REASONING_EFFORT=none` and
+  `HINDSIGHT_API_RETAIN_LLM_EXTRA_BODY={"chat_template_kwargs":{"enable_thinking":false}}`.
+  Other Qwen clients and Hindsight reflect/consolidation reasoning are unchanged.
+
+Private backups and configuration/retry receipts are under
+`~/.local/state/hindsight/swap-reliability-*/`; the latest validation is recorded
+in `~/.local/state/hindsight/swap-reliability-verification.json`. Earlier probe
+receipts are historical, not the current health result. Failed transport and
+interrupted-recovery operations are resumed using Hindsight's official retry
+endpoint with their existing operation IDs, never by reuploading the corpus.
+Queue recovery does not mean corpus processing has finished.
+
+Relevant upstream behavior: [llama-swap v251 configuration](https://github.com/mostlygeek/llama-swap/blob/v251/config.example.yaml).

@@ -1,0 +1,17 @@
+monitor.alsa.rules = [
+	{
+		matches = [
+			{
+				device.name = "~alsa_card.pci-0000_01_00*"
+			},
+			{
+				device.name = "~alsa_card.usb-Generic_USB_Audio-*"
+			}
+		]
+		actions = {
+			update.props = {
+				device.disabled = true
+			}
+		}
+	}
+]

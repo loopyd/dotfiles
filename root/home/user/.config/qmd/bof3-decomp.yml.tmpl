@@ -1,0 +1,27 @@
+collections:
+  docs:
+    path: /mnt/PROJECTS/repos/bof3-decomp/docs
+    pattern: "**/*.md"
+  pi-tasks:
+    path: /mnt/PROJECTS/repos/bof3-decomp/.pi/tasks
+    pattern: "**/*.md"
+  pi-prompts:
+    path: /mnt/PROJECTS/repos/bof3-decomp/.pi/prompts
+    pattern: "**/*.md"
+  pi-agents:
+    path: /mnt/PROJECTS/repos/bof3-decomp/.pi/agents
+    pattern: "**/*.md"
+  third-party-references:
+    path: /mnt/PROJECTS/repos/bof3-decomp/third_party/references
+    pattern: "**/*.md"
+  third-party-tools:
+    path: /mnt/PROJECTS/repos/bof3-decomp/third_party/tools
+    pattern: "**/*.md"
+models:
+  embed: qmd-embed
+  rerank: qmd-rerank
+  generate: qmd-generate
+llm:
+  provider: openai-compatible
+  baseUrl: http://127.0.0.1:8080/v1
+  apiKey: @@DOTFILES:SECRET_CONFIG_9ROUTER_RESTORE_JSON_APIKEY@@

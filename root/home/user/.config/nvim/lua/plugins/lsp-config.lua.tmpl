@@ -1,0 +1,109 @@
+local servers = { "lua_ls", "ts_ls", "pyright" }
+local formatters = {
+	"stylua",
+	"prettier",
+	"black",
+	"isort",
+	"eslint_d",
+	"markdownlint",
+	"codespell",
+	"cpplint",
+	"cue_fmt",
+	"cmakelint",
+	"checkmake",
+	"cueimports",
+	"jq",
+	"ocamlformat",
+	"yamlfmt",
+	"xmlformatter",
+	"clang-format",
+	"cmakelang",
+}
+
+return {
+	{
+		"mason-org/mason.nvim",
+		name = "mason",
+		config = function(_, opts)
+			require("mason").setup(opts)
+			local registry = require("mason-registry")
+			local function install_all()
+				for _, name in ipairs(formatters) do
+					if registry.has_package(name) and not registry.is_installed(name) then
+						registry.get_package(name):install({}, function(success, result)
+							if not success then
+								vim.schedule(function()
+									vim.api.nvim_err_writeln(
+										("Mason install failed for %s: %s"):format(name, vim.inspect(result))
+									)
+								end)
+							end
+						end)
+					end
+				end
+			end
+			if registry.refresh then
+				registry.refresh(install_all)
+			else
+				install_all()
+			end
+		end,
+		opts = {},
+		@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ = 50,
+	},
+	{
+		"mason-org/mason-lspconfig.nvim",
+		name = "mason-lspconfig",
+		config = function(_, opts)
+			require("mason-lspconfig").setup(opts)
+		end,
+		opts = {
+			ensure_installed = servers,
+			automatic_enable = false,
+		},
+		@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ = 50,
+	},
+	{
+		"neovim/nvim-lspconfig",
+		config = function()
+			local capabilities = require("cmp_nvim_lsp").default_capabilities()
+			for _, server in ipairs(servers) do
+				local ok, err = pcall(function()
+					vim.lsp.config(server, {
+						capabilities = capabilities,
+					})
+					vim.lsp.enable(server)
+				end)
+				if not ok then
+					vim.schedule(function()
+						vim.api.nvim_err_writeln(("LSP setup failed for %s: %s"):format(server, tostring(err)))
+					end)
+				end
+			end
+			vim.api.nvim_create_user_command("LspInfo", "checkhealth vim.lsp", {
+				desc = "Show LSP Info",
+			})
+			vim.api.nvim_create_user_command("LspLog", function(_)
+				local state_path = vim.fn.stdpath("state")
+				local log_path = vim.fs.joinpath(state_path, "lsp.log")
+				vim.cmd(string.format("edit %s", log_path))
+			end, {
+				desc = "Show LSP log",
+			})
+			vim.api.nvim_create_user_command("LspRestart", "lsp restart", {
+				desc = "Restart LSP",
+			})
+			vim.api.nvim_create_autocmd("LspAttach", {
+				group = vim.api.nvim_create_augroup("UserLspConfig", {}),
+				callback = function(ev)
+					vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
+					local opts = { buffer = ev.buf }
+					vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+					vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+					vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+				end,
+			})
+		end,
+		@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ = 50,
+	},
+}

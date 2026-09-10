@@ -1,0 +1,23 @@
+{
+  "serverMode": "self-hosted",
+  "apiUrl": "http://127.0.0.1:8888",
+  "bankId": "shared",
+  "dynamicBankId": false,
+  "harness": "codex",
+  "retainTags": [
+    "project:{gitProject}"
+  ],
+  "retainMetadata": {
+    "repo": "{gitProject}",
+    "project": "{project}"
+  },
+  "retainSessions": true,
+  "autoSeed": true,
+  "gitIngest": "full",
+  "seedLimit": 300,
+  "maxParallelRetains": 2,
+  "autoReflect": true,
+  "reflectBudget": "low",
+  "codebaseSurvey": true,
+  "autoUpdate": true
+}

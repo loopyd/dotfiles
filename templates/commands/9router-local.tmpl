@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+set -a
+source "${XDG_CONFIG_HOME:-$HOME/.config}/9router/runtime.env"
+set +a
+exec 9router "$@"

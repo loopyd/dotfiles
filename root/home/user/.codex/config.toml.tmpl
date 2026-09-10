@@ -1,0 +1,66 @@
+
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+developer_instructions = """
+Approval-loop discipline: after an auto-review denial, do not repeat the request
+or pursue the same outcome through wrappers, alternate tools, or broader permissions.
+Continue only with a materially safer, policy-compliant alternative. If none exists,
+stop and report the denied action, reason, and exact user authorization needed.
+If that safer alternative is also denied, stop rather than generate more variants.
+A reviewer timeout is not a denial: retry the identical request at most once;
+if it times out again, stop and report the infrastructure blocker.
+Do not weaken sandbox settings, approval policies, or command rules to make progress.
+"""
+sandbox_mode = "workspace-write"
+
+openai_base_url = "http://127.0.0.1:8787/v1"
+service_tier = "fast"
+
+[features]
+hooks = true
+context_management.experimental_mode = true
+
+[projects."/mnt/PROJECTS/repos/rebof3-simple"]
+trust_level = "trusted"
+
+[tui.model_availability_nux]
+gpt-6-astra = 1
+
+[mcp_servers."sqlitecloud-mcp-server"]
+command = "npx"
+args = ["-y", "@sqlitecloud/mcp-server", "--connectionString", "sqlitecloud://cb1v6252dz.g2.sqlite.cloud:8860/inventory?apikey=4mdTbBaxru8hRYMeoLre2UYY3sD2NEP4p8M4jS5t8j4"]
+
+[mcp_servers."github-mcp-server"]
+command = "docker"
+args = ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"]
+[mcp_servers."github-mcp-server".env]
+"GITHUB_PERSONAL_ACCESS_TOKEN" = "@@DOTFILES:SECRET_CODEX_CONFIG_TOML_CREDENTIAL@@"
+
+[mcp_servers."markitdown"]
+command = "uvx"
+args = ["markitdown-mcp@0.0.1a4"]
+
+[mcp_servers."context7"]
+command = "@@DOTFILES:HOME@@/.local/share/mise/installs/node/25.9.0/bin/npx"
+args = ["@upstash/context7-mcp@1.0.31"]
+[mcp_servers."context7".env]
+"PATH" = "@@DOTFILES:HOME@@/.local/share/mise/installs/node/25.9.0/bin:@@DOTFILES:HOME@@/.opam/default/bin:@@DOTFILES:HOME@@/.local/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/node/24.15.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-path:@@DOTFILES:HOME@@/.opam/default/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/bun/latest/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/deno/2.7.11/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/deno/2.7.11/.deno/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/github-burnt-sushi-ripgrep/15.1.0:@@DOTFILES:HOME@@/.local/share/mise/installs/github-ogulcancelik-herdr/0.7.1:@@DOTFILES:HOME@@/.local/share/mise/installs/go/1.26.1/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/node/24/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/pnpm/10.33.0:@@DOTFILES:HOME@@/.local/share/mise/installs/python/3.12.13/bin:@@DOTFILES:HOME@@/.cargo/bin:@@DOTFILES:HOME@@/.local/share/mise/installs/zig/0.15.2/bin:@@DOTFILES:HOME@@/.local/bin:@@DOTFILES:HOME@@/.sdkman/candidates/maven/current/bin:@@DOTFILES:HOME@@/.sdkman/candidates/java/current/bin:@@DOTFILES:HOME@@/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:@@DOTFILES:HOME@@/.rvm/bin:@@DOTFILES:HOME@@/.local/share/yabridge:@@DOTFILES:HOME@@/.local/share/yabridge:@@DOTFILES:HOME@@/.rvm/bin:@@DOTFILES:HOME@@/.rvm/bin"
+"CONTEXT7_API_KEY" = "@@DOTFILES:SECRET_CODEX_CONFIG_TOML_CONTEXT7_API_KEY@@"
+
+[mcp_servers."context-mode"]
+command = "context-mode"
+
+[mcp_servers."playwright"]
+command = "npx"
+args = ["@playwright/mcp@latest"]
+
+[mcp_servers."vercel"]
+url = "https://mcp.vercel.com"
+
+[mcp_servers.hindsight]
+command = "node"
+args = ["@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/mcp-server.js"]
+env = { HINDSIGHT_MCP_HARNESS = "codex" }

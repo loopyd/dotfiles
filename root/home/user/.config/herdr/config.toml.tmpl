@@ -1,0 +1,116 @@
+# herdr configuration
+onboarding = false
+
+[theme]
+# smoky charcoal
+
+[theme.custom]
+panel_bg = "#1c1512"
+accent = "#ff6633"
+surface0 = "#3a2e26"
+surface1 = "#524438"
+surface_dim = "#1f1814"
+overlay0 = "#8a8080"
+overlay1 = "#a89890"
+text = "#d6d0ce"
+subtext0 = "#7a7068"
+mauve = "#cc5500"
+green = "#cc7733"
+yellow = "#ffaa44"
+red = "#dd4400"
+blue = "#667788"
+teal = "#bb8844"
+peach = "#ff5533"
+
+[remote]
+manage_ssh_config = true
+
+[ui.sound]
+enabled = true
+
+[terminal]
+shell_mode = "login"
+new_cwd = "follow"
+
+[worktrees]
+directory = "~/.herdr/worktrees"
+
+[update]
+channel = "stable"
+version_check = true
+
+[keys]
+prefix = "ctrl+b"
+detach = "prefix+q"
+workspace_picker = "prefix+w"
+goto = "prefix+g"
+new_workspace = "prefix+shift+n"
+new_worktree = "prefix+shift+g"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+navigate_workspace_up = "up"
+navigate_workspace_down = "down"
+navigate_pane_left = "h"
+navigate_pane_down = "j"
+navigate_pane_up = "k"
+navigate_pane_right = "l"
+remote_image_paste = "ctrl+v"
+new_tab = "prefix+c"
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+shift+t"
+close_tab = "prefix+shift+x"
+copy_mode = "prefix+["
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+last_pane = ""
+split_vertical = "prefix+v"
+split_horizontal = "prefix+minus"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+resize_mode = "prefix+r"
+toggle_sidebar = "prefix+b"
+
+[ui.toast]
+delivery = "herdr"
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[ui.toast.clipboard]
+enabled = true
+position = "bottom-center"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+mouse_capture = true
+right_click_passthrough_modifier = ""
+redraw_on_focus_gained = true
+mouse_scroll_lines = 3
+confirm_close = true
+prompt_new_tab_name = true
+pane_borders = true
+pane_gaps = true
+agent_panel_sort = "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@"
+
+status_indicators = "symbols"
+[[keys.command]]
+key = "@@DOTFILES:SECRET_CONFIG_HERDR_CONFIG_TOML_KEY@@"
+type = "shell"
+command = "herdr plugin action invoke open-file-viewer --plugin herdr-file-viewer"
+
+[advanced]
+scrollback_limit_bytes = 10485760
+
+[experimental]
+pane_history = true
+allow_nested = false

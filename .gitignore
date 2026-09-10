@@ -1,0 +1,65 @@
+# Secondary secret-prevention controls for host-capture overlay content.
+# Keep these patterns explicit and anchored to avoid hiding intended dotfiles.
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Shell history and interactive traces
+/root/home/user/.bash_history
+/root/home/user/.zsh_history
+/root/home/user/.lesshst
+/root/home/user/.python_history
+
+# High-risk credential stores
+/root/home/user/.ssh/
+/root/home/user/.gnupg/
+/root/home/user/.aws/
+/root/home/user/.azure/
+/root/home/user/.docker/
+/root/home/user/.kube/
+/root/home/user/.pki/
+/root/home/user/.mozilla/
+/root/home/user/.thunderbird/
+/root/home/user/.npm/
+/root/home/user/.config/Code/User/globalStorage/
+/root/home/user/.config/gh/
+/root/home/user/.config/gcloud/
+/root/home/user/.config/google-chrome/
+/root/home/user/.config/chromium/
+/root/home/user/.config/BraveSoftware/
+/root/home/user/.config/discord/
+/root/home/user/.local/share/keyrings/
+
+# Sensitive key/token file patterns under captured user tree
+/root/home/user/.env
+/root/home/user/.env.*
+/root/home/user/**/*.pem
+/root/home/user/**/*.p12
+/root/home/user/**/*.pfx
+/root/home/user/**/*.kdbx
+
+# User-local binaries and generated artifacts
+/root/home/user/.local/bin/
+/root/home/user/bin/
+/root/home/user/.cargo/bin/
+/root/home/user/.cache/
+/root/home/user/.local/share/Trash/
+
+# Rendering inputs and runtime state must never enter this public repository.
+/private/
+values.json
+values.local.json
+/root/home/user/.config/dotfiles/
+/root/home/user/.codex/auth.json*
+/root/home/user/.codex/sessions/
+/root/home/user/.codex/memories/
+/root/home/user/.codex/plugins/cache/
+/root/home/user/.local/state/
+/root/home/user/.local/share/hindsight/
+/root/home/user/.9router/db/
+/root/home/user/.9router/auth/
+__pycache__/
+*.pyc

@@ -1,0 +1,82 @@
+<!DOCTYPE patchbay>
+<patchbay version="0.6.1" name="pipewirepatch">
+ <items>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Main Audio:monitor_FL" node="Main Audio"/>
+   <input port="ATH-M50xBT2:playback_FL" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-midi">
+   <output port="Midi Through:Midi Through Port-0" node="Midi-Bridge"/>
+   <input port="Midi Through:Midi Through Port-0" node="Midi-Bridge"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Main Audio:monitor_FL" node="Main Audio"/>
+   <input port="USB Audio #1:playback_FL" node="USB Audio Front Headphones"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="PCSX2:output_FR" node="PCSX2"/>
+   <input port="ATH-M50xBT2:playback_FR" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="alsa" port-type="alsa-midi">
+   <output port="0:Midi Through Port-0" node="14:Midi Through"/>
+   <input port="0:Midi Through Port-0" node="14:Midi Through"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="HyperX QuadCast 2 S:capture_FL" node="HyperX QuadCast 2 S Analog Stereo"/>
+   <input port="REAPER:input_FL" node="REAPER"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="PCSX2:output_FL" node="PCSX2"/>
+   <input port="ATH-M50xBT2:playback_FL" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="JACK Source:capture_FL" node="JACK Source"/>
+   <input port="ATH-M50xBT2:playback_FL" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Main Audio:monitor_FR" node="Main Audio"/>
+   <input port="USB Audio #1:playback_FR" node="USB Audio Front Headphones"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="cinnamon:monitor_1" node="cinnamon"/>
+   <input port="ATH-M50xBT2:playback_FL" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="cinnamon:monitor_2" node="cinnamon"/>
+   <input port="ATH-M50xBT2:playback_FR" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Calf Equalizer 8 Band:Out R" node="Calf Equalizer 8 Band"/>
+   <input port="Microphone FX:playback_MONO" node="Microphone FX"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="JACK Source:capture_FR" node="JACK Source"/>
+   <input port="ATH-M50xBT2:playback_FR" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="HyperX QuadCast 2 S:capture_FR" node="HyperX QuadCast 2 S Analog Stereo"/>
+   <input port="REAPER:input_FR" node="REAPER"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="JACK Source:capture_FR" node="JACK Source"/>
+   <input port="cinnamon:input_FR" node="cinnamon"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Calf Equalizer 8 Band:Out L" node="Calf Equalizer 8 Band"/>
+   <input port="Microphone FX:playback_MONO" node="Microphone FX"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-midi">
+   <output port="JACK Source:capture_0" node="JACK Source"/>
+   <input port="JACK Sink:playback_0" node="JACK Sink"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="Main Audio:monitor_FR" node="Main Audio"/>
+   <input port="ATH-M50xBT2:playback_FR" node="ATH-M50xBT2"/>
+  </item>
+  <item node-type="pipewire" port-type="pipewire-audio">
+   <output port="JACK Source:capture_FL" node="JACK Source"/>
+   <input port="cinnamon:input_FL" node="cinnamon"/>
+  </item>
+ </items>
+</patchbay>
+

@@ -1,0 +1,12 @@
+[Unit]
+Description=Headroom (default)
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=@@DOTFILES:HOME@@/.headroom/deploy/default/run-headroom.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
