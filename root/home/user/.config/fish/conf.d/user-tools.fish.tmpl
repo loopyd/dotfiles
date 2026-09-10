@@ -1,0 +1,4 @@
+fish_add_path --path "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.local/share/mise/shims"
+if status is-interactive; and test -x "$HOME/.local/bin/mise"
+    "$HOME/.local/bin/mise" activate fish | source
+end

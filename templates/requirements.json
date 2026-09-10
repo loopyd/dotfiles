@@ -1,5 +1,7 @@
 {
   "python": ">=3.11",
+  "mise_installer": "2026.5.0 (verified fresh-install binary; existing installations preserved)",
+  "user_packages": "templates/packages.json is versionless; scripts/install-user-tools.sh restores it after private rendering. Configured runtime defaults remain in the mise/rustup templates.",
   "9router": "0.5.69",
   "easyllama": "0.6.0",
   "hindsight_cli": "0.9.2",
@@ -7,9 +9,10 @@
   "required_existing_tools": ["docker", "docker compose", "node >=22.15", "npm", "codex"],
   "hindsight_installer": "scripts/install-hindsight.sh installs CLI 0.9.2 and missing coding-agent runtime >=0.5.3, pulls missing pinned images and enables database/app user units. --dry-run previews; --check is read-only; --no-start defers user service startup.",
   "restore_order": [
-    "Install Docker/Compose, Node >=22.15 with npm, Python >=3.11, Codex, EasyLlama and 9router; installed binaries and package caches are not copied.",
+    "Install Docker/Compose and Python >=3.11. Node/npm, Codex and 9router can be restored by the opt-in user-tools installer after rendering; EasyLlama remains a separate setup.",
     "Initialize 9router once, then stop it before restoring its exported configuration tables.",
     "Render with a private values file and optionally --restore-router. OAuth/account stores were excluded and require fresh login.",
+    "Run scripts/install-user-tools.sh to install mise, configured runtimes and versionless user packages; review local Go rebuilds and excluded retired Pi packages.",
     "Start EasyLlama and 9router-local, then run scripts/install-hindsight.sh as the logged-in destination user to install clients and activate the Hindsight user services.",
     "Start a new Codex session after the local services and coding-agent runtime are available."
   ],

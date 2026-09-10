@@ -980,6 +980,12 @@
       "sha256": "18a82a4dafbba8d7a4245ddd9263547c4074c6aa6487422b787a14c6bb86c749"
     },
     {
+      "source": "root/home/user/.cargo/env.tmpl",
+      "target": ".cargo/env",
+      "mode": "0600",
+      "sha256": "8566c299618b2cd21dd0c2bf98b416819a05bc484418691b72635cca342f7343"
+    },
+    {
       "source": "root/home/user/.codex/AGENTS.md.tmpl",
       "target": ".codex/AGENTS.md",
       "mode": "0600",
@@ -4370,6 +4376,12 @@
       "sha256": "aa8185da61506f926849447864edb699a2b1f3d7088d03e4da2b2f0576cd91f0"
     },
     {
+      "source": "root/home/user/.config/fish/conf.d/user-tools.fish.tmpl",
+      "target": ".config/fish/conf.d/user-tools.fish",
+      "mode": "0600",
+      "sha256": "db8fe9d39674496b02323d14b5a84ca3f6c70a0118b53922ef960047318b8aab"
+    },
+    {
       "source": "root/home/user/.config/fish/conf.d/uv.env.fish.tmpl",
       "target": ".config/fish/conf.d/uv.env.fish",
       "mode": "0600",
@@ -4416,42 +4428,6 @@
       "target": ".config/gmux/host.toml",
       "mode": "0600",
       "sha256": "4d60e54f80eed6d3a2ab3dab1b753c895116e48e1e3a06e1de50ab5355fa9be0"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/local.2026-04-07.json.tmpl",
-      "target": ".config/go/telemetry/local/local.2026-04-07.json",
-      "mode": "0600",
-      "sha256": "908410cbda499389cf01af5ae5644f3fe0c4d1e27014954dd850f8a680adc574"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/local.2026-04-21.json.tmpl",
-      "target": ".config/go/telemetry/local/local.2026-04-21.json",
-      "mode": "0600",
-      "sha256": "bb3ffa4201036536d8e3d0783fcead6698abf9364da2029235058760b15607af"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/local.2026-04-28.json.tmpl",
-      "target": ".config/go/telemetry/local/local.2026-04-28.json",
-      "mode": "0600",
-      "sha256": "83e083f4b35cbe0d2c87169882a884bd309d7efa0e147e16151bf9734ca8bffa"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/local.2026-05-12.json.tmpl",
-      "target": ".config/go/telemetry/local/local.2026-05-12.json",
-      "mode": "0600",
-      "sha256": "c1eda071719f9bf7676bf4e9aadd5b7ce0a2dda545f06335b3e4b3a883405e8d"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/local.2026-05-19.json.tmpl",
-      "target": ".config/go/telemetry/local/local.2026-05-19.json",
-      "mode": "0600",
-      "sha256": "64e9ea872367d8794c4996af7411169facf6b01071095635ff102a472c458a5f"
-    },
-    {
-      "source": "root/home/user/.config/go/telemetry/local/weekends.tmpl",
-      "target": ".config/go/telemetry/local/weekends",
-      "mode": "0600",
-      "sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
     },
     {
       "source": "root/home/user/.config/gtk-2.0/gtkfilechooser.ini.tmpl",
@@ -4583,7 +4559,7 @@
       "source": "root/home/user/.config/mise/config.toml.tmpl",
       "target": ".config/mise/config.toml",
       "mode": "0600",
-      "sha256": "acd6fb24a5c76d98de239610ccf4f9a4940ebc516295e9b950404cc80a04df78"
+      "sha256": "7e7a1a26aef3e058e615b56c172f6be8945388375f9c2a7227168ab7529f391d"
     },
     {
       "source": "root/home/user/.config/nemo/desktop-metadata.tmpl",
@@ -5000,10 +4976,10 @@
       "sha256": "674ac4b0bd40c5764a1ddf4e0119e9b4ee02f743211eefcf7b27c932a4831a4b"
     },
     {
-      "source": "root/home/user/.config/uv/uv-receipt.json.tmpl",
-      "target": ".config/uv/uv-receipt.json",
+      "source": "root/home/user/.config/user-tools/env.sh.tmpl",
+      "target": ".config/user-tools/env.sh",
       "mode": "0600",
-      "sha256": "3665a3726bf974005b6254410622af75e643202464a6861d4db4df112bd2e91d"
+      "sha256": "5144a136a7c5b7c2df88af02c69de077bdd59c97734d10662f0853b9fb3274ee"
     },
     {
       "source": "root/home/user/.config/wireplumber/wireplumber.conf.d/00-alsa-plumber.conf.tmpl",
@@ -5195,13 +5171,19 @@
       "source": "root/home/user/.profile.tmpl",
       "target": ".profile",
       "mode": "0600",
-      "sha256": "c1df574695cc8c365e96d3f4795b3420cc05a8fb429525dd57a0636a2916881d"
+      "sha256": "7693f77a02fe22e96f3866a521d45c9be308407fae6af3e1334b64049f1a5e26"
+    },
+    {
+      "source": "root/home/user/.rustup/settings.toml.tmpl",
+      "target": ".rustup/settings.toml",
+      "mode": "0600",
+      "sha256": "81339660aa31b5f2bd53fa0b6f0fd2b5d3d02a5adc5be3f86e7b778b9b5a784c"
     },
     {
       "source": "root/home/user/.zshrc.tmpl",
       "target": ".zshrc",
       "mode": "0600",
-      "sha256": "f2918b10d0cf197392cc60c9a66beeef7bb5bd3347f8bfc985da01bf2bad2b5c"
+      "sha256": "02675eb8ea7ce704a2dea8e6e8adc57fffe88d8eabba0d59bfed543b9b52f8d5"
     },
     {
       "source": "root/home/user/Documents/patchbay_persist.xml.tmpl",

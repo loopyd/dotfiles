@@ -21,3 +21,10 @@ export OPENAI_BASE_URL="http://127.0.0.1:8787/v1"
 export COPILOT_PROVIDER_TYPE="anthropic"
 export COPILOT_PROVIDER_BASE_URL="http://127.0.0.1:8787"
 # <<< headroom persistent env <<<
+
+if [ -r "$HOME/.config/user-tools/env.sh" ]; then
+    . "$HOME/.config/user-tools/env.sh"
+fi
+if [ -x "$HOME/.local/bin/mise" ]; then
+    eval "$("$HOME/.local/bin/mise" activate zsh)"
+fi

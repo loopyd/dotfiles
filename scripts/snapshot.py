@@ -132,6 +132,8 @@ def reason(path, is_dir=False):
     parts = path.parts
     lowered = [part.lower() for part in parts]
     name = path.name.lower()
+    if str(path).startswith('.config/go/telemetry') or str(path) == '.config/uv/uv-receipt.json':
+        return 'tool telemetry/installation receipt'
     blocked = NOISE - {'plugins'} if parts[:4] == ('.config', 'nvim', 'lua', 'plugins') else NOISE
     if any(part in blocked for part in lowered):
         return 'runtime/cache/dependency'
@@ -192,7 +194,7 @@ def capture(args):
     exclusions = Counter()
     links = []
     roots = ['.config', '.agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
-    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json']
+    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.cargo/env', '.rustup/settings.toml']
     candidates = [home / name for name in fixed if (home / name).exists()]
     for prefix in roots:
         base = home / prefix

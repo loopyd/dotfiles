@@ -18,6 +18,7 @@ WITH_OLLAMA="true"
 WITH_GIT_HOOKS="true"
 WITH_DOTFILES="false"
 WITH_HINDSIGHT="false"
+WITH_USER_TOOLS="false"
 DOTFILES_VALUES="${HOME}/.config/dotfiles/values.json"
 
 OVERRIDE_GPU=""
@@ -40,6 +41,7 @@ Options:
   --no-git-hooks     Skip repository hook installation
   --with-dotfiles    Render user configuration after installers
   --with-hindsight   Install Hindsight and activate its user services after rendering
+  --with-user-tools  Install mise and restore user packages after rendering
   --dotfiles-values <path>  Private JSON values outside the repository
   -h, --help         Show this help
 EOF
@@ -116,12 +118,15 @@ phase_0_preflight() {
 		err 'sudo is required for non-root execution'
 		exit 1
 	fi
-	if [[ "${WITH_HINDSIGHT}" == "true" && "${DRY_RUN}" != "true" ]]; then
+	if [[ ( "${WITH_HINDSIGHT}" == "true" || "${WITH_USER_TOOLS}" == "true" ) && "${DRY_RUN}" != "true" ]]; then
 		if [[ "${EUID}" -eq 0 ]]; then
-			err 'Hindsight requires the logged-in destination user; do not run bootstrap with sudo'
+			err 'User tools and Hindsight require the destination user; do not run bootstrap with sudo'
 			exit 1
 		fi
-		require_commands python3 node npm
+		require_commands python3
+		if [[ "${WITH_USER_TOOLS}" != "true" ]]; then
+			require_commands node npm
+		fi
 	fi
 
 	local arch distro codename
@@ -232,6 +237,10 @@ phase_dotfiles() {
 	if [[ "${WITH_DOTFILES}" == "true" ]]; then
 		run_maybe_dry python3 "${SCRIPTS_DIR}/setup-dotfiles.py" --values "${DOTFILES_VALUES}" --apply
 	fi
+	if [[ "${WITH_USER_TOOLS}" == "true" ]]; then
+		run_installer install-user-tools.sh
+		export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:${PATH}"
+	fi
 	if [[ "${WITH_HINDSIGHT}" == "true" ]]; then
 		run_installer install-hindsight.sh
 	fi
@@ -280,6 +289,10 @@ parse_args() {
 				;;
 			--with-hindsight)
 				WITH_HINDSIGHT="true"
+				shift
+				;;
+			--with-user-tools)
+				WITH_USER_TOOLS="true"
 				shift
 				;;
 			--dotfiles-values)

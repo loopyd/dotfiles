@@ -108,6 +108,7 @@ upstream health, metrics and API-documentation routes remain unauthenticated.
 
 ## Installer scripts
 
+- `scripts/install-mise.sh` installs checksum-verified mise; `scripts/install-user-tools.sh` restores user toolchains and versionless packages.
 - `scripts/install-hindsight.sh` installs the pinned CLI/runtime and activates the captured Docker-backed user units (details below).
 - `scripts/install-core-cli.sh` installs base apt tooling and fish (install-only).
 - `scripts/install-gh-cli.sh` configures the official GitHub CLI apt repo and installs `gh`.
@@ -133,7 +134,8 @@ python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
 Alternatively, use `./bootstrap.sh --with-dotfiles --with-hindsight` with your
 private `--dotfiles-values` path. Hindsight is opt-in; when requested, bootstrap
 installs Docker even with `--no-gpu` or the minimal profile. Node/npm and running
-9router/EasyLlama remain prerequisites. A newly granted Docker group membership
+9router/EasyLlama remain prerequisites. Add `--with-user-tools` to restore Node/npm
+and your other user tools before Hindsight. A newly granted Docker group membership
 requires a fresh login before the Hindsight installer can proceed.
 
 The installer verifies SHA256-pinned official CLI 0.9.2 binaries for Linux amd64
@@ -155,6 +157,53 @@ The CLI checksum pins come from the official
 [Hindsight v0.9.2 release](https://github.com/vectorize-io/hindsight/releases/tag/v0.9.2).
 Changing the CLI version requires reviewing new checksums; container digest changes
 remain explicit template changes rather than automatic upgrades.
+
+### User toolchains and versionless packages
+
+`templates/packages.json` inventories user npm globals across installed Node
+runtimes, mise tool identities, Python user-site and user-owned mise distributions, requested
+packages, uv tools, Cargo crates, Rust components/targets, and Go command package paths. Package versions
+and duplicate runtime installations are omitted; restoration resolves current
+releases. Configured runtime selectors are preserved separately: Node `24`,
+Python `3.12.13`, and the remaining selectors in the mise template. The rustup
+default version/profile is preserved with the destination host target. Inactive
+mise tools install without changing global defaults. uv becomes a global mise
+tool instead of restoring its old standalone binary/installation receipt.
+
+```bash
+python3 scripts/setup-dotfiles.py --values /private/path/values.json --apply
+./scripts/install-user-tools.sh --dry-run
+./scripts/install-user-tools.sh
+./bootstrap.sh --with-dotfiles --with-user-tools --with-hindsight --dry-run
+```
+
+Run as the destination user; no sudo or system Python writes. Python distributions
+restore through `uv pip --target` into the corresponding user site or `uv pip`
+into an explicitly resolved, user-owned mise interpreter; requested
+ruff/sqlfluff/yamllint commands use isolated `uv tool` environments, replacing their
+old exposed command wrappers when present. npm globals stay in the resolved,
+user-owned Node prefix; uv/Cargo/Rustup/Go destinations are restricted to the user
+account rather than inherited system prefixes. Cargo registry
+tools use `cargo install --locked`; release-built Go packages use `go install` with
+`@latest`. The two local/development Go binaries (`gmux`, `gmuxd`) remain explicit
+manual source rebuilds, not guessed remote package installs. Local/direct Python
+sources are inventoried separately and require their original source installs;
+they are never silently replaced by similarly named PyPI packages. Retired Pi packages
+are fully inventoried but skipped unless `--include-retired-pi` is explicitly used.
+Review conflicting legacy Pi CLI packages before opting in.
+
+Shell/profile, Cargo environment and rustup settings are templated. Non-secret
+npm scope/registry and script settings live in the package manifest; `.npmrc`
+tokens are excluded, so authenticate separately for private registries. Go
+telemetry, uv installation receipts, caches and compiled toolchains are excluded.
+The restored mise config intentionally drops blanket `/` trust; the installer
+trusts only the rendered user config, never all project configurations. Existing
+live trust settings are not changed by capture. Review templates before rendering.
+
+To refresh package names intentionally, run `python3 scripts/packages.py snapshot`
+and review the diff. This does not refresh credentials or copy package payloads.
+The mise installer preserves an existing binary; fresh Linux amd64/arm64 installs
+use checksums from the official [mise v2026.5.0 release](https://github.com/jdx/mise/releases/tag/v2026.5.0).
 
 ## Security
 
