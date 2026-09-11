@@ -200,13 +200,16 @@ def capture(args):
     collected = {}
     private_network = {'.config/9router/identity.json', '.config/9router/restore.json', '.config/tailscale/identity.json'}
     existing_values = json.loads(values_path.read_text()) if values_path.exists() else {}
+    for key in ('SECRET_TAILSCALE_API_KEY', 'TAILSCALE_OWNER'):
+        if isinstance(existing_values.get(key), str):
+            scrubber.values[key] = existing_values[key]
     if isinstance(existing_values.get('EASYLLAMA_ROOT'), str):
         scrubber.values['EASYLLAMA_ROOT'] = existing_values['EASYLLAMA_ROOT']
     network_keys = {'SECRET_ROUTER_IDENTITY', 'SECRET_ROUTER_TABLES', 'SECRET_TAILSCALE_IDENTITY'}
     preserve_network = network_keys.issubset(existing_values)
     if preserve_network:
         scrubber.values.update({key: existing_values[key] for key in network_keys})
-        for relative in private_network | {'.config/tailscale/network.json', '.config/tailscale/default.env'}:
+        for relative in private_network | {'.config/tailscale/network.json', '.config/tailscale/default.env', '.config/tailscale/owner.json'}:
             template = Path(__file__).resolve().parents[1] / 'root/home/user' / (relative + '.tmpl')
             collected[relative] = (template.read_text(), False)
     exclusions = Counter()
@@ -224,6 +227,11 @@ def capture(args):
             candidates.extend(parent / name for name in sorted(files))
     for source in sorted(set(candidates)):
         relative = source.relative_to(home)
+        if (str(relative) == '.config/tailscale/endpoints.json'
+                or (str(relative).startswith('.config/systemd/user/')
+                    and relative.name in {'tailscale@.service', 'tailscale@ninerouter.service', 'tailscale@hindsight.service'})):
+            exclusions['retired userspace Tailscale deployment'] += 1
+            continue
         if str(relative) in private_network:
             exclusions['private network bundle (preserved only as template)'] += 1
             continue
@@ -286,10 +294,13 @@ def capture(args):
     used = set()
     for entry in entries:
         used.update(MARKER.findall((output / entry['source']).read_text()))
-    private_values = {name: value for name, value in scrubber.values.items() if name in used}
+    private_only = {'SECRET_TAILSCALE_API_KEY', 'TAILSCALE_OWNER'}
+    private_values = {name: value for name, value in scrubber.values.items() if name in used or name in private_only}
     if values_path.exists():
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
-        private_write(values_path.parent / 'backups' / (stamp + '.json'), values_path.read_text())
+        backup_values = json.loads(values_path.read_text())
+        backup_values.pop('SECRET_TAILSCALE_API_KEY', None)
+        private_write(values_path.parent / 'backups' / (stamp + '.json'), json.dumps(backup_values, indent=2) + '\n')
     private_write(values_path, json.dumps(private_values, indent=2) + '\n')
     (output / 'templates').mkdir(parents=True, exist_ok=True)
     example = {name: None for name in sorted(used) if name not in {'HOME', 'USER', 'UID', 'GID'}}

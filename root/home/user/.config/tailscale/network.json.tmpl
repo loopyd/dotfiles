@@ -1,33 +1,51 @@
 {
-  "version": "1.102.3-t9329c3677-ga522f65e9",
-  "node_id": "ny5Q2pJD5A21CNTRL",
+  "addresses": [
+    "100.108.239.19",
+    "fd7a:115c:a1e0::393b:ef13"
+  ],
   "dns_name": "ninerouter.tailc28ab1.ts.net.",
-  "addresses": ["100.108.239.19", "fd7a:115c:a1e0::393b:ef13"],
-  "serve": {
-    "TCP": {"443": {"HTTPS": true}},
-    "Web": {"ninerouter.tailc28ab1.ts.net:443": {"Handlers": {"/": {"Proxy": "http://127.0.0.1:20128"}}}},
-    "AllowFunnel": {"ninerouter.tailc28ab1.ts.net:443": true}
-  },
+  "node_id": "ny5Q2pJD5A21CNTRL",
   "prefs": {
-    "WantRunning": true,
-    "LoggedOut": false,
-    "RouteAll": false,
+    "AdvertiseRoutes": null,
+    "AdvertiseServices": null,
+    "AdvertiseTags": null,
+    "AutoUpdate": {
+      "Apply": true,
+      "Check": true
+    },
     "CorpDNS": true,
-    "ShieldsUp": false,
-    "RunSSH": true,
+    "ExitNodeAllowLANAccess": false,
     "ExitNodeID": "",
     "ExitNodeIP": "",
-    "ExitNodeAllowLANAccess": false,
-    "AdvertiseRoutes": null,
-    "AdvertiseTags": null,
-    "OperatorUser": "@@DOTFILES:USER@@",
     "Hostname": "ninerouter",
-    "NetfilterMode": 2,
+    "LoggedOut": false,
     "NetfilterKind": "",
+    "NetfilterMode": 2,
     "NoSNAT": false,
     "NoStatefulFiltering": true,
-    "AdvertiseServices": null,
-    "AutoUpdate": {"Check": true, "Apply": true},
-    "RunWebClient": false
-  }
+    "OperatorUser": "@@DOTFILES:USER@@",
+    "RouteAll": false,
+    "RunSSH": true,
+    "RunWebClient": false,
+    "ShieldsUp": false,
+    "WantRunning": true
+  },
+  "serve": {
+    "TCP": {
+      "443": {
+        "HTTPS": true
+      }
+    },
+    "Web": {
+      "ninerouter.tailc28ab1.ts.net:443": {
+        "Handlers": {
+          "/": {
+            "Proxy": "http://127.0.0.1:20128"
+          }
+        }
+      }
+    }
+  },
+  "tags": [],
+  "version": "1.102.3-t9329c3677-ga522f65e9"
 }

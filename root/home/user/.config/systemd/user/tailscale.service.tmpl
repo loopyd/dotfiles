@@ -1,10 +1,10 @@
 [Unit]
-Description=Verify and preserve captured Tailscale exposure
+Description=Restore captured private ninerouter Tailscale HTTPS exposure
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 ExecStartPre=/usr/bin/systemctl is-active --quiet tailscaled.service
+ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py preflight
 ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py apply
 
 [Install]

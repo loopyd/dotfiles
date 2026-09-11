@@ -92,6 +92,8 @@ Review the new snapshot before replacing repository templates. Values must stay
 outside the snapshot and all Git working trees. Existing values are backed up
 privately in a sibling `backups/` directory before refresh. `scripts/guard.py` scans complete
 files and reports only finding locations/categories, never secret contents.
+Snapshot backups exclude `SECRET_TAILSCALE_API_KEY`; refresh preserves it only in
+the private `values.json`.
 
 Not captured: authentication/session stores, histories, Hindsight's corpus and
 database, caches, installed executables/packages, firmware, sample libraries and
@@ -322,17 +324,55 @@ they are not silently rebuilt or pulled from an assumed public registry.
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions
 as other components; bootstrap selects them with `--with-network` or
-`--only tailscale,router`. The Compose definition pins 9router 0.5.69,
-host networking, **2 CPUs** and **4 GiB `/dev/shm`**, reusing `~/.9router` rather
-than copying credentials. Tailscale stays native; its existing SSH, node identity
-and public Funnel endpoint remain unchanged.
+`--only tailscale,router`. The Compose definition keeps 9router 0.5.69
+pinned by digest, **2 CPUs**, **4 GiB `/dev/shm`** and the existing `~/.9router`
+data. Its verified backend is loopback-only `127.0.0.1:20128`; host Tailscale
+socket/binary mounts are removed and internal publication is set to `false`.
 
-The live gateway runs under the enabled user `9router.service`; its old GUI
-autostart is disabled and `9router-local` starts that unit instead. Native npm
-9router is no longer a restoration prerequisite. Identity/configuration bundles
-live only in the private values store; Git contains placeholders. See
-[network service operations](.github/context/PROJECT/network-services.md) for
-deployment order, recovery, secret-restoration boundaries and checks.
+**Phase 1 complete — Verified 2026-09-10.** After Code/Security GO,
+migration and gateway/Hindsight restarts succeeded. Native `ninerouter` serves
+private HTTPS; Funnel removal is confirmed from native configuration.
+Dashboard and API share HTTPS 443; use
+`https://ninerouter.tailc28ab1.ts.net/v1` as the API base. Port 20128 is the local
+Docker proxy backend, not a raw remote API endpoint.
+
+The proposed next stage uses native kernel Tailscale Services: native host
+`koija` / `tag:ssh` and a separate `ninerouter:443` Service VIP. Services
+require host tagging, which removes personal ownership and Taildrop eligibility.
+Fresh preferences show **four DriveShares**; an approved tagged-host migration
+must preserve owner wildcard read/write access through the Taildrive capability,
+host `drive:share` and client `drive:access`. Renaming changes Taildrive mount
+and bookmark paths; see the [owner/file-sharing requirements](.github/context/PROJECT/network-services.md#owner-identity-and-file-sharing).
+Phase 1 preserved the in-memory DriveShares fingerprint and count of four;
+capture does not export share definitions. The original owner stays pinned privately.
+Rename, tagging and Service activation await the user's personal-identity
+choice; native identity, SSH settings and preferences are preserved, with no
+tag, rename or tailnet API writes. Checked owner SSH to
+local user `koija` must remain available; external SSH login is untested.
+
+The root native daemon owns networking and SSH. Starting `9router.service`
+pulls in and re-executes the user coordinator to restore private configuration,
+without another userspace daemon or startup API/model launches. This dependency
+path passed verification. Retired app helpers and unit/endpoints templates are
+removed from the repository; snapshot capture excludes obsolete live app artifacts.
+The owner template and masked/offline home state remain. The invalid IPset
+policy is not retried. See
+[Tailscale setup and validation](.github/context/PROJECT/network-services.md#tailscale-setup-and-cutover).
+
+HTTPS certificates pass; the dashboard keeps its exact origin/login redirect.
+Authenticated `/v1/models` returns 66 models with the required Qwen IDs;
+anonymous API requests return 401. AI units are active, Hindsight's authenticated
+API is ready, and anonymous API/dashboard-data access is rejected. Database and
+EasyLlama health pass. No full login, external SSH, off-tailnet public-access or
+inference smoke tests were performed.
+
+The baseline gateway uses user `9router.service`; its old GUI autostart is
+disabled and `9router-local` starts that unit. Native npm 9router is no longer
+a restoration prerequisite. Router identity/configuration bundles remain private;
+Git contains placeholders. Preserve skills and private keys in place; Tailscale
+capture includes non-secret configuration, never daemon identity/key exports.
+See [network service operations](.github/context/PROJECT/network-services.md)
+for recovery boundaries and the dated verification report.
 
 ## Security
 

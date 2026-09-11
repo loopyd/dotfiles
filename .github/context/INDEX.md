@@ -5,7 +5,9 @@ This index tracks curated research and historical documentation under .github/co
 ## Core Context
 
 - coding-standards: [PROJECT/coding-standards.md](PROJECT/coding-standards.md)
-- network-services: [PROJECT/network-services.md](PROJECT/network-services.md) - EasyLlama/Qwen, 9router and Hindsight lifecycle, native Tailscale exposure, private snapshots and recovery.
+- network-services: [PROJECT/network-services.md](PROJECT/network-services.md) - Local AI lifecycle and private restoration; gateway/Hindsight restarts and health checks pass. Retired app helpers/templates are removed; snapshot excludes obsolete live app artifacts. Owner template, home state and masks stay.
+- tailscale-setup: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover) - Phase 1 complete, Verified 2026-09-10: native `ninerouter` dashboard and `/v1` use private HTTPS 443 via loopback 20128; Funnel off in native config. Native `koija` + Services VIP remains pending the tagged-host/Taildrop choice.
+- tailscale-identity: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing) - Four DriveShares compared exactly in memory, never exported. Future tagging needs host `drive:share`, client `drive:access` and owner wildcard read/write capability; rename changes mount/bookmark paths. Pending choice; external SSH untested.
 - lifecycle: [PROJECT/coding-standards.md#lifecycle-interface](PROJECT/coding-standards.md#lifecycle-interface) - Noun commands, action dispatch, pinned builds and guarded removal; [usage](../../README.md#lifecycle-commands).
 - system-context: [PROJECT/system-context.md](PROJECT/system-context.md)
 - system-context-audio-repro-pass: [PROJECT/system-context.md](PROJECT/system-context.md) - 2026-04-06 audio/system reproducibility inventory and source-to-overlay mapping.

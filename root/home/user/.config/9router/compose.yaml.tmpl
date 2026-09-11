@@ -17,14 +17,12 @@ services:
       NODE_OPTIONS: "--dns-result-order=ipv4first --max-old-space-size=6144"
       NEXT_TELEMETRY_DISABLED: "1"
       PORT: "20128"
-      HOSTNAME: "0.0.0.0"
+      HOSTNAME: "127.0.0.1"
       HOME: /home/node
       DATA_DIR: /app/data
     volumes:
       - "@@DOTFILES:HOME@@/.9router:/app/data"
       - "@@DOTFILES:HOME@@/.9router:/home/node/.9router"
-      - "/run/tailscale:/run/tailscale:ro"
-      - "/usr/bin/tailscale:/usr/local/bin/tailscale:ro"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:20128/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s

@@ -6,15 +6,16 @@ source "${SCRIPT_DIR}/delib.sh"
 START_SERVICES=true
 
 usage() {
-    printf '%s\n' 'Usage: tailscale.sh <install|update|uninstall|check> [--dry-run] [--no-start]' \
-        'Preserves the native daemon, node identity and network exposure; does not containerize Tailscale.'
+    printf '%s\n' 'Usage: tailscale.sh <install|update|uninstall|check> [--dry-run] [--no-start|--nostart]' \
+        'Preserves the captured native host and its private ninerouter HTTPS exposure.'
 }
 
 parse_args() {
     while [[ "$#" -gt 0 ]]; do
         case "$1" in
-            --no-start) START_SERVICES=false ;;
-            *) err "Unknown option: $1"; return 2 ;;
+            --no-start|--nostart) START_SERVICES=false ;;
+            -h|--help) usage; return ;;
+            *) err "Unknown option: $1"; usage; return 2 ;;
         esac
         shift
     done
@@ -43,11 +44,19 @@ sys.path.insert(0, sys.argv[1])
 from network import installed_helpers
 installed_helpers(['tailscale.py', 'network.py'])
 PY
-    python3 "${SCRIPT_DIR}/tailscale.py" check
+    LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/tailscale.py")
     systemctl --user daemon-reload
     systemctl --user enable tailscale.service
+    lifecycle_receipt record
     if [[ "${START_SERVICES}" == true ]]; then
-        systemctl --user start tailscale.service
+        systemctl is-active --quiet tailscaled.service
+        python3 "${HOME}/.local/lib/dotfiles/tailscale.py" preflight
+        if [[ "${LIFECYCLE_ACTION}" == update ]]; then
+            systemctl --user restart tailscale.service
+        else
+            systemctl --user start tailscale.service
+        fi
+        python3 "${HOME}/.local/lib/dotfiles/tailscale.py" check
     fi
 }
 

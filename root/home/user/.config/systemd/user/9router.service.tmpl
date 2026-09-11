@@ -9,6 +9,7 @@ Type=simple
 ExecStartPre=/usr/bin/test -s %h/.9router/db/data.sqlite
 ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
 ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/router.py preflight
 ExecStart=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml up --no-build --pull never --abort-on-container-exit
 ExecStop=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60
 ExecStopPost=-/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60

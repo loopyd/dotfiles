@@ -24,8 +24,43 @@ Concise repository terms used across .github/context.
 
 ## private identity export
 
-- Meaning: Explicit fixed-allowlist capture into private renderer values; only placeholders enter Git.
+- Meaning: Fixed-allowlist router identity/configuration capture into private values; only placeholders enter Git. Tailscale daemon identity/SSH keys stay in place and are never exported or copied.
 - References: [Network identity boundary](PROJECT/network-services.md#identity-restoration-boundary)
+
+## Tailscale Services
+
+- Meaning: Proposed native kernel service hosting with a separate `ninerouter:443` VIP proxying loopback Docker port 20128. Requires a tagged host; native `koija` rename, tagging and Service activation await the user's personal-identity decision and final tests.
+- References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
+
+## Private HTTPS conversion
+
+- Meaning: Completed Phase 1 on personal native `ninerouter`: dashboard and `/v1` share private HTTPS 443 through loopback 20128, with Funnel off in native configuration. Verified 2026-09-10; no off-tailnet probe or inference test claimed.
+- References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
+
+## Native hostname and SSH host
+
+- Meaning: Current native node is personal `ninerouter`; later `koija` / `tag:ssh` is pending the identity decision. Preserve original-owner SSH to local user `koija`, using `action: check` for the tagged-host rule. External SSH login has not been tested.
+- References: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing)
+
+## Original-owner pin
+
+- Meaning: Privately retained, verified owner metadata needed before host tagging replaces user ownership with tag identity. It is neither a credential nor a transferable daemon identity and does not itself grant access.
+- References: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing)
+
+## Taildrop and Taildrive
+
+- Meaning: Taildrop is unavailable on tagged hosts. Phase 1 preserved all four DriveShares by in-memory fingerprint comparison without exporting definitions. Future tagging requires host `drive:share`, client `drive:access`, and owner → `tag:ssh` capability `tailscale.com/cap/drive` with wildcard read/write access. Rename changes mount/bookmark paths; tagging remains pending choice and untested.
+- References: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing)
+
+## Native coordinator
+
+- Meaning: User service restoring private configuration through root-owned native `tailscaled.service`. Phase 1 pulls it in and re-executes it when `9router.service` starts, without extra userspace daemons or startup API/model calls. This dependency check is not a full login test.
+- References: [Runtime lifecycle](PROJECT/network-services.md#runtime-lifecycle)
+
+## Retired Tailscale app nodes
+
+- Meaning: Old userspace nodes remain masked/offline with home identity state preserved. Retired app helpers and unit/endpoints templates are removed from the repository and obsolete live app artifacts are excluded from snapshot capture; the owner template and home masks stay. The rejected IPset policy is not retried.
+- References: [Verification and remaining work](PROJECT/network-services.md#verification-and-remaining-work)
 
 ## symlink policy
 

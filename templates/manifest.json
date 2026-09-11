@@ -4943,25 +4943,25 @@
       "source": "root/home/user/.config/9router/compose.yaml.tmpl",
       "target": ".config/9router/compose.yaml",
       "mode": "0600",
-      "sha256": "ff69a80a8beb84890700d6f54581386f32df11e9319bb2358b6804269b2d51b0"
+      "sha256": "42ca35771facf1c7586f9b8605a751bf3743c416b022a868b2903e1891ca5033"
     },
     {
       "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
       "target": ".config/systemd/user/9router.service",
       "mode": "0600",
-      "sha256": "2a73eaad81c71081d718cba96e3ad9a5b53181b2fa4fbb700393af60696a0326"
+      "sha256": "c753de2cffb8fcd3a45200f9553a44f458261185722fd7d08eb187bc34860258"
     },
     {
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
       "target": ".config/systemd/user/tailscale.service",
       "mode": "0600",
-      "sha256": "cf289de067849a714e5d3e843ed0596412838ac36c2b5903ede694653e8e9aab"
+      "sha256": "2e6b7a67af1e1ea5c454baa00699c4b5f7f420d538ef6d59356a95d29b49f86d"
     },
     {
       "source": "root/home/user/.config/tailscale/network.json.tmpl",
       "target": ".config/tailscale/network.json",
       "mode": "0600",
-      "sha256": "9661e83767181c451055afdf64bf0253681a145683c4fcf184cb842a8fc03a9a"
+      "sha256": "6ac4d71bd73cc7a68b1315423482c177eecf4b958fbaf52fac48b8f09b5dc551"
     },
     {
       "source": "root/home/user/.config/tailscale/default.env.tmpl",
@@ -5058,6 +5058,12 @@
       "target": ".config/systemd/user/easyllama.service",
       "mode": "0600",
       "sha256": "a9ccbe81fbf73eff045516c92c6441d11dee3c38436051f10f8693604640056b"
+    },
+    {
+      "source": "root/home/user/.config/tailscale/owner.json.tmpl",
+      "target": ".config/tailscale/owner.json",
+      "mode": "0600",
+      "sha256": "65a1a5836fb7070d4f45b1ae15c365f42daf37b02313914d88440d4a72314431"
     }
   ],
   "symlinks": [

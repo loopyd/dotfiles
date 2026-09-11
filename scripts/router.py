@@ -54,12 +54,46 @@ def check(port):
     if not container['State']['Running'] or container['Image'] != image.stdout.strip():
         raise ValueError('Managed router container or image differs')
     limits = container['HostConfig']
+    environment = dict(entry.split('=', 1) for entry in container['Config']['Env'] if '=' in entry)
+    if environment.get('HOSTNAME') != '127.0.0.1' or environment.get('PORT') != str(port):
+        raise ValueError('Router must bind its local backend only')
+    if any('tailscale' in mount['Source'].lower() or 'tailscale' in mount['Destination'].lower() for mount in container['Mounts']):
+        raise ValueError('Router must not control the host Tailscale daemon')
+    private_settings()
     if limits['NanoCpus'] != 2000000000 or limits['ShmSize'] != 4294967296 or limits['NetworkMode'] != 'host':
         raise ValueError('Managed router limits or networking differ')
     if not any(mount['Source'] == str(data()) and mount['Destination'] == '/app/data' for mount in container['Mounts']):
         raise ValueError('Managed router persistent storage differs')
     health(port)
-    print('Managed router unit, image, storage, host network and resource limits verified')
+    print('Managed router unit, image, storage, private backend and resource limits verified')
+
+
+def private_settings():
+    database = data() / 'db/data.sqlite'
+    publishing_records = 0
+    with sqlite3.connect('file:' + str(database) + '?mode=ro', uri=True) as connection:
+        for stored, in connection.execute('SELECT data FROM settings'):
+            settings = json.loads(stored)
+            if not isinstance(settings, dict):
+                raise ValueError('Unexpected router settings schema')
+            if 'tailscaleEnabled' in settings or 'tailscaleUrl' in settings:
+                publishing_records += 1
+                if settings.get('tailscaleEnabled') is not False or settings.get('tailscaleUrl') != '':
+                    raise ValueError('Disable router-managed Tailscale publishing and clear its URL before startup')
+    if publishing_records != 1:
+        raise ValueError('Exactly one explicit private publishing record is required')
+
+
+def preflight():
+    private_settings()
+    result = subprocess.run(['docker', 'compose', '--file', str(config() / 'compose.yaml'), 'config', '--format', 'json'], capture_output=True, check=True, text=True)
+    service = json.loads(result.stdout)['services']['router']
+    environment = service.get('environment', {})
+    if environment.get('HOSTNAME') != '127.0.0.1' or str(environment.get('PORT')) != '20128':
+        raise ValueError('Router backend must remain loopback-only')
+    if any('tailscale' in str(volume.get('source', '')).lower() or 'tailscale' in str(volume.get('target', '')).lower() for volume in service.get('volumes', [])):
+        raise ValueError('Remove direct Tailscale mounts before startup')
+    print('Loopback backend and externally managed tailnet publishing verified')
 
 
 def copy_database(source, target):
@@ -79,14 +113,8 @@ def prepare():
     identity = config() / 'identity.json'
     if identity.exists() and not (data() / 'db/data.sqlite').exists():
         restore_files(data(), decode_files(json.loads(identity.read_text())))
-    (data() / 'tailscale').mkdir(parents=True, exist_ok=True)
-    link = data() / 'tailscale/tailscaled.sock'
-    if link.is_symlink() and os.readlink(link) != '/run/tailscale/tailscaled.sock':
-        raise ValueError('Unexpected Tailscale socket link')
-    if not link.is_symlink():
-        if link.exists():
-            raise ValueError('Tailscale socket path is occupied')
-        link.symlink_to('/run/tailscale/tailscaled.sock')
+    if (data() / 'db/data.sqlite').exists():
+        private_settings()
     installed_helpers(['router.py', 'network.py'])
 
 
@@ -149,7 +177,7 @@ def restore():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['prepare', 'initialize', 'restore', 'health', 'check', 'ready', 'wait'])
+    parser.add_argument('command', choices=['prepare', 'initialize', 'restore', 'health', 'check', 'ready', 'wait', 'preflight'])
     parser.add_argument('--port', type=int, default=20128)
     args = parser.parse_args()
     if args.command == 'ready':
@@ -170,7 +198,7 @@ def main():
     elif args.command == 'health':
         health(args.port)
     else:
-        {'prepare': prepare, 'initialize': initialize, 'restore': restore}[args.command]()
+        {'prepare': prepare, 'initialize': initialize, 'restore': restore, 'preflight': preflight}[args.command]()
 
 
 if __name__ == '__main__':
