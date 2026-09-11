@@ -561,6 +561,28 @@ this proves early responsiveness only, **not an apples-to-apples full-corpus com
 
 Memory figures are measured snapshots, not peak loads or configured-limit reductions.
 
+### Replay Startup Readiness
+
+Replay’s 14:08:00 PDT `AssertionError` preceded container startup (14:08:01)
+and API readiness (14:08:06), exhausting three starts/hour.
+`Type=simple`/`After=` orders launch, not readiness.
+
+**Code/Security-approved unit-only fix:** `ExecStartPre` uses
+`/usr/bin/timeout --kill-after=5s 180s`, `/bin/sh` and `/usr/bin/curl -q`
+(first option ignores curlrc), polling credential-free database health at
+`http://127.0.0.1:8888/health` for exact HTTP 200: three-second requests,
+two-second sleeps. Strict image/database-OID/bank-ID/1024D/model-identity/ledger
+guards and replay remain unchanged; no helper/source/library changes.
+The private one-time epoch unit is not bootstrapped.
+
+**Verified:** real unit active/exited, `Result=success`, `ExecMainStatus=0`.
+Disposable-unit tests passed: delayed 503→200 **2.294s**, persistent 503
+**4.246s**, redirect 302 **4.249s** (test deadline four seconds; production 180).
+Entire SQLite/source SHA-256 and all five backend container IDs/start timestamps
+are unchanged. All **1,619 batches** remain accepted; accepted-batch skipping
+and byte-identical ledger establish no resubmissions.
+Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
+
 ## Preserved Configuration
 
 - The reviewed Compose pin is 9router **0.5.75**, pinned by image digest, with **2 CPUs**
