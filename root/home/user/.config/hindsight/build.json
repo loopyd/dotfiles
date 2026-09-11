@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "source": "https://github.com/vectorize-io/hindsight",
+  "commit": "48b62ee08170b464f4c42b6f133b7cb798a59b21",
+  "dockerfile": "docker/standalone/Dockerfile",
+  "target": "standalone",
+  "build_args": {
+    "PRELOAD_ML_MODELS": "false",
+    "INCLUDE_LOCAL_MODELS": "true"
+  },
+  "tag": "dotfiles/hindsight:48b62ee08170"
+}

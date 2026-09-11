@@ -36,7 +36,7 @@ services:
         max-file: "3"
 
   app:
-    image: ghcr.io/vectorize-io/hindsight@sha256:84ab276b8f501546deb6ea9c64a57291718b4e16a59dd9e02a02fdd5adfe9028
+    image: "@@DOTFILES:HINDSIGHT_IMAGE@@"
     container_name: hindsight
     hostname: hindsight-local
     user: "@@DOTFILES:UID@@:@@DOTFILES:GID@@"
@@ -56,8 +56,9 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     shm_size: 4g
-    mem_limit: 3g
-    cpus: 2
+    mem_limit: 6g
+    memswap_limit: 8g
+    cpus: 8
     pids_limit: 512
     stop_grace_period: 60s
     logging:
@@ -65,4 +66,3 @@ services:
       options:
         max-size: 10m
         max-file: "3"
-

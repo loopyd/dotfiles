@@ -17,14 +17,14 @@ usage() {
     cat <<'EOF'
 Usage: ./scripts/hindsight.sh <install|update|uninstall|check> [--dry-run] [--no-start]
 
-Install the pinned CLI, stage the official coding-agent runtime, pull the
-rendered digest-pinned containers and enable the database/app user units.
+Install the pinned CLI, stage the official coding-agent runtime, build/reuse
+the pinned unmodified upstream app and enable the database/app user units.
 Run as the logged-in destination user after rendering private dotfiles.
-Docker/Compose, Node >=22.15, npm and Python >=3.11 must already be installed.
+Docker/Compose, Git, Node >=22.15, npm and Python >=3.11 must already be installed.
 9router/EasyLlama must be running before the Hindsight app can become healthy.
 
   --dry-run   Preview only: no downloads, sudo, writes or service changes
-  --no-start  Install and enable user units without starting Hindsight
+  --no-start  Stage only; Docker must already be available; no service changes
   check       Validate rendered config and live authenticated services only
 EOF
 }
@@ -68,21 +68,14 @@ install_clients() {
 
 activate_services() {
     run_maybe_dry install -Dm0644 "${SCRIPT_DIR}/readiness.py" "${HOME}/.local/lib/dotfiles/readiness.py"
-    run_maybe_dry safe_sudo systemctl enable --now docker.service
-    if [[ "${DRY_RUN}" != true ]] && ! docker info >/dev/null 2>&1; then
-        err 'Docker is inaccessible to this user; log in again after Docker group setup. Do not run this installer as root.'
-        return 1
-    fi
-    run_maybe_dry "${COMPOSE[@]}" pull --policy missing database app
-    run_maybe_dry systemctl --user daemon-reload
-    run_maybe_dry systemctl --user enable hindsight-db.service hindsight.service
     if [[ "${START_SERVICES}" == true ]]; then
+        run_maybe_dry "${COMPOSE[@]}" pull --policy missing database
+        run_maybe_dry systemctl --user daemon-reload
+        run_maybe_dry systemctl --user enable hindsight-db.service hindsight.service
+        run_maybe_dry systemctl --user start hindsight-db.service
         if [[ "${LIFECYCLE_ACTION}" == update ]]; then
-            run_maybe_dry systemctl --user stop hindsight.service
-            run_maybe_dry systemctl --user restart hindsight-db.service
             run_maybe_dry systemctl --user restart hindsight.service
         else
-            run_maybe_dry systemctl --user start hindsight-db.service
             run_maybe_dry systemctl --user start hindsight.service
         fi
         run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" health
@@ -107,15 +100,22 @@ main() {
     [[ "$(uname -s)" == Linux ]] || { err 'Linux is required'; return 1; }
     if [[ "${DRY_RUN}" != true ]]; then
         [[ "${EUID}" -ne 0 ]] || { err 'Run as the logged-in destination user, not root'; return 1; }
-        require_commands python3 docker systemctl
-        systemctl --user show-environment >/dev/null
+        require_commands python3 docker git
+        if [[ "${START_SERVICES}" == true ]]; then
+            require_commands systemctl
+            systemctl --user show-environment >/dev/null
+        fi
     fi
-    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" preflight
     if [[ "${DRY_RUN}" != true ]]; then
         require_commands curl sha256sum awk install mktemp node npm
         node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 15)) process.exit(1)'
     fi
     trap cleanup EXIT
+    if [[ "${START_SERVICES}" == true ]]; then
+        run_maybe_dry safe_sudo systemctl enable --now docker.service
+    fi
+    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" build-image
+    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" preflight
     install_clients
     activate_services
     log 'Completed; no bank creation, key rotation, database reset or lingering changes'

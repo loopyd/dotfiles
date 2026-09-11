@@ -8,7 +8,7 @@ IMAGES_DIR=""
 
 usage() {
     printf '%s\n' 'Usage: easyllama.sh <install|update|uninstall|check> [--dry-run] [--no-start] [--images-dir PATH]' \
-        'Uses captured EasyLlama 0.6.0 local images; never rebuilds floating sources or deletes models.'
+        'Uses captured EasyLlama 0.6.0 images and verifies/downloads pinned Qwen 0.6B embedding weights; preserves other models.'
 }
 
 parse_args() {
@@ -30,6 +30,7 @@ main() {
     local -a options=()
     [[ -z "${IMAGES_DIR}" ]] || options+=(--directory "${IMAGES_DIR}")
     python3 "${SCRIPT_DIR}/easyllama.py" images "${options[@]}"
+    python3 "${SCRIPT_DIR}/easyllama.py" model
     python3 "${SCRIPT_DIR}/easyllama.py" prepare
     systemctl --user daemon-reload
     systemctl --user enable easyllama.service

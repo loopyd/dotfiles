@@ -9,9 +9,13 @@ routing:
       groups:
         gpu:
           swap: true
-          exclusive: true
+          exclusive: false
           members:
           - qwen3-chat
+        cpu:
+          swap: false
+          exclusive: false
+          members:
           - qwen3-embeddings
 models:
   qwen3-chat:
@@ -26,7 +30,7 @@ models:
     useModelName: qwen3-chat
   qwen3-embeddings:
     concurrencyLimit: 0
-    name: Qwen3 Embeddings 8B
+    name: Qwen3 Embeddings 0.6B FP16
     description: Dense embedding model for vector search, RAG, similarity
     cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/run
     cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/sleep

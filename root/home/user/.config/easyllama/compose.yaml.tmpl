@@ -333,9 +333,10 @@ services:
     - /bin/sh
     - -lc
     - exec /opt/venv/bin/easyllama server qwen --bin /app/bin/llama-server-qwen --host
-      127.0.0.1 --port 9001 -hf Qwen/Qwen3-Embedding-8B-GGUF:Q5_K_M --ctx-size 163840
-      --batch-size 1024 --ubatch-size 1024 --parallel 4 --flash-attn on --cache-type-k
-      f16 --cache-type-v f16 --no-mmap --no-warmup --embedding
+      127.0.0.1 --port 9001 --model /root/.cache/huggingface/hub/models--Qwen--Qwen3-Embedding-0.6B-GGUF/snapshots/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-f16.gguf --n-gpu-layers 0
+      --device none --threads 8 --threads-batch 8 --ctx-size 131072
+      --batch-size 512 --ubatch-size 512 --parallel 4 --flash-attn on --cache-type-k
+      f16 --cache-type-v f16 --no-mmap --no-warmup --embedding --pooling last
     environment:
       EASYLLAMA_RUNTIME_MODE: container
       EASYLLAMA_MODE: qwen
@@ -400,7 +401,7 @@ services:
       easyllama.type: llamacpp
       maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
       org.opencontainers.image.version: '24.04'
-    cpus: 24.0
+    cpus: 8.0
     mem_limit: 67108864000
     memswap_limit: 101468602368
     shm_size: 67108864

@@ -4439,7 +4439,7 @@
       "source": "root/home/user/.config/hindsight/compose.yaml.tmpl",
       "target": ".config/hindsight/compose.yaml",
       "mode": "0600",
-      "sha256": "ccc324711ca5706a2a26f2b61e5b10cca236a0a443440613abc5c183cff91273"
+      "sha256": "b7ebd9d29993c4b9602b6cba2f86954f0e592982a72bc2be070e6cec2494ffeb"
     },
     {
       "source": "root/home/user/.config/hindsight/credentials.json.tmpl",
@@ -4463,7 +4463,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "00c5caff43387eb40d0952bb3a8b05cf029906effa9a9c7e72215056b40203c0"
+      "sha256": "566d7124ca080a3a22d68656f8c1ca6ecb714eb764c9aedfa9c3306e117b59e6"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -5003,13 +5003,13 @@
       "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
       "target": ".config/easyllama/proxy.yaml",
       "mode": "0600",
-      "sha256": "edacb1ec9e9748355aa8877577183cc487bc9d251b174c43362216502c869281"
+      "sha256": "c3e2b8ffdc2dd6065b65175cf0d9c50360813024019c8383a4bae3530e152b7a"
     },
     {
       "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
       "target": ".config/easyllama/compose.yaml",
       "mode": "0600",
-      "sha256": "18aca747a26f6c3c0e094b0035bd3b7d739631694700be6f5026356bfd42ff79"
+      "sha256": "ef5fedd8cb1a773f6b2e60f42b612c2c6569c7438217ff26b3a08c3d2c67fd5c"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
@@ -5027,7 +5027,7 @@
       "source": "root/home/user/.config/easyllama/config/config.qwen.yml.tmpl",
       "target": ".config/easyllama/config/config.qwen.yml",
       "mode": "0600",
-      "sha256": "da5d71dcd418b72f591de39f8c552433ab4fc2fce44cb100b89a214ec8ddba71"
+      "sha256": "c54978b2726a06289e6b8ce3081f869bb56137637eaa26e96d49bd71d36775d0"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.spiritbuun.yml.tmpl",
@@ -5172,6 +5172,18 @@
       "target": ".agents/skills/tailscale/references/tsnet.md",
       "mode": "0600",
       "sha256": "1aeda7f436940c44225f1cde9aa3aeb87f952a664c4bdea351cf5cd4f4a25ce8"
+    },
+    {
+      "source": "root/home/user/.config/hindsight/build.json",
+      "target": ".config/hindsight/build.json",
+      "mode": "0600",
+      "sha256": "17764218355788a354e0badc7533cfba6437833ca890c644ba70d6ae591bc724"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/model.json",
+      "target": ".config/easyllama/model.json",
+      "mode": "0600",
+      "sha256": "92e8a316e1a3b07b28f2d36bba17d30e930c83870e660097966803baeb77d054"
     }
   ],
   "symlinks": [

@@ -61,6 +61,14 @@ The current machine's values remain in `~/.config/dotfiles/values.json`; never
 commit or paste that file. On another machine, fill a private copy of
 `templates/values.example.json`. Python 3.11 or newer is required.
 
+For Hindsight restoration, transfer private values to the destination user's
+`~/.config/dotfiles/values.json`, including `HINDSIGHT_IMAGE` with the known current
+immutable `sha256:` image ID. Render these values first, even if that image is not
+yet present locally. The build helper populates/updates this value and re-renders
+Hindsight Compose after building or verifying the image. The image ID is not a
+secret; `templates/values.example.json` provides `HINDSIGHT_IMAGE: null`.
+Replace that null with the transferred ID before rendering.
+
 ```bash
 python3 scripts/dotfiles.py check
 python3 scripts/dotfiles.py install --values /private/path/values.json
@@ -142,6 +150,39 @@ ingestion and the `shared` bank remain enabled. The explicit tool may need a new
 Codex session or MCP reconnect to load changed timeouts. This configuration change
 needs no service restart, source edit, reinstall, hook disabling or Herdr change.
 
+### Hindsight CPU embedding trial
+
+**Earlier 8B trial, 2026-09-11: all candidates rolled back; loaded search unresolved.**
+At that checkpoint, the original eight-CPU/four-slot/context-163840 profile was
+restored in live configuration, templates and manifest; ingestion resumed.
+CPU16 reduced isolated latency by 20–22%, but both it and the baseline failed
+the batch-versus-single vector gate. Matched batch-versus-batch validation is
+required; CPU16 causation is unproven. The memory-saving one-slot trial timed
+out on all 12 later loaded searches despite healthy API/DB checks. GPU12 was
+rejected for vector drift (minimum cosine 0.824). That trial retained no optimization;
+models, chat, authentication, source and installed packages were unchanged. See the
+[measurements, settings and recovery](.github/context/PROJECT/network-services.md#hindsight-cpu-embedding-trial).
+
+### Hindsight 0.6B migration
+
+**2026-09-11, 17:18:21 UTC: 1,619/1,619 batches accepted; processing ONGOING.**
+All 19,381 records are queued, not fully processed; SQL shows three documents and
+161 memories, zero failed operations. The replay unit exited successfully.
+Unmodified Hindsight commit `48b62ee08170b464f4c42b6f133b7cb798a59b21` adds
+remote embedding concurrency absent from published 0.9.2; its package still reports
+0.9.2. Parallel batch concurrency is 2, not a universal per-request hard cap.
+Official Qwen3 Embedding 0.6B FP16 runs on CPU: width 1024, native context 32768,
+eight threads/four slots/context131072, batch/microbatch512, LAST pooling.
+Qwen chat, FlashRank and authentication are unchanged. The old 8B database remains
+intact for rollback; canonical `hindsight` now uses 1024-dimensional schemas.
+All ten pinned knowledge pages are now visible; metadata repair verified at
+17:32:48 UTC. Backups, image archive and receipts remain;
+dump listing passed, but a full restore is **UNTESTED**.
+Isolated CPU probes improved ~4.4–4.7×; measured memory is 16.62 GiB vs ~29–31 GiB
+with unchanged limits. Early 12/12 searches are not a full-corpus comparison, and
+cached timings do not prove production throughput. Lifecycle/render/guard checks pass.
+See [pins, recovery, dated processing counts and evidence](.github/context/PROJECT/network-services.md#hindsight-06b-migration).
+
 ### Hindsight private HTTPS
 
 The dedicated dashboard endpoint is `https://hindsight.tailc28ab1.ts.net`,
@@ -220,11 +261,11 @@ utilities (`delib`, `lifecycle`, `guard`, `snapshot`, `packages`, `terminal`,
 ### Hindsight installation and activation
 
 Run as the destination user in a logged-in Linux session, never with `sudo`.
-First install Docker/Compose, Node >=22.15 with npm, and Python >=3.11. Restore
-the private templates, then install and activate Hindsight:
+First install Docker/Compose, Git, Node >=22.15 with npm, and Python >=3.11. Transfer
+private values as described above, then render before installing Hindsight:
 
 ```bash
-python3 scripts/dotfiles.py install --values /private/path/values.json
+python3 scripts/dotfiles.py install --values ~/.config/dotfiles/values.json
 ./scripts/hindsight.sh install --dry-run
 ./scripts/hindsight.sh install
 ./scripts/hindsight.sh check
@@ -232,7 +273,7 @@ python3 scripts/dotfiles.py install --values /private/path/values.json
 
 Alternatively, use `./bootstrap.sh install --with-dotfiles --with-hindsight` with your
 private `--dotfiles-values` path. Hindsight is opt-in; when requested, bootstrap
-installs Docker even with `--no-gpu` or the minimal profile. Node/npm and running
+installs Docker even with `--no-gpu` or the minimal profile.
 The captured local stack now selects EasyLlama, 9router and their Docker/NVIDIA
 prerequisites in order. Add `--with-user-tools` to restore Node/npm
 and your other user tools before Hindsight. A newly granted Docker group membership
@@ -244,21 +285,39 @@ a newer compatible installed runtime is retained, preserving automatic updates.
 The captured Codex hooks, MCP configuration and skills are restored by the
 renderer, not rewritten by the runtime-only updater. No Codex session is launched.
 
-It enables/starts the system Docker daemon, pulls only missing digest-pinned
-images from the rendered Compose configuration, reloads the user service manager,
-enables both units for login, then starts `hindsight-db.service` before
-`hindsight.service`. Bounded startup probes check Docker, database readiness and
-9router discovery; see [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery). `--no-start` enables the user units without starting them;
-`check` validates configuration and authenticated endpoints without mutation.
-Install leaves active units running. Update stops the app, restarts the database,
-then restarts the app to apply configured container pins; `--no-start` suppresses
-this activation. No database/volume is deleted, credentials
-are not rotated, and lingering is not enabled. Back up database contents separately.
+The `root/home/user/.config/hindsight/build.json` recipe builds/reuses unmodified
+pinned source. After rendering transferred private values, install builds if the
+local image is absent, then updates private `HINDSIGHT_IMAGE` and Compose to the
+resulting immutable ID. Source pinning is not bit-reproducible because upstream
+base images/OS dependencies float. Existing-build adoption requires recipe attestation.
+Preserve user data/backups, the exact-image archive and matching build receipt
+`~/.local/state/dotfiles/hindsight-build.json`, plus component lifecycle receipt
+`~/.local/state/dotfiles/lifecycle/hindsight.json`; these are separate from the
+configuration snapshot. With Docker available, transferred private values rendered,
+archive checksum verified and matching receipt restored, recover the image with:
+
+```bash
+python3 scripts/hindsight.py build-image --archive ~/.local/share/hindsight/images/hindsight-48b62ee08170.tar
+```
+
+The helper verifies recipe/receipt/image identity without changing services;
+database/user-data recovery and activation are separate. See
+[archive checksum and backup limits](.github/context/PROJECT/network-services.md#backup-and-recovery).
+
+With activation enabled, it enables/starts Docker, pulls only the missing
+digest-pinned database image, reloads/enables user units and starts the database
+before the app. Install leaves active units running; update restarts only the app,
+without restarting the database. `--no-start` builds/stages with Docker already
+available and makes no service changes, including reload or enable. `check` and
+`--dry-run` are read-only. Routine lifecycle actions never reset a bank, delete
+database/volume data, rotate credentials or enable lingering. The separately
+completed database cutover above is not a routine installer action. Startup probes remain
+bounded; see [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery).
 
 The CLI checksum pins come from the official
 [Hindsight v0.9.2 release](https://github.com/vectorize-io/hindsight/releases/tag/v0.9.2).
-Changing the CLI version requires reviewing new checksums; container digest changes
-remain explicit template changes rather than automatic upgrades.
+Changing the CLI version requires reviewing new checksums; app source/recipe pins
+and database image digests remain explicit reviewed changes.
 
 ### User toolchains and versionless packages
 

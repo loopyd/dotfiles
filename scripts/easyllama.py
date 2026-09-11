@@ -8,13 +8,17 @@ import os
 from pathlib import Path
 import re
 import signal
+import stat
 import subprocess
 import sys
 import threading
 import tempfile
 import time
 import uuid
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
+
+sys.dont_write_bytecode = True
 
 from network import installed_helpers
 
@@ -23,11 +27,16 @@ def execute(arguments):
     return subprocess.run(arguments, check=True, capture_output=True, text=True)
 
 
-def configuration():
+def deployment_configuration():
     directory = Path.home() / '.config/easyllama'
     deployment = json.loads((directory / 'deployment.json').read_text())
     if deployment['version'] != '0.6.0' or deployment['revision'] != '94166edbd5e74a9e89741d889483b12bdb82907c':
         raise ValueError('Unexpected EasyLlama release pin')
+    return directory, deployment
+
+
+def configuration():
+    directory, deployment = deployment_configuration()
     command = ['docker', 'compose', '--project-name', 'easyllama', '--file', str(directory / 'compose.yaml')]
     services = json.loads(execute([*command, 'config', '--format', 'json']).stdout)['services']
     if set(services) != {'proxy', 'chat', 'embeddings'} or set(deployment['images']) != set(services):
@@ -38,6 +47,94 @@ def configuration():
         service['environment'] = {key: value.replace('$$', '$') for key, value in service['environment'].items()}
         service['command'] = [value.replace('$$', '$') for value in service['command']]
     return directory, deployment, services, command
+
+
+class ModelRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        if urlsplit(new_url).scheme != 'https':
+            raise ValueError('Model download redirects must preserve HTTPS')
+        return super().redirect_request(request, response, code, message, headers, new_url)
+
+
+def model_configuration():
+    directory, deployment = deployment_configuration()
+    pin = json.loads((directory / 'model.json').read_text())
+    if pin.get('format') != 1 or pin.get('repository') != 'Qwen/Qwen3-Embedding-0.6B-GGUF' or pin.get('file') != 'Qwen3-Embedding-0.6B-f16.gguf':
+        raise ValueError('Unexpected embedding model recipe')
+    if not re.fullmatch(r'[0-9a-f]{40}', pin['revision']) or not re.fullmatch(r'[0-9a-f]{64}', pin['sha256']) or type(pin['size']) is not int or pin['size'] <= 0:
+        raise ValueError('Embedding model requires a full revision, size and SHA-256 pin')
+    root = Path(deployment['root'])
+    if not root.is_absolute() or root.resolve() != root or not root.is_dir():
+        raise ValueError('Create the configured EasyLlama data root first')
+    target = root / 'cache/models' / ('models--' + pin['repository'].replace('/', '--')) / 'snapshots' / pin['revision'] / pin['file']
+    if target.resolve() != target or target.is_symlink():
+        raise ValueError('Embedding model cache must not traverse symlinks')
+    return pin, target
+
+
+def verify_model(target, pin):
+    if not target.is_file():
+        raise ValueError('Pinned embedding model is missing or is not a regular file')
+    descriptor = os.open(target, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, 'rb') as source:
+        status = os.fstat(source.fileno())
+        if not stat.S_ISREG(status.st_mode) or status.st_size != pin['size'] or hashlib.file_digest(source, 'sha256').hexdigest() != pin['sha256']:
+            raise ValueError('Cached embedding model differs from its size or SHA-256 pin; refusing replacement')
+
+
+def model(check_only=False, dry_run=False):
+    if dry_run:
+        print('DRY-RUN: verify the pinned Qwen 0.6B embedding weights or download the exact revision when absent; no writes or downloads')
+        return
+    pin, target = model_configuration()
+    if check_only or target.exists():
+        verify_model(target, pin)
+        print('Pinned Qwen 0.6B embedding weights verified')
+        return
+    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    descriptor = os.open(target.parent / '.dotfiles-model.lock', os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        if target.exists() or target.is_symlink():
+            verify_model(target, pin)
+            return
+        download_model(target, pin)
+    finally:
+        os.close(descriptor)
+    print('Pinned Qwen 0.6B embedding weights downloaded and verified; other model weights preserved')
+
+
+def download_model(target, pin):
+    url = 'https://huggingface.co/' + pin['repository'] + '/resolve/' + pin['revision'] + '/' + pin['file']
+    request = Request(url, headers={'Accept-Encoding': 'identity', 'User-Agent': 'dotfiles-easyllama'})
+    descriptor, temporary = tempfile.mkstemp(prefix='.' + pin['file'] + '.', suffix='.part', dir=target.parent)
+    try:
+        with os.fdopen(descriptor, 'wb') as output:
+            with build_opener(ModelRedirectHandler()).open(request, timeout=60) as response:
+                length = response.headers.get('Content-Length')
+                if response.status != 200 or length is not None and int(length) != pin['size']:
+                    raise ValueError('Unexpected model download response or size')
+                digest = hashlib.sha256()
+                size = 0
+                while chunk := response.read(8 * 1024 * 1024):
+                    size += len(chunk)
+                    if size > pin['size']:
+                        raise ValueError('Model download exceeds its pinned size')
+                    digest.update(chunk)
+                    output.write(chunk)
+                if size != pin['size'] or digest.hexdigest() != pin['sha256']:
+                    raise ValueError('Downloaded model differs from its size or SHA-256 pin')
+            output.flush()
+            os.fsync(output.fileno())
+        if target.exists() or target.is_symlink():
+            verify_model(target, pin)
+            return
+        if target.parent.resolve() != target.parent:
+            raise ValueError('Model cache directory changed during download')
+        os.replace(temporary, target)
+        sync_directory(target.parent)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def images(directory=None):
@@ -149,6 +246,7 @@ def health():
 
 
 def check():
+    model(check_only=True)
     _directory, _deployment, services, _command = configuration()
     images()
     observed = containers(services)
@@ -390,10 +488,18 @@ def run():
 
 def main():
     parser = argparse.ArgumentParser(description='Pinned EasyLlama Docker lifecycle; never builds floating source or removes model data')
-    parser.add_argument('command', choices=['prepare', 'images', 'archive', 'run', 'stop', 'check', 'health', 'wait'])
+    parser.add_argument('command', choices=['prepare', 'images', 'archive', 'run', 'stop', 'check', 'health', 'wait', 'model'])
     parser.add_argument('--directory', type=Path)
+    parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--check', action='store_true', help='Verify cached model weights without downloading or writing')
     args = parser.parse_args()
-    if args.command == 'archive':
+    if (args.dry_run or args.check) and args.command != 'model':
+        parser.error('--dry-run and --check require model')
+    if args.command == 'model':
+        if args.directory is not None:
+            parser.error('model uses the configured EasyLlama root')
+        model(check_only=args.check, dry_run=args.dry_run)
+    elif args.command == 'archive':
         if args.directory is None:
             parser.error('archive requires --directory outside Git')
         archive(args.directory.resolve())

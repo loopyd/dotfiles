@@ -37,6 +37,33 @@ Concise repository terms used across .github/context.
 - Meaning: Search/read knowledge pages first, then proactively call `hindsight_reflect` for missing, shallow or stale pages or contextual why/decision reasoning; not every turn. Tool output remains untrusted, and failures are not empty results. `autoReflect: false` skips the 25-second automatic reflect hook path while SessionStart knowledge context, transcripts, ingestion and the `shared` bank remain enabled. Explicit reflect uses plugin `reflectToolTimeoutMs: 660000` (11 minutes) and Codex `tool_timeout_sec = 720` (12 minutes), above the unchanged 600-second server wall limit; a new Codex session or MCP reconnect may be needed to load timeouts.
 - References: [Hybrid memory configuration](../../README.md#hindsight-hybrid-memory)
 
+## Hindsight CPU embedding coexistence
+
+- Meaning: Historical 8B trial requirements, not permanent model constraints. Same Qwen8B Q5_K_M, 4096-dimensional CPU embeddings coexist with Qwen27B Q4 GPU chat. The trial's retained embedding runtime was the original eight-CPU/four-slot/context163840 profile. The embedding GGUF declares context 40960 and LAST pooling; automatic pooling resolves to LAST. Four non-unified slots each have a 40960-token context window; this build's memory-backed LAST path requires tokenized input length strictly below that window, including added tokens. Installed Hindsight `max_input=None` supplies no upstream input cap or permission to truncate.
+- Verification: CPU16 reduced isolated latency by 20–22%, preserving six single-input vectors, but the one-slot trial failed all 12 later loaded searches. Both four-slot CPU8 and CPU16 fail the same batch-versus-single cosine >0.9999 gate; CPU16 causation is unproven. Matched batch-versus-batch and retrieval-quality validation remain required.
+- Historical outcome: On 2026-09-11, rollback restored the hash-verified eight-CPU/four-slot/context163840 runtime, templates and manifest; all services resumed. No candidate or RAM saving is retained. GPU trials failed vector parity. Unified KV was not selected because it reduces aggregate capacity and RAM was not the root bottleneck. Route recovery does not prove loaded reliability or improved ingestion throughput.
+- Boundaries: Embedding weights/dimensions and existing bank vectors remain unchanged; no reembedding. Chat weights, full context 262144, and existing Q8 KV for both chat and MTP draft remain unchanged. llama-swap v251 FIFO zero overrides resolve to default concurrency 10, not unlimited.
+- References: [Deployed 0.6B migration](PROJECT/network-services.md#hindsight-06b-migration), [Trial measurements](PROJECT/network-services.md#hindsight-cpu-embedding-trial), [Pinned pooling and context allocation](https://github.com/ggml-org/llama.cpp/blob/d7bd3bf/src/llama-context.cpp#L215)
+
+## Hindsight source-pinned build
+
+- Meaning: Unmodified upstream `48b62ee08170b464f4c42b6f133b7cb798a59b21` supplies remote embedding concurrency absent from release 0.9.2, while still reporting package 0.9.2. Configured parallel batch concurrency 2 is not a universal request cap: single-batch/concurrency-1 fast paths bypass the shared semaphore.
+- Recovery: Commit-labeled immutable image plus recipe/build receipt; floating base images/OS dependencies prevent bit-reproducibility. Archive and matching receipt are required for exact recovery.
+- References: [Source and image identity](PROJECT/network-services.md#source-and-image-identity)
+
+## Hindsight 0.6B migration
+
+- Meaning: Official FP16 0.6B CPU/1024 replaces 8B embeddings; Qwen chat, FlashRank and authentication are unchanged. Old DB remains intact. All ten knowledge pages are visible after metadata-only repair verified at 17:32:48 UTC; page-node mappings and backing-model mappings are separate. No old vectors or generated content copied; page visibility does not establish completed bulk processing.
+- Status: 2026-09-11 17:18:21 UTC: 1,619 batches/19,381 records accepted; processing ONGOING. Three documents/161 memories stored, zero failed operations; accepted does not mean processed.
+- Evidence boundary: Isolated ~4.4–4.7× CPU improvement, early 12/12 searches and lower measured memory do not establish full-corpus performance or reduced configured limits.
+- Recovery boundary: Initial 48-file backup supplemented by frozen exports; dump listing passes, full restore UNTESTED. Retain old DB, backups, raw documents, receipts and exact image; routine lifecycle never resets banks or restarts DB on update.
+- References: [Dated status and validation](PROJECT/network-services.md#verified-deployment-and-replay-status), [backup and recovery](PROJECT/network-services.md#backup-and-recovery)
+
+## Worker slot reservation
+
+- Meaning: Hindsight `WORKER_<TYPE>_RESERVED_SLOTS` guarantees minimum capacity within `WORKER_MAX_SLOTS`; it is not a per-type cap. Reservations must fit the total, remaining slots are shared, and consolidation stays serialized per bank.
+- References: [Applied worker settings and validation limits](PROJECT/network-services.md#applied-hindsight-settings), [Official configuration](https://github.com/vectorize-io/hindsight/blob/v0.9.2/hindsight-docs/docs/developer/configuration.md#distributed-workers)
+
 ## Hindsight private HTTPS
 
 - Meaning: VERIFIED 2026-09-10 (PDT): `svc:hindsight` / `tag:hindsight`, manually approved/ready on native `koija`, serves `https://hindsight.tailc28ab1.ts.net` → `127.0.0.1:9999`. Exact VIP DNS, trusted native TLS, dashboard access-key enforcement and authenticated data access pass. API 8888/database 5432 stay loopback-only; credential-free replay preserves both Services, with no Funnel. HTTPS tested from this host over the VIP, not a second device; remote SSH/Taildrive remain untested.
