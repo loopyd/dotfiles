@@ -95,6 +95,11 @@ files and reports only finding locations/categories, never secret contents.
 Snapshot backups exclude `SECRET_TAILSCALE_API_KEY`; refresh preserves it only in
 the private `values.json`.
 
+The 2026-09-10 refresh preserves authored restoration-only overrides,
+installer-managed shell/tool defaults and restrictive trust settings. It excludes
+live blanket mise trust, Codex hook trust caches and runtime PID/timestamp noise;
+rendering-equivalent credential markers retain their canonical names and values.
+
 Not captured: authentication/session stores, histories, Hindsight's corpus and
 database, caches, installed executables/packages, firmware, sample libraries and
 browser/account state. Reinstall those applications through their normal tools;
@@ -115,8 +120,29 @@ Only placeholders and null-valued examples belong in Git.
 Rendering also creates `~/.config/hindsight/credentials.json` with mode `0600`
 for local key retrieval. Keep it private. After an intentional restore, restart
 only `hindsight.service`; the renderer does not restart it automatically. Existing
-imports remain in the separate persistent database. Services stay loopback-only;
-upstream health, metrics and API-documentation routes remain unauthenticated.
+imports remain in the separate persistent database. The API on port 8888,
+dashboard backend on port 9999 and PostgreSQL stay loopback-only; upstream
+health, metrics and API-documentation routes remain unauthenticated.
+
+### Hindsight private HTTPS
+
+The dedicated dashboard endpoint is `https://hindsight.tailc28ab1.ts.net`,
+using native `svc:hindsight` / `tag:hindsight` to proxy `127.0.0.1:9999`
+alongside `svc:ninerouter`. The dashboard access key remains required; the
+API and database are not published. No Funnel or userspace app node is used.
+One-time API provisioning created the Service and manually approved only the
+stable native `koija` node. The old Hindsight node was first renamed to
+`hindsight-retired` to resolve a name collision, then deleted from the tailnet
+along with `ninerouter-app`; retained local identity/data are separate.
+Startup uses native Serve without API credentials; captured `services` metadata
+includes both Services and their VIPs. ACLs and `autoApprovers` are unchanged.
+See [access, provisioning and replay](.github/context/PROJECT/network-services.md#hindsight-private-https)
+for the preservation requirements and [Tailscale Services mechanics](https://tailscale.com/docs/features/tailscale-services).
+**VERIFIED 2026-09-10 (PDT):** exact VIP DNS, trusted native TLS, same-origin
+login, anonymous rejection and authenticated dashboard data access pass.
+Coordinator replay preserves Serve and both advertisements; Hindsight/9router
+checks pass without AI container restarts. HTTPS was tested from this host over
+the tailnet VIP, not a second device; remote SSH/Taildrive remain untested.
 
 ## Lifecycle commands
 
@@ -354,8 +380,9 @@ Taildrop is now disabled by the approved tagging; Taildrive mounts/bookmarks
 use native hostname `koija`.
 
 Home/repository capture and idempotent unit replay are complete. Tailscale,
-router and Hindsight checks pass; dotfiles validates **844 templates**, **7 unit
-links** and no missing values; the guard finds zero issues in **924 files**.
+router and Hindsight checks pass; final dotfiles validation covers **861 templates**,
+**7 unit links** and no missing values. The earlier Phase 2 guard found zero
+issues in **924 files**.
 **Remote owner SSH, Taildrive end-to-end access and inference smoke tests were
 not run.** See the [owner/file-sharing requirements](.github/context/PROJECT/network-services.md#owner-identity-and-file-sharing).
 
@@ -373,22 +400,28 @@ without global changes. Temporary one-off migration tooling is not a repository
 or startup dependency; replay now validates the captured Service idempotently.
 Retired app helpers and unit/endpoints templates are
 removed from the repository; snapshot capture excludes obsolete live app artifacts.
-The owner template and masked/offline home state remain. The invalid IPset
-policy is not retried. See
+The owner template and local identity/data are preserved. Tailnet deletion of
+both retired devices and removal of the local instance template and two masks
+are complete. See
+[retired app cleanup](.github/context/PROJECT/network-services.md#retired-app-cleanup).
+The invalid IPset policy is not retried. See
 [Tailscale setup and validation](.github/context/PROJECT/network-services.md#tailscale-setup-and-cutover).
 
 Historical Phase 1, 2026-09-10: node-level private HTTPS, gateway/Hindsight
 restarts and dependency/health checks passed before rename/tagging. See the
-dated report for those checks; no full-login or off-tailnet probe is claimed.
+dated report for those checks; no full host reboot test or off-tailnet probe is claimed.
 
 The baseline gateway uses user `9router.service`; its old GUI autostart is
 disabled and `9router-local` starts that unit. Native npm 9router is no longer
 a restoration prerequisite. Router identity/configuration bundles remain private;
 Git contains placeholders. Preserve skills and private keys in place; Tailscale
 capture includes non-secret configuration, never daemon identity/key exports.
-Private `network.json` now captures the exact Service definition/tags, VIP
-addresses and approved stable node ID under `network.service`, alongside
-listeners/backends. Git captures this non-secret operator metadata; credentials
+The public `services` map in captured `network.json` records both Service
+definitions/tags, VIPs, backends and approved stable native node ID.
+Historical `retired_device` metadata is removed from the repository template and
+home configuration, with the manifest hash updated; retirement history remains
+in the documentation. Git captures
+non-secret operator metadata; credentials
 remain private and use placeholders. Restoring metadata does not
 grant external API permission, provision or approve a host. See the
 [restoration boundary](.github/context/PROJECT/network-services.md#identity-restoration-boundary).

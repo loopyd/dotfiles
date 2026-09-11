@@ -8,6 +8,7 @@
   "prefs": {
     "AdvertiseRoutes": null,
     "AdvertiseServices": [
+      "svc:hindsight",
       "svc:ninerouter"
     ],
     "AdvertiseTags": null,
@@ -34,6 +35,22 @@
   },
   "serve": {
     "Services": {
+      "svc:hindsight": {
+        "TCP": {
+          "443": {
+            "HTTPS": true
+          }
+        },
+        "Web": {
+          "hindsight.tailc28ab1.ts.net:443": {
+            "Handlers": {
+              "/": {
+                "Proxy": "http://127.0.0.1:9999"
+              }
+            }
+          }
+        }
+      },
       "svc:ninerouter": {
         "TCP": {
           "443": {
@@ -52,19 +69,21 @@
       }
     }
   },
-  "service": {
-    "addrs": [
-      "100.102.149.102",
-      "fd7a:115c:a1e0::6d2b:9567"
-    ],
-    "approved_node_id": "ny5Q2pJD5A21CNTRL",
-    "name": "svc:ninerouter",
-    "ports": [
-      "tcp:443"
-    ],
-    "tags": [
-      "tag:ninerouter"
-    ]
+  "services": {
+    "svc:hindsight": {
+      "addrs": ["100.89.123.251", "fd7a:115c:a1e0::c72b:7bfc"],
+      "approved_node_id": "ny5Q2pJD5A21CNTRL",
+      "name": "svc:hindsight",
+      "ports": ["tcp:443"],
+      "tags": ["tag:hindsight"]
+    },
+    "svc:ninerouter": {
+      "addrs": ["100.102.149.102", "fd7a:115c:a1e0::6d2b:9567"],
+      "approved_node_id": "ny5Q2pJD5A21CNTRL",
+      "name": "svc:ninerouter",
+      "ports": ["tcp:443"],
+      "tags": ["tag:ninerouter"]
+    }
   },
   "tags": [
     "tag:ssh"

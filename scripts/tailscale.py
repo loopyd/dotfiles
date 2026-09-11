@@ -20,7 +20,16 @@ PRIVATE_NATIVE = {
         'Handlers': {'/': {'Proxy': 'http://127.0.0.1:20128'}}
     }},
 }
-PRIVATE_SERVE = {'Services': {SERVICE: PRIVATE_NATIVE}}
+PRIVATE_ROUTER = {'Services': {SERVICE: PRIVATE_NATIVE}}
+PRIVATE_SERVE = {'Services': {
+    SERVICE: PRIVATE_NATIVE,
+    'svc:hindsight': {
+        'TCP': {'443': {'HTTPS': True}},
+        'Web': {'hindsight.tailc28ab1.ts.net:443': {
+            'Handlers': {'/': {'Proxy': 'http://127.0.0.1:9999'}}
+        }},
+    },
+}}
 
 
 @contextmanager
@@ -78,9 +87,9 @@ def captured():
     expected = json.loads((Path.home() / '.config/tailscale/network.json').read_text())
     private_only(expected)
     expected['serve'] = serve_config(expected['serve'])
-    service_mode = exact(expected['serve'], PRIVATE_SERVE)
+    service_mode = any(exact(expected['serve'], allowed) for allowed in (PRIVATE_ROUTER, PRIVATE_SERVE))
     if not service_mode and not exact(expected['serve'], PRIVATE_NATIVE):
-        raise ValueError('Capture must contain only the fixed private ninerouter HTTPS exposure')
+        raise ValueError('Capture must contain only the approved private HTTPS exposures')
     hostname = 'koija' if service_mode else 'ninerouter'
     tags = expected['tags']
     if tags is None:
@@ -97,20 +106,31 @@ def captured():
             or 'AdvertiseServices' not in prefs):
         raise ValueError('Capture must include the native hostname and Service advertisements')
     if service_mode:
-        if prefs['AdvertiseServices'] != [SERVICE]:
-            raise ValueError('Capture must include only the already provisioned ninerouter Service advertisement')
+        if prefs['AdvertiseServices'] != sorted(expected['serve']['Services']):
+            raise ValueError('Capture must advertise exactly the approved private Services')
     elif prefs['AdvertiseServices'] not in (None, []):
         raise ValueError('Private native mode must not advertise Services')
     return expected
 
 
-def preferences(expected, deadline=None):
+def preferences(expected, deadline=None, allow_missing=False):
     prefs = json.loads(native(['debug', 'prefs'], deadline=deadline).stdout)
-    if any(key not in prefs or not exact(prefs[key], value) for key, value in expected['prefs'].items()):
-        raise ValueError('Tailscale preferences differ from the captured configuration')
+    for key, value in expected['prefs'].items():
+        if key == 'AdvertiseServices' and 'Services' in expected['serve']:
+            actual = prefs.get(key) or []
+            if (not isinstance(actual, list) or any(not isinstance(name, str) for name in actual)
+                    or len(actual) != len(set(actual))):
+                raise ValueError('Invalid native Service advertisements')
+            if allow_missing and set(actual).issubset(value):
+                continue
+            if sorted(actual) == value:
+                continue
+        if key not in prefs or not exact(prefs[key], value):
+            raise ValueError('Tailscale preferences differ from the captured configuration')
+    return prefs
 
 
-def inspect(expected, deadline=None):
+def inspect(expected, deadline=None, allow_missing=False):
     current = json.loads(native(['status', '--json'], deadline=deadline).stdout)
     node = current['Self']
     if (current.get('BackendState') != 'Running' or node['ID'] != expected['node_id']
@@ -120,7 +140,7 @@ def inspect(expected, deadline=None):
         raise ValueError('Native Tailscale identity, DNS or tags differ from the capture')
     if 'https' not in (node.get('CapMap') or {}):
         raise ValueError('HTTPS must already be enabled by the tailnet administrator')
-    preferences(expected, deadline=deadline)
+    preferences(expected, deadline=deadline, allow_missing=allow_missing)
     return serve_config(json.loads(native(['serve', 'status', '--json'], deadline=deadline).stdout))
 
 
@@ -129,7 +149,7 @@ def empty_exposure(actual):
         if key == 'Services':
             if value is None:
                 continue
-            if not isinstance(value, dict) or not set(value).issubset({SERVICE}):
+            if not isinstance(value, dict) or not set(value).issubset(PRIVATE_SERVE['Services']):
                 return False
             for service in value.values():
                 if not isinstance(service, dict):
@@ -145,6 +165,19 @@ def empty_exposure(actual):
     return True
 
 
+def compatible_exposure(actual, expected):
+    if 'Services' not in expected:
+        return exact(actual, expected) or empty_exposure(actual)
+    if set(actual) - {'Services'}:
+        return False
+    services = actual.get('Services') or {}
+    if not isinstance(services, dict) or not set(services).issubset(expected['Services']):
+        return False
+    return all(exact(service, expected['Services'][name])
+               or empty_exposure({'Services': {name: service}})
+               for name, service in services.items())
+
+
 def check():
     expected = captured()
     if not exact(inspect(expected), expected['serve']):
@@ -155,8 +188,8 @@ def check():
 def preflight(expected=None, deadline=None):
     if expected is None:
         expected = captured()
-    actual = inspect(expected, deadline=deadline)
-    if not exact(actual, expected['serve']) and not empty_exposure(actual):
+    actual = inspect(expected, deadline=deadline, allow_missing=True)
+    if not compatible_exposure(actual, expected['serve']):
         raise ValueError('Existing exposure differs; refusing to replace it')
     print('Native Tailscale private HTTPS preflight passed')
 
@@ -199,14 +232,31 @@ def apply():
 
 def apply_locked():
     expected = captured()
-    actual = inspect(expected)
-    if not exact(actual, expected['serve']):
-        if not empty_exposure(actual):
+    actual = inspect(expected, allow_missing=True)
+    advertised = sorted(preferences(expected, allow_missing=True).get('AdvertiseServices') or [])
+    missing = set(expected['serve'].get('Services', {})) - set(advertised)
+    if not exact(actual, expected['serve']) or missing:
+        if not compatible_exposure(actual, expected['serve']):
             raise ValueError('Existing exposure differs; refusing to replace it')
-        if not exact(captured(), expected) or not exact(inspect(expected), actual):
+        if (not exact(captured(), expected) or not exact(inspect(expected, allow_missing=True), actual)
+                or sorted(preferences(expected, allow_missing=True).get('AdvertiseServices') or []) != advertised):
             raise ValueError('Native configuration changed immediately before Serve')
         if 'Services' in expected['serve']:
-            native(['serve', '--service=' + SERVICE, '--bg', '--https=443', 'http://127.0.0.1:20128'])
+            for name, service in expected['serve']['Services'].items():
+                if (not exact(captured(), expected) or not exact(inspect(expected, allow_missing=True), actual)
+                        or sorted(preferences(expected, allow_missing=True).get('AdvertiseServices') or []) != advertised):
+                    raise ValueError('Native configuration changed immediately before Serve')
+                if exact((actual.get('Services') or {}).get(name), service) and name not in missing:
+                    continue
+                endpoint = next(iter(service['Web'].values()))['Handlers']['/']['Proxy']
+                native(['serve', '--service=' + name, '--bg', '--https=443', endpoint])
+                updated = inspect(expected, allow_missing=True)
+                current_advertised = sorted(preferences(expected, allow_missing=True).get('AdvertiseServices') or [])
+                intended = {'Services': {**(actual.get('Services') or {}), name: service}}
+                if not exact(updated, intended) or current_advertised != sorted(set(advertised) | {name}):
+                    raise ValueError('Unexpected native configuration after Serve')
+                actual = updated
+                advertised = current_advertised
         else:
             native(['serve', '--bg', '--https=443', '--yes', 'http://127.0.0.1:20128'])
     check()

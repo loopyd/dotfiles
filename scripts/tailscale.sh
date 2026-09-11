@@ -7,7 +7,7 @@ START_SERVICES=true
 
 usage() {
     printf '%s\n' 'Usage: tailscale.sh <install|update|uninstall|check> [--dry-run] [--no-start|--nostart]' \
-        'Preserves the captured native host and its private ninerouter HTTPS exposure.'
+        'Preserves the captured native host and its approved private HTTPS services.'
 }
 
 parse_args() {

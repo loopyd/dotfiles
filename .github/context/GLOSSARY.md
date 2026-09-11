@@ -32,6 +32,11 @@ Concise repository terms used across .github/context.
 - Meaning: Phase 2 COMPLETE, verified 2026-09-10: native `koija` / `tag:ssh` hosts `svc:ninerouter` / `tag:ninerouter`, private HTTPS 443 to `127.0.0.1:20128`, with no Funnel. Only the stable native node is manually approved; Service VIP DNS and TLS/dashboard/API checks pass. The broad network grant remains; app access is not owner-only.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
+## Hindsight private HTTPS
+
+- Meaning: VERIFIED 2026-09-10 (PDT): `svc:hindsight` / `tag:hindsight`, manually approved/ready on native `koija`, serves `https://hindsight.tailc28ab1.ts.net` → `127.0.0.1:9999`. Exact VIP DNS, trusted native TLS, dashboard access-key enforcement and authenticated data access pass. API 8888/database 5432 stay loopback-only; credential-free replay preserves both Services, with no Funnel. HTTPS tested from this host over the VIP, not a second device; remote SSH/Taildrive remain untested.
+- References: [Access, provisioning and replay](PROJECT/network-services.md#hindsight-private-https), [Tailscale Services](https://tailscale.com/docs/features/tailscale-services)
+
 ## Private HTTPS conversion
 
 - Meaning: Historical Phase 1, verified 2026-09-10: private node-level HTTPS replaced Funnel on personal native `ninerouter`. Phase 2 retains the origin through a Service VIP after the native rename to `koija`; no off-tailnet probe or inference smoke test is claimed.
@@ -54,17 +59,17 @@ Concise repository terms used across .github/context.
 
 ## Native coordinator
 
-- Meaning: User service restoring reviewed private configuration through root-owned native `tailscaled.service`. Gateway start re-executes it; Phase 2 unit replay idempotently validates the captured Service. Startup has no API credentials, provisioning, extra userspace daemons or API/model probes. Admin reprovisioning and approval are separate; no full login test is claimed.
+- Meaning: User service restoring reviewed private configuration through root-owned native `tailscaled.service`. Gateway start re-executes it; Phase 2 unit replay idempotently validates the captured Service. Startup has no API credentials, provisioning, extra userspace daemons or API/model probes. Admin reprovisioning and approval are separate; no full host reboot test is claimed.
 - References: [Runtime lifecycle](PROJECT/network-services.md#runtime-lifecycle)
 
 ## Retired Tailscale app nodes
 
-- Meaning: Old userspace nodes remain masked/offline with home identity state preserved. Retired app helpers and unit/endpoints templates are removed from the repository and obsolete live app artifacts are excluded from snapshot capture; the owner template and home masks stay. The rejected IPset policy is not retried.
-- References: [Verification and remaining work](PROJECT/network-services.md#verification-and-remaining-work)
+- Meaning: `hindsight-retired` and `ninerouter-app` are deleted tailnet devices; their local template and two masks are removed. Local identity/data, owner template, native coordinator/daemon and both Services are preserved. Retired app artifacts stay excluded from capture. The rejected IPset policy is not retried.
+- References: [Retired app cleanup](PROJECT/network-services.md#retired-app-cleanup), [Hindsight provisioning history](PROJECT/network-services.md#hindsight-private-https)
 
 ## Private per-service values
 
-- Meaning: Captured `network.service` metadata includes the exact definition/tags, VIP addresses and approved stable node ID alongside listeners/backends. Git captures this non-secret operator metadata and credential placeholders, not credentials. Metadata is not authorization; external API permission, admin reprovisioning and manual approval remain separate from startup, without broader auto-approval.
+- Meaning: Captured public `services` map holds both Services' definitions/tags, VIPs, listeners/backends and approved stable native node ID; historical `retired_device` metadata is removed. Git captures non-secret metadata and canonical credential placeholders. Snapshot refresh preserves authored restoration overrides and excludes live trust caches/runtime noise. Metadata is not authorization; API permission, admin reprovisioning and manual approval remain separate from startup, without broader auto-approval.
 - References: [Network identity boundary](PROJECT/network-services.md#identity-restoration-boundary)
 
 ## symlink policy

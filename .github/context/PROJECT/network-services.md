@@ -13,13 +13,19 @@ mount/bookmark changes to `koija`. The broad network grant remains unchanged,
 so app access is not owner-only. Home/repository capture and unit replay/checks
 are complete. Remote owner SSH and Taildrive end-to-end access remain untested.
 
-Old userspace app nodes remain masked/offline with their state preserved.
+Both retired userspace app devices are deleted from the tailnet; their local
+template and two masks are removed, with identity/data preserved.
 Repository cleanup is complete: `scripts/tailnet.py`, `scripts/tailserve.py`,
 and retired app unit/endpoints templates are removed. The owner template and
-home state/masks remain; snapshot capture excludes obsolete live app unit and
-endpoints artifacts.
+home identity/data are preserved; snapshot capture excludes obsolete app unit
+and endpoints artifacts. See [retired app cleanup](#retired-app-cleanup).
 The rejected IPset policy is not a recovery recipe and must not be retried.
 The dated historical reports below describe the earlier baseline.
+
+The dedicated [Hindsight HTTPS service](#hindsight-private-https) is verified
+2026-09-10 (PDT): native-host approval, exact VIP DNS, trusted TLS, dashboard
+authentication and idempotent replay pass. HTTPS testing used this host over
+the tailnet VIP, not a second device. Phase 2 below records the earlier 9router cutover.
 
 ## Service Ownership
 
@@ -40,7 +46,7 @@ Bootstrap selects Docker/NVIDIA → EasyLlama → 9router → Hindsight for the 
 local AI stack; PostgreSQL precedes Hindsight. Existing AI unit dependencies and
 database data remain intact. Phase 1 pulls in and re-executes the native user
 coordinator as a dependency of starting `9router.service`. This start path was
-verified; a full login was not tested.
+verified; a full host reboot was not tested.
 
 ## EasyLlama Snapshot
 
@@ -125,10 +131,12 @@ for a fresh host without these locally built images.
   `https://ninerouter.tailc28ab1.ts.net/v1`; `http://127.0.0.1:20128` is the
   local proxy backend, not a separate remote endpoint. Gateway authentication
   and the required Qwen chat/embedding models remain configured.
-- Hindsight's backend remains on loopback 8888 with its existing API/dashboard
-  authentication and separate PostgreSQL data. Its old userspace Tailscale node
-  stays offline; no private Hindsight HTTPS readiness is claimed. Earlier ACME
-  failures concern that retired deployment, not proof about the new gateway.
+- Hindsight's API on loopback 8888, dashboard backend on loopback 9999 and
+  separate PostgreSQL data retain their authentication and loopback bindings.
+  Native `svc:hindsight` targets only the dashboard; see
+  [Hindsight private HTTPS](#hindsight-private-https) for verified access results.
+  Historical ACME failures concern its retired userspace deployment, whose
+  tailnet device is now deleted; they do not establish native Service readiness.
 
 ## Router Maintenance
 
@@ -214,6 +222,79 @@ Clients 1.94+ use Service routes by default. Older Linux clients need
 `accept-routes`; assess each client's existing routes before an explicit change,
 without enabling route acceptance globally.
 
+### Hindsight Private HTTPS
+
+**VERIFIED 2026-09-10 (PDT).** The dedicated dashboard endpoint is
+`https://hindsight.tailc28ab1.ts.net` on HTTPS 443, via `svc:hindsight` /
+`tag:hindsight` to `http://127.0.0.1:9999`. Access requires a permitted tailnet
+client and the existing dashboard access key. Preserve API authentication,
+loopback-only API port 8888 and PostgreSQL; neither gets a Serve frontend.
+The existing broad network grant remains, so private access is not owner-only.
+
+Verified provisioning history, 2026-09-10 (PDT), before retired-device deletion:
+
+- Service creation initially returned **409**: inactive/masked old Hindsight
+  node `n1MGs2nwEA21CNTRL`, last seen hours earlier, held the name. Only its DNS
+  label was renamed to `hindsight-retired.tailc28ab1.ts.net`; identity, tags,
+  addresses and local-state metadata for **54 paths** were preserved.
+- The one-time API operation then created `svc:hindsight`, tagged
+  `tag:hindsight`, on `tcp:443`, with VIPs `100.89.123.251` and
+  `fd7a:115c:a1e0::c72b:7bfc`. Only native `koija`, stable ID
+  `ny5Q2pJD5A21CNTRL`, was manually approved as its host.
+- Native processes are one root process and its unprivileged child in the same
+  unit. Native preferences, `tag:ssh`, SSH, four shares and 9router are unchanged;
+  no ACL or `autoApprovers` change was made.
+
+Reprovisioning remains a separate admin operation; captured metadata grants no
+authorization. Retain host `tag:ssh`, and do not add policy grants or
+`autoApprovers` without evidence they are needed. Service definition, host
+advertisement, host approval and client permission are separate requirements;
+see the official [Tailscale Services mechanics](https://tailscale.com/docs/features/tailscale-services).
+
+After provisioning, the native coordinator must replay the reviewed mapping
+through the existing root-owned daemon without tailnet API credentials:
+
+```sh
+tailscale serve --bg --service=svc:hindsight --https=443 http://127.0.0.1:9999
+```
+
+Native Serve advertises the Service. Keep this mapping independent of
+`svc:ninerouter`; replay must preserve its HTTPS frontend and backend.
+The captured public `services` map includes both Services and their VIPs.
+Historical `retired_device` metadata is removed. Preserve each
+Service's definition, loopback backend and approved stable node ID on replay.
+Restored metadata is not API permission or approval; startup performs neither
+provisioning nor credential retrieval. A replacement host needs explicit
+enrollment and approval, not a copied daemon identity.
+
+Preserve native hostname `koija`, identity keys, checked owner SSH and all four
+DriveShares in place. Retired local app identity/data remain preserved during
+[unit cleanup](#retired-app-cleanup). No Funnel, additional daemon or global Serve reset belongs in
+this replay path.
+
+Verified runtime results, 2026-09-10 (PDT):
+
+- `svc:hindsight` is configured/ready on `koija`, approved manually. DNS returns
+  exactly `100.89.123.251` and `fd7a:115c:a1e0::c72b:7bfc`. Native DNS-01
+  issuance produced a trusted TLS certificate without Funnel; initial
+  handshakes waiting for the certificate resolved.
+- `/` returns **307** to same-origin `/login`, then **200**. Anonymous
+  `/api/list` returns **401**. Access-key login POST returns **200** and sets
+  `hindsight_cp_access` with `Secure` and `HttpOnly`; authenticated `/api/banks`
+  and `/api/list?bank_id=shared` both return **200**.
+- Native coordinator replay is idempotent: Serve is unchanged and only the two
+  expected Services are advertised. Other native preferences, SSH, the four-share
+  fingerprint and ACL remain unchanged; `autoApprovers` remains unchanged.
+- API **8888**, dashboard backend **9999** and PostgreSQL **5432** listen only
+  on `127.0.0.1`. At this pre-cleanup check, old Hindsight/9router app units
+  were masked/inactive.
+- Existing Hindsight health and 9router checks pass; no AI container restart
+  was required.
+
+HTTPS was tested from this host through the tailnet VIP, **not a second device**.
+Remote-client SSH and Taildrive end-to-end tests remain unperformed; no
+off-tailnet public-access probe or full host reboot test is claimed.
+
 ### Owner Identity And File Sharing
 
 The verified original owner remains pinned privately in `TAILSCALE_OWNER` and
@@ -251,13 +332,50 @@ launches no model/API probes. It must verify expected native identity and tags
 before applying reviewed Service configuration and must not restore Funnel.
 Starting `9router.service` pulls it in and re-executes its configuration action.
 Phase 2 replay of `tailscale.service` idempotently validated the captured Service.
-No full login test was performed.
+No full host reboot test was performed.
 
 Receipt-checked removal preserves native SSH, private configuration, daemon
 identity state, credentials, skills and backend data. It does not log out,
-revoke or delete nodes. Retired repository app artifacts are removed; the owner
-template is retained. Old app units remain masked/offline
-without enabled links; home identity state and masks are preserved.
+revoke or delete nodes. The separately authorized retired-device deletion and
+local cleanup are recorded below. Retired repository app artifacts are removed;
+the owner template and home identity/data are preserved.
+
+### Retired App Cleanup
+
+**Tailnet deletion verified, 2026-09-10 (PDT):** `hindsight-retired`
+(`n1MGs2nwEA21CNTRL`) and `ninerouter-app` (`ndDeXAoiZ921CNTRL`) are deleted.
+Both `svc:hindsight` and `svc:ninerouter` still use approved native host `koija`.
+Hindsight trusted HTTPS, login **200** and anonymous API **401**, plus router
+discovery of **66 models** including the required Qwen models, are verified.
+These checks establish neither new inference results nor remote-client coverage.
+
+**Local removal complete, 2026-09-10 (PDT).** The parent checked the exact
+template hash, verified both masks were inactive with no reverse dependencies
+or enablement links, and removed only
+`~/.config/systemd/user/tailscale@.service` and the two retired instance
+`/dev/null` masks. User daemon-reload is complete; no live retired units/masks
+remain: `list-unit-files tailscale@*` returns zero entries, both instances report
+`LoadState=not-found` / `ActiveState=inactive`, and no `tailscale@` files remain.
+Local identity/data, the owner template, native user `tailscale.service`,
+root-owned `tailscaled.service`, SSH, all four DriveShares and both active
+Services are preserved. State/key deletion or export is not authorized.
+Historical `retired_device` metadata is removed from the repository template and
+home `network.json`, and the manifest hash is updated. Both active Service
+definitions are preserved.
+
+Final checks pass: `tailscale.py check`, `router.py check` (**66 models**,
+required Qwen models) and `hindsight.py health` (authenticated API succeeds,
+anonymous access rejected). Hindsight HTTPS login returns **200** and anonymous
+`/api/list` returns **401**. Renderer validation passes **861 templates** and
+**7 unit links**, with no missing values, after syncing **18 skill/lock
+templates** and **5 private documentation placeholders**.
+
+The snapshot preserves authored restoration-only overrides absent from live
+home, installer-managed shell/tool defaults and restrictive trust settings.
+It excludes live mise `trusted_config_paths=['/']`, Codex hook trust caches,
+ibus PIDs and Nemo timestamps. Rendering-equivalent credential markers retain
+their canonical names/values; the newer installed Tailscale skill and lock are
+synced. Local identity/state data remain outside capture.
 
 ### Verification And Remaining Work
 
@@ -280,13 +398,14 @@ without enabled links; home identity state and masks are preserved.
   the approved native node ID. `systemctl --user start tailscale.service`
   idempotently validates the captured Service. `tailscale.sh check`,
   `router.py check` and `hindsight.py health` pass.
-- Dotfiles validation checks **844 templates**, **7 unit links**, and no missing
-  values. The guard scans **924 files** with **zero findings**;
-  `git diff --check` passes. The host-ID compatibility correction is complete;
+- At the earlier Phase 2 check, dotfiles validated **844 templates**, **7 unit
+  links**, and no missing values; the guard scanned **924 files** with **zero
+  findings**, and `git diff --check` passed. Final renderer results are recorded
+  in [retired app cleanup](#retired-app-cleanup). The host-ID compatibility correction is complete;
   there is no ongoing migration blocker.
 
 **Remote owner SSH, Taildrive end-to-end access and inference smoke tests
-were not run.** Model discovery establishes inventory only. No full-login or
+were not run.** Model discovery establishes inventory only. No full host reboot test or
 off-tailnet public-access probe is claimed.
 
 Historical Phase 1, 2026-09-10: private node-level HTTPS replaced Funnel before
@@ -304,26 +423,24 @@ memory and report only their count of four. Keep them in the native state.
 a transferable identity. Keep the verified original-owner pin private and
 runtime verification status separate from intended configuration.
 
-The captured `service` subsection of private `~/.config/tailscale/network.json`
-(`network.service`) contains the exact Service definition, `tag:ninerouter`,
-assigned VIP addresses and approved stable native node ID. This non-secret
-metadata is the operator reference for explicit admin reprovisioning; it is not
-identity keys, API permission or host approval. Keep the record separate from
-runtime verification and actual control-plane authorization.
+The captured public `services` map in `~/.config/tailscale/network.json` records
+both `svc:ninerouter` and `svc:hindsight`, including their definitions/tags,
+VIPs, listeners, loopback backends and approved stable native node ID.
+The historical `retired_device` field is removed from capture and home
+configuration; retirement history is recorded in [retired app cleanup](#retired-app-cleanup).
+The map extends the historical single-Service `network.service` capture. Non-secret metadata
+belongs in Git; credentials use placeholders and stay outside Git and snapshot
+output. Preserve each Service independently when replaying or adding entries.
 
-Future per-service capture extends the existing configuration/template
-workflow with reviewed names, tags, DNS names, VIP addresses, listener ports,
-loopback backends and approved stable node IDs. Record each service independently
-so later additions preserve other services. Non-secret metadata is captured in
-Git; credentials use placeholders and remain outside Git and snapshot output.
-Validate renderer/schema support
-before relying on new values. Restoring metadata does not enroll or provision
-a host or grant approval; those remain explicit admin operations. Startup
-does not acquire API credentials or provision Services.
+Metadata is an operator reference, not identity keys, API permission or host
+approval. Keep it separate from runtime evidence and actual control-plane
+authorization. Restoring it does not enroll/provision a host or grant approval;
+those remain explicit admin operations. Startup neither acquires API credentials
+nor provisions Services.
 
 Preserve existing daemon identity/SSH keys in place. Do not read, export or copy
 `/var/lib/tailscale` through sudo, containers or other wrappers. Retain old app
-state under `~/.local/state/tailscale/` while its units remain offline; exclude
+identity/data under `~/.local/state/tailscale/` through local unit cleanup; exclude
 those keys, state files and temporary enrollment files from template capture.
 A replacement host requires independent enrollment and an intentional hostname
 handoff. Preserve existing skills and private keys without adding key exports.
@@ -351,6 +468,7 @@ unrelated accounts. Never use a combined capture path that reads native keys.
 - [Official 9router container definitions](https://github.com/decolua/9router/blob/master/docker-compose.yml)
 - [Official 9router Dockerfile](https://github.com/decolua/9router/blob/master/Dockerfile)
 
-Installed local/runtime evidence was verified on 2026-09-10.
-These URLs are background references; the dated verification report records
-the completed live migration and capture/replay checks.
+The dated 2026-09-10 reports record the earlier completed migration and
+capture/replay checks. These URLs describe upstream mechanics; the Hindsight
+section separately records verified control-plane, HTTPS/TLS,
+authentication and replay results from 2026-09-10 (PDT), with client-test limits.

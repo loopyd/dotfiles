@@ -5,7 +5,7 @@
       "source": "root/home/user/.agents/.skill-lock.json.tmpl",
       "target": ".agents/.skill-lock.json",
       "mode": "0600",
-      "sha256": "7c94d0cf74e8fecae31c64a52fdba38754ebf4ddc80eb3e2a4fcdc221f295f4f"
+      "sha256": "b73d4e53394032086280513ef0941648c9094bb46da87ac863a6b66afe0938c4"
     },
     {
       "source": "root/home/user/.agents/skills/9router/SKILL.md.tmpl",
@@ -4955,13 +4955,13 @@
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
       "target": ".config/systemd/user/tailscale.service",
       "mode": "0600",
-      "sha256": "548430bc9ae39acc3ae207a2d4b308defabb253f507789ad5c6d76366ef493d0"
+      "sha256": "f23ad1e03849024c076d552153365c2078e890f03e05167af972c588c2cb7fd1"
     },
     {
       "source": "root/home/user/.config/tailscale/network.json.tmpl",
       "target": ".config/tailscale/network.json",
       "mode": "0600",
-      "sha256": "3aafbf6217e076dc50060d2bdccd129e6572d724333d50600f4247d84a56721b"
+      "sha256": "2de72e7667a401d33bd30f96d150ddefdc8ce925fe9074522bd38a1bff299c36"
     },
     {
       "source": "root/home/user/.config/tailscale/default.env.tmpl",
@@ -5064,6 +5064,108 @@
       "target": ".config/tailscale/owner.json",
       "mode": "0600",
       "sha256": "65a1a5836fb7070d4f45b1ae15c365f42daf37b02313914d88440d4a72314431"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/SKILL.md.tmpl",
+      "target": ".agents/skills/tailscale/SKILL.md",
+      "mode": "0600",
+      "sha256": "36c5469651a22f656778647a691c97ac44c9a117f07fe3a1752332c318bd030a"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/access-control.md.tmpl",
+      "target": ".agents/skills/tailscale/references/access-control.md",
+      "mode": "0600",
+      "sha256": "5edad7470bf2c0e7206b00a49ff957adae072d2c400e482f47deb9ce84ffa716"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/aperture.md.tmpl",
+      "target": ".agents/skills/tailscale/references/aperture.md",
+      "mode": "0600",
+      "sha256": "3589b9cd924b180894ad7de1c39069b3cdd142229dd13040a833e50903baa323"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/api.md.tmpl",
+      "target": ".agents/skills/tailscale/references/api.md",
+      "mode": "0600",
+      "sha256": "b95a3faec25bbf9365e04a74420d47c3f74fa6b991e65b24738cbd566145a1ee"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/border0.md.tmpl",
+      "target": ".agents/skills/tailscale/references/border0.md",
+      "mode": "0600",
+      "sha256": "d720e653f75810f29b7a4c5b5f8a2bf4aba9a747074b974193e08f59aceccce9"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/cli.md.tmpl",
+      "target": ".agents/skills/tailscale/references/cli.md",
+      "mode": "0600",
+      "sha256": "4f1edcb0384f367b6f736d6f64f423afdf161c42d26d93773ccba1e5a5dd8a9e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/common-tasks.md.tmpl",
+      "target": ".agents/skills/tailscale/references/common-tasks.md",
+      "mode": "0600",
+      "sha256": "212a405a2ab93dc99641a0c747a80beec1e6ac44d5c842211d20ec058bd680ca"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/connectivity.md.tmpl",
+      "target": ".agents/skills/tailscale/references/connectivity.md",
+      "mode": "0600",
+      "sha256": "f4877f87150eff26d86f84bb3b8cd9bfd347b42130c17c3f25277bce8ee39cec"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/containers.md.tmpl",
+      "target": ".agents/skills/tailscale/references/containers.md",
+      "mode": "0600",
+      "sha256": "2f51629556282c75fac4c8e61e79b282f72bcb3317f5e326a9b7886ebc05f842"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/device-management.md.tmpl",
+      "target": ".agents/skills/tailscale/references/device-management.md",
+      "mode": "0600",
+      "sha256": "99e5bc250b92c84261fe8b09572cedb98825c8f6bfe3a455bf62db208d4eea13"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/enterprise.md.tmpl",
+      "target": ".agents/skills/tailscale/references/enterprise.md",
+      "mode": "0600",
+      "sha256": "eef36452bf05cccf37157985644c276f3bea7e7b75066c69c92d4d934634281b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/error-messages.md.tmpl",
+      "target": ".agents/skills/tailscale/references/error-messages.md",
+      "mode": "0600",
+      "sha256": "8da869019e10da04f1b7faa29422a74792fe47ad915ee266c18f59cb6b5e0c24"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/exit-nodes.md.tmpl",
+      "target": ".agents/skills/tailscale/references/exit-nodes.md",
+      "mode": "0600",
+      "sha256": "6ed5ec2d6bbd4ace82fcf0ff3ab37237f32b4f61e12722d65b5d38e1dc9ca735"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/installation.md.tmpl",
+      "target": ".agents/skills/tailscale/references/installation.md",
+      "mode": "0600",
+      "sha256": "f2a42b5ae499a93d035a62db91fa1cbc92d5feca69b70db14662d25fec5bb987"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/sharing-and-publishing.md.tmpl",
+      "target": ".agents/skills/tailscale/references/sharing-and-publishing.md",
+      "mode": "0600",
+      "sha256": "ae57f15b2d0ad752f9fa1194b423ecc95c489f6348c9ae585434dcbd2c6be89f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/subnet-routers.md.tmpl",
+      "target": ".agents/skills/tailscale/references/subnet-routers.md",
+      "mode": "0600",
+      "sha256": "120ae47bb355de0662181cef02ebf83e9c35975a5c13bf3d089351411ced4815"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/tsnet.md.tmpl",
+      "target": ".agents/skills/tailscale/references/tsnet.md",
+      "mode": "0600",
+      "sha256": "1aeda7f436940c44225f1cde9aa3aeb87f952a664c4bdea351cf5cd4f4a25ce8"
     }
   ],
   "symlinks": [
