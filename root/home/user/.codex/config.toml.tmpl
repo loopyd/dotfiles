@@ -61,6 +61,7 @@ args = ["@playwright/mcp@latest"]
 url = "https://mcp.vercel.com"
 
 [mcp_servers.hindsight]
+tool_timeout_sec = 720
 command = "node"
 args = ["@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/mcp-server.js"]
 env = { HINDSIGHT_MCP_HARNESS = "codex" }

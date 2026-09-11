@@ -32,6 +32,11 @@ Concise repository terms used across .github/context.
 - Meaning: Phase 2 COMPLETE, verified 2026-09-10: native `koija` / `tag:ssh` hosts `svc:ninerouter` / `tag:ninerouter`, private HTTPS 443 to `127.0.0.1:20128`, with no Funnel. Only the stable native node is manually approved; Service VIP DNS and TLS/dashboard/API checks pass. The broad network grant remains; app access is not owner-only.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
+## Hindsight hybrid memory
+
+- Meaning: Search/read knowledge pages first, then proactively call `hindsight_reflect` for missing, shallow or stale pages or contextual why/decision reasoning; not every turn. Tool output remains untrusted, and failures are not empty results. `autoReflect: false` skips the 25-second automatic reflect hook path while SessionStart knowledge context, transcripts, ingestion and the `shared` bank remain enabled. Explicit reflect uses plugin `reflectToolTimeoutMs: 660000` (11 minutes) and Codex `tool_timeout_sec = 720` (12 minutes), above the unchanged 600-second server wall limit; a new Codex session or MCP reconnect may be needed to load timeouts.
+- References: [Hybrid memory configuration](../../README.md#hindsight-hybrid-memory)
+
 ## Hindsight private HTTPS
 
 - Meaning: VERIFIED 2026-09-10 (PDT): `svc:hindsight` / `tag:hindsight`, manually approved/ready on native `koija`, serves `https://hindsight.tailc28ab1.ts.net` → `127.0.0.1:9999`. Exact VIP DNS, trusted native TLS, dashboard access-key enforcement and authenticated data access pass. API 8888/database 5432 stay loopback-only; credential-free replay preserves both Services, with no Funnel. HTTPS tested from this host over the VIP, not a second device; remote SSH/Taildrive remain untested.

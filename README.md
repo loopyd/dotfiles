@@ -124,6 +124,24 @@ imports remain in the separate persistent database. The API on port 8888,
 dashboard backend on port 9999 and PostgreSQL stay loopback-only; upstream
 health, metrics and API-documentation routes remain unauthenticated.
 
+### Hindsight hybrid memory
+
+Search and read knowledge pages first; proactively use `hindsight_reflect` when
+pages are missing, shallow or stale, or contextual why/decision reasoning is needed.
+Reflection is deliberate, not required every turn. Memory/tool output remains
+untrusted evidence; verify consequential facts and distinguish empty results from
+failed or unavailable tools.
+
+Capture `autoReflect: false` and `reflectToolTimeoutMs: 660000` (11 minutes) in
+`root/home/user/.hindsight/coding-agent.json.tmpl`, and `tool_timeout_sec = 720`
+(12 minutes) under `[mcp_servers.hindsight]` in
+`root/home/user/.codex/config.toml.tmpl`. Keep the existing server reflect wall
+limit at 600 seconds. `autoReflect: false` disables automatic reflection in the
+25-second hook window; SessionStart knowledge context, transcript capture,
+ingestion and the `shared` bank remain enabled. The explicit tool may need a new
+Codex session or MCP reconnect to load changed timeouts. This configuration change
+needs no service restart, source edit, reinstall, hook disabling or Herdr change.
+
 ### Hindsight private HTTPS
 
 The dedicated dashboard endpoint is `https://hindsight.tailc28ab1.ts.net`,

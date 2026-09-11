@@ -989,13 +989,13 @@
       "source": "root/home/user/.codex/AGENTS.md.tmpl",
       "target": ".codex/AGENTS.md",
       "mode": "0600",
-      "sha256": "61c65ba4d19f6e365c85182d1cd3d5e2ec3c9cd1bc7a0a93b30e1b37a1151c03"
+      "sha256": "a194c7913b836a47da0bae87978d1075d5b1eac1e2b8da5a5f4edf45589faafe"
     },
     {
       "source": "root/home/user/.codex/config.toml.tmpl",
       "target": ".codex/config.toml",
       "mode": "0600",
-      "sha256": "db729d5d3ba32ee5648feb4389b29dd94a6fa98f59d0cebd84131e798c01defb"
+      "sha256": "2ed8bd123d337fb27b8ad14124bae8a404aa7d6285b68b25a5f3b090b946365e"
     },
     {
       "source": "root/home/user/.codex/hooks.json.tmpl",
@@ -4841,7 +4841,7 @@
       "source": "root/home/user/.hindsight/coding-agent.json.tmpl",
       "target": ".hindsight/coding-agent.json",
       "mode": "0600",
-      "sha256": "7ead0c64807ac07b73a32cd8678424c67b0f1fe88cf7ae80e5ef8d62f92dcdd9"
+      "sha256": "6824c2c95531ddc2ed54b1ddf80f69e70ac9527e6958554729d1223ba1122e05"
     },
     {
       "source": "root/home/user/.hindsight/config.tmpl",
