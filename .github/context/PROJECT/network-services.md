@@ -1,19 +1,17 @@
 # Local AI Services and Tailscale
 
-**Phase 1 complete — Verified 2026-09-10.** Migration and verification succeeded
-following Code Review and Security Review GO.
-The personal native node `ninerouter` serves tailnet-only HTTPS at
-`https://ninerouter.tailc28ab1.ts.net` for the dashboard and `/v1` API.
-Funnel removal is confirmed from native configuration. Gateway and Hindsight
-restarts succeeded; native identity, SSH settings, preferences and all four
-DriveShares were preserved without tagging, renaming or tailnet API writes.
+**Phase 2: COMPLETE — verified 2026-09-10.** The native node retains its stable
+ID and identity keys as `koija.tailc28ab1.ts.net` with `tag:ssh`.
+`svc:ninerouter`, tagged `tag:ninerouter`, serves private HTTPS 443 through
+`127.0.0.1:20128`, with only that native node manually approved as its host.
+The dashboard/API origin remains `ninerouter.tailc28ab1.ts.net`; DNS resolves
+to captured Service VIPs, not the native IP. Funnel is off.
 
-The later design uses native kernel Tailscale Services: native host `koija`
-serves a separate `ninerouter:443` Service VIP. Services require a tagged host,
-so rename, tagging and Service activation await the user's personal-identity
-decision. No native tag or identity mutation was performed. Native preferences
-show **four DriveShares**; their
-configuration and owner access must survive any approved migration.
+All **four DriveShares** retain their fingerprint and native SSH settings are
+preserved. Tagging disables Taildrop; the user accepted that loss and Taildrive
+mount/bookmark changes to `koija`. The broad network grant remains unchanged,
+so app access is not owner-only. Home/repository capture and unit replay/checks
+are complete. Remote owner SSH and Taildrive end-to-end access remain untested.
 
 Old userspace app nodes remain masked/offline with their state preserved.
 Repository cleanup is complete: `scripts/tailnet.py`, `scripts/tailserve.py`,
@@ -165,45 +163,53 @@ For Tailscale removal and retained state, see [runtime lifecycle](#runtime-lifec
 
 | Stage | Endpoint | Required result | Status |
 | --- | --- | --- | --- |
-| Phase 1: private HTTPS | Native `ninerouter.tailc28ab1.ts.net:443` | Dashboard and `/v1` through loopback 20128; Funnel off | Complete; Verified 2026-09-10 |
-| Native host | `koija.tailc28ab1.ts.net`, `tag:ssh` | Preserve native identity state and checked owner SSH to local user `koija` | Rename/tagging pending personal-identity decision |
-| Separate Service | `svc:ninerouter`, `ninerouter.tailc28ab1.ts.net:443` | Native kernel Services VIP proxies loopback 20128 | Pending host decision, provisioning and tests |
+| Native host | `koija.tailc28ab1.ts.net`, `tag:ssh` | Retain stable native identity and checked owner SSH to local user `koija` | Complete; policy tests pass, remote SSH untested |
+| Separate Service | `svc:ninerouter`, `tag:ninerouter`; `ninerouter.tailc28ab1.ts.net:443` | Native kernel Services VIP proxies `127.0.0.1:20128`; no Funnel | Complete; exact host manually approved, DNS/TLS/API verified |
+
+The applied policy change added only the original-owner Drive grant and host
+`drive:share`, and removed only the exact obsolete `tag:ninerouter` Funnel
+attribute. The wildcard network grant, existing checked owner SSH, client
+`drive:access` and unrelated policy remain unchanged.
+
+Admin provisioning is a guarded one-off operation, separate from startup:
+register the exact Service definition with `tag:ninerouter`, then manually
+approve only the pinned stable native node ID as its host. Do not broaden
+`autoApprovers`. Definition, advertisement, host approval and client permission
+are separate requirements; captured metadata does not establish readiness.
+
+The native coordinator applies the reviewed HTTPS frontend and HTTP backend:
+
+```sh
+tailscale serve --service=svc:ninerouter --https=443 http://127.0.0.1:20128
+```
+
+This CLI automatically advertises the Service. Avoid versioned `get-config` /
+`set-config` round-trips: the researched 1.102.3 conversion conflates frontend
+HTTPS with the backend URL scheme and cannot preserve this mapping correctly.
+Clients 1.94+ use Service routes by default. Older Linux clients need
+`accept-routes`; assess each client's existing routes before an explicit change,
+without enabling route acceptance globally.
 
 ### Owner Identity And File Sharing
 
-The original owner must be verified and pinned privately before tagging.
-Tagging replaces user ownership with tag identity; the tagged node's current
-owner field must not be used to infer the original owner. Preserve verified
-owner metadata separately from daemon keys, using the private `TAILSCALE_OWNER`
-value and reviewed owner configuration. No credential belongs in that metadata.
+The verified original owner remains pinned privately in `TAILSCALE_OWNER` and
+reviewed owner configuration, separately from daemon keys. Tagging replaces
+user ownership; never infer the original owner from the tagged node's current
+owner field. Owner metadata is non-secret and does not itself grant access.
 
-Services require host tagging. A tagged host loses Taildrop eligibility; keeping
-the current personal identity therefore matters. Tagging requires the user's
-configuration choice. Phase 1 private Serve on the
-existing native node is complete and does not change personal ownership.
+The existing stable native identity, keys and SSH settings are unchanged.
+Taildrop is now disabled by the approved tagging. Taildrive mounts and bookmarks
+must use native hostname `koija`; all **four DriveShares** remain in native
+state with the same in-memory fingerprint, without exported definitions.
 
-Fresh native preferences contain **four DriveShares**. Preserve all four share
-definitions in place and original-owner access. Phase 1 verified their unchanged
-fingerprint in memory and reported the count of four; capture does not export
-share definitions. The Researcher's confirmed requirements
-for a future approved tagging change are:
+The host has `drive:share`; clients retain `drive:access`. The verified original
+owner has `tailscale.com/cap/drive` access to `tag:ssh` with `shares: ["*"]` and
+`access: "rw"`. The existing SSH rule remains original owner → `tag:ssh`, local
+user `koija`, with `action: check`. Checked SSH and network policy tests passed
+before and after tagging. Preserve these rules and unrelated policy.
 
-- Give `tag:ssh` the `drive:share` node attribute and retain the clients'
-  existing `drive:access` attribute.
-- Grant the verified original owner access to `tag:ssh` through the
-  `tailscale.com/cap/drive` application capability, with `shares: ["*"]` and
-  `access: "rw"`, preserving the existing wildcard read/write share access.
-- Account for the hostname rename in Taildrive mount and bookmark paths;
-  retain all four share definitions and verify owner access at the new paths.
-
-These are pending-choice requirements; no tagging or policy mutation has been
-performed. A metadata pin alone does not preserve access, and share inventory
-is not an end-to-end file-access test.
-
-The intended tagged-host SSH rule is the verified original owner →
-`tag:ssh`, local user `koija`, with `action: check`. Preserve unrelated SSH
-rules and the existing owner login path during migration. **External SSH login
-has not been tested**; policy inspection or local checks cannot establish it.
+**Remote owner SSH and Taildrive end-to-end access were not run.** Share
+fingerprints and policy tests do not establish remote login or file access.
 
 ### Runtime Lifecycle
 
@@ -213,13 +219,15 @@ The lifecycle retains `install`, `update`, `uninstall`, `check`,
 suppresses activation and does not stop an already running unit.
 
 The user coordinator is limited to restoring reviewed private native
-configuration. Provisioning and owner/policy decisions happen explicitly before
-activation; routine startup does not enroll nodes, mutate tailnet API policy or
-launch model/API probes. It must not silently restore obsolete Funnel settings
-or apply the pending tagged-Service configuration to the current personal node.
-Phase 1 starts it as a dependency of `9router.service` and re-executes its
-configuration action. This dependency path passed verification; no full login
-test was performed.
+configuration. Explicit admin provisioning and approval precede activation;
+temporary migration tooling is not a repository or startup dependency.
+Routine startup consumes no tailnet API
+credentials, does no provisioning/enrollment or tailnet API mutation, and
+launches no model/API probes. It must verify expected native identity and tags
+before applying reviewed Service configuration and must not restore Funnel.
+Starting `9router.service` pulls it in and re-executes its configuration action.
+Phase 2 replay of `tailscale.service` idempotently validated the captured Service.
+No full login test was performed.
 
 Receipt-checked removal preserves native SSH, private configuration, daemon
 identity state, credentials, skills and backend data. It does not log out,
@@ -229,37 +237,38 @@ without enabled links; home identity state and masks are preserved.
 
 ### Verification And Remaining Work
 
-**Verified 2026-09-10**, after successful gateway and Hindsight
-restarts:
+**Phase 2: COMPLETE — verified results, 2026-09-10.**
 
-- HTTPS certificate valid on `https://ninerouter.tailc28ab1.ts.net`;
-  dashboard retains the exact same origin and login redirect.
-- Authenticated `/v1/models` returns **66 models**, preserving the required
-  Qwen IDs; anonymous API requests return **401**.
-- Native configuration confirms Funnel removal. Docker listens only on
-  `127.0.0.1:20128`, has no Tailscale socket/binary mounts, and retains its
-  pinned image, persistent store, **2 CPUs** and **4 GiB shared memory**.
-- Native identity, SSH settings and preferences are preserved; all **four
-  DriveShares** retain their in-memory fingerprint. No tag, rename or tailnet
-  API write occurred. No share names or definitions were exported.
-- The native coordinator re-executes as a gateway-start dependency. AI units
-  are active; Hindsight's authenticated API is ready, while anonymous API and
-  dashboard-data access are rejected. Database and EasyLlama health pass.
-- Final checks validate **844 templates** and **476 placeholders**; the guard
-  scans **924 files** with **zero findings**. `tailscale.sh check` and
-  `router.sh check` pass, as does `systemd-analyze --user verify` for both
-  changed installed units.
+- Native stable node ID and identity keys are unchanged; hostname/DNS is
+  `koija` with `tag:ssh`. Only this node is manually approved for
+  `svc:ninerouter` / `tag:ninerouter`; the API reports it ready.
+- Service DNS resolves to the captured VIP addresses, not the native IP.
+  HTTPS 443 proxies `127.0.0.1:20128`; TLS passes and the dashboard retains
+  its exact origin and login redirect.
+- Anonymous API access returns **401**. Authenticated `/v1/models` returns
+  **66 models**, including both required Qwen models. AI units remain active;
+  no gateway restart was required.
+- All **four DriveShares** retain their fingerprint and native SSH settings
+  are preserved. Checked owner SSH/network policy tests pass before and after
+  tagging; the Drive grant and attributes are applied. The wildcard network
+  grant is unchanged and only the exact obsolete Funnel attribute was removed.
+- Home and repository configuration capture include Service VIP metadata and
+  the approved native node ID. `systemctl --user start tailscale.service`
+  idempotently validates the captured Service. `tailscale.sh check`,
+  `router.py check` and `hindsight.py health` pass.
+- Dotfiles validation checks **844 templates**, **7 unit links**, and no missing
+  values. The guard scans **924 files** with **zero findings**;
+  `git diff --check` passes. The host-ID compatibility correction is complete;
+  there is no ongoing migration blocker.
 
-No full-login, external SSH, off-tailnet public-access or inference smoke tests
-were performed. Model discovery verifies inventory, not inference. Native
-Funnel configuration and listener inspection are not external reachability probes.
+**Remote owner SSH, Taildrive end-to-end access and inference smoke tests
+were not run.** Model discovery establishes inventory only. No full-login or
+off-tailnet public-access probe is claimed.
 
-Native `koija` / `tag:ssh` and the separate `ninerouter` Services VIP remain
-pending the user's tagged-host/Taildrop choice. Any approved migration must
-preserve checked owner SSH and all four Taildrive shares with the attributes,
-capability grant and renamed-path checks described above. Retired repository
-app artifacts are removed and excluded from snapshot capture; the owner
-template and masked/offline home state remain. The invalid IPset policy is not retried.
+Historical Phase 1, 2026-09-10: private node-level HTTPS replaced Funnel before
+tagging/rename. Gateway and Hindsight restarts, coordinator dependency checks,
+authenticated Hindsight health, database and EasyLlama health passed. Those
+restart results describe Phase 1; Phase 2 required no gateway restart.
 
 ## Identity Restoration Boundary
 
@@ -270,6 +279,23 @@ memory and report only their count of four. Keep them in the native state.
 `~/.config/tailscale/network.json` is configuration, not
 a transferable identity. Keep the verified original-owner pin private and
 runtime verification status separate from intended configuration.
+
+The captured `service` subsection of private `~/.config/tailscale/network.json`
+(`network.service`) contains the exact Service definition, `tag:ninerouter`,
+assigned VIP addresses and approved stable native node ID. This non-secret
+metadata is the operator reference for explicit admin reprovisioning; it is not
+identity keys, API permission or host approval. Keep the record separate from
+runtime verification and actual control-plane authorization.
+
+Future per-service capture extends the existing configuration/template
+workflow with reviewed names, tags, DNS names, VIP addresses, listener ports,
+loopback backends and approved stable node IDs. Record each service independently
+so later additions preserve other services. Non-secret metadata is captured in
+Git; credentials use placeholders and remain outside Git and snapshot output.
+Validate renderer/schema support
+before relying on new values. Restoring metadata does not enroll or provision
+a host or grant approval; those remain explicit admin operations. Startup
+does not acquire API credentials or provision Services.
 
 Preserve existing daemon identity/SSH keys in place. Do not read, export or copy
 `/var/lib/tailscale` through sudo, containers or other wrappers. Retain old app
@@ -302,5 +328,5 @@ unrelated accounts. Never use a combined capture path that reads native keys.
 - [Official 9router Dockerfile](https://github.com/decolua/9router/blob/master/Dockerfile)
 
 Installed local/runtime evidence was verified on 2026-09-10.
-These URLs are background references; current Services details still require
-review before the pending tagged-host migration.
+These URLs are background references; the dated verification report records
+the completed live migration and capture/replay checks.

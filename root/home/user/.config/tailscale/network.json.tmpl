@@ -3,11 +3,13 @@
     "100.108.239.19",
     "fd7a:115c:a1e0::393b:ef13"
   ],
-  "dns_name": "ninerouter.tailc28ab1.ts.net.",
+  "dns_name": "koija.tailc28ab1.ts.net.",
   "node_id": "ny5Q2pJD5A21CNTRL",
   "prefs": {
     "AdvertiseRoutes": null,
-    "AdvertiseServices": null,
+    "AdvertiseServices": [
+      "svc:ninerouter"
+    ],
     "AdvertiseTags": null,
     "AutoUpdate": {
       "Apply": true,
@@ -17,7 +19,7 @@
     "ExitNodeAllowLANAccess": false,
     "ExitNodeID": "",
     "ExitNodeIP": "",
-    "Hostname": "ninerouter",
+    "Hostname": "koija",
     "LoggedOut": false,
     "NetfilterKind": "",
     "NetfilterMode": 2,
@@ -31,21 +33,41 @@
     "WantRunning": true
   },
   "serve": {
-    "TCP": {
-      "443": {
-        "HTTPS": true
-      }
-    },
-    "Web": {
-      "ninerouter.tailc28ab1.ts.net:443": {
-        "Handlers": {
-          "/": {
-            "Proxy": "http://127.0.0.1:20128"
+    "Services": {
+      "svc:ninerouter": {
+        "TCP": {
+          "443": {
+            "HTTPS": true
+          }
+        },
+        "Web": {
+          "ninerouter.tailc28ab1.ts.net:443": {
+            "Handlers": {
+              "/": {
+                "Proxy": "http://127.0.0.1:20128"
+              }
+            }
           }
         }
       }
     }
   },
-  "tags": [],
+  "service": {
+    "addrs": [
+      "100.102.149.102",
+      "fd7a:115c:a1e0::6d2b:9567"
+    ],
+    "approved_node_id": "ny5Q2pJD5A21CNTRL",
+    "name": "svc:ninerouter",
+    "ports": [
+      "tcp:443"
+    ],
+    "tags": [
+      "tag:ninerouter"
+    ]
+  },
+  "tags": [
+    "tag:ssh"
+  ],
   "version": "1.102.3-t9329c3677-ga522f65e9"
 }

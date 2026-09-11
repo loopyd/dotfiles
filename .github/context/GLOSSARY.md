@@ -29,17 +29,17 @@ Concise repository terms used across .github/context.
 
 ## Tailscale Services
 
-- Meaning: Proposed native kernel service hosting with a separate `ninerouter:443` VIP proxying loopback Docker port 20128. Requires a tagged host; native `koija` rename, tagging and Service activation await the user's personal-identity decision and final tests.
+- Meaning: Phase 2 COMPLETE, verified 2026-09-10: native `koija` / `tag:ssh` hosts `svc:ninerouter` / `tag:ninerouter`, private HTTPS 443 to `127.0.0.1:20128`, with no Funnel. Only the stable native node is manually approved; Service VIP DNS and TLS/dashboard/API checks pass. The broad network grant remains; app access is not owner-only.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
 ## Private HTTPS conversion
 
-- Meaning: Completed Phase 1 on personal native `ninerouter`: dashboard and `/v1` share private HTTPS 443 through loopback 20128, with Funnel off in native configuration. Verified 2026-09-10; no off-tailnet probe or inference test claimed.
+- Meaning: Historical Phase 1, verified 2026-09-10: private node-level HTTPS replaced Funnel on personal native `ninerouter`. Phase 2 retains the origin through a Service VIP after the native rename to `koija`; no off-tailnet probe or inference smoke test is claimed.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
 ## Native hostname and SSH host
 
-- Meaning: Current native node is personal `ninerouter`; later `koija` / `tag:ssh` is pending the identity decision. Preserve original-owner SSH to local user `koija`, using `action: check` for the tagged-host rule. External SSH login has not been tested.
+- Meaning: Native `koija` / `tag:ssh` retains its stable ID, identity keys and SSH settings. Original-owner SSH to local user `koija` uses `action: check`; policy tests pass before and after tagging. Remote owner SSH login was not run.
 - References: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing)
 
 ## Original-owner pin
@@ -49,18 +49,23 @@ Concise repository terms used across .github/context.
 
 ## Taildrop and Taildrive
 
-- Meaning: Taildrop is unavailable on tagged hosts. Phase 1 preserved all four DriveShares by in-memory fingerprint comparison without exporting definitions. Future tagging requires host `drive:share`, client `drive:access`, and owner → `tag:ssh` capability `tailscale.com/cap/drive` with wildcard read/write access. Rename changes mount/bookmark paths; tagging remains pending choice and untested.
+- Meaning: Taildrop is disabled by the approved tagging; Taildrive mount/bookmark paths use `koija`. All four DriveShares retain their in-memory fingerprint without export. Host `drive:share`, client `drive:access`, and original-owner → `tag:ssh` capability `tailscale.com/cap/drive` with `shares: ["*"]`, `access: "rw"` preserve policy access. Remote Taildrive end-to-end access was not run.
 - References: [Owner identity and file sharing](PROJECT/network-services.md#owner-identity-and-file-sharing)
 
 ## Native coordinator
 
-- Meaning: User service restoring private configuration through root-owned native `tailscaled.service`. Phase 1 pulls it in and re-executes it when `9router.service` starts, without extra userspace daemons or startup API/model calls. This dependency check is not a full login test.
+- Meaning: User service restoring reviewed private configuration through root-owned native `tailscaled.service`. Gateway start re-executes it; Phase 2 unit replay idempotently validates the captured Service. Startup has no API credentials, provisioning, extra userspace daemons or API/model probes. Admin reprovisioning and approval are separate; no full login test is claimed.
 - References: [Runtime lifecycle](PROJECT/network-services.md#runtime-lifecycle)
 
 ## Retired Tailscale app nodes
 
 - Meaning: Old userspace nodes remain masked/offline with home identity state preserved. Retired app helpers and unit/endpoints templates are removed from the repository and obsolete live app artifacts are excluded from snapshot capture; the owner template and home masks stay. The rejected IPset policy is not retried.
 - References: [Verification and remaining work](PROJECT/network-services.md#verification-and-remaining-work)
+
+## Private per-service values
+
+- Meaning: Captured `network.service` metadata includes the exact definition/tags, VIP addresses and approved stable node ID alongside listeners/backends. Git captures this non-secret operator metadata and credential placeholders, not credentials. Metadata is not authorization; external API permission, admin reprovisioning and manual approval remain separate from startup, without broader auto-approval.
+- References: [Network identity boundary](PROJECT/network-services.md#identity-restoration-boundary)
 
 ## symlink policy
 

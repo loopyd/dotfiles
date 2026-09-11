@@ -329,48 +329,59 @@ pinned by digest, **2 CPUs**, **4 GiB `/dev/shm`** and the existing `~/.9router`
 data. Its verified backend is loopback-only `127.0.0.1:20128`; host Tailscale
 socket/binary mounts are removed and internal publication is set to `false`.
 
-**Phase 1 complete — Verified 2026-09-10.** After Code/Security GO,
-migration and gateway/Hindsight restarts succeeded. Native `ninerouter` serves
-private HTTPS; Funnel removal is confirmed from native configuration.
-Dashboard and API share HTTPS 443; use
-`https://ninerouter.tailc28ab1.ts.net/v1` as the API base. Port 20128 is the local
-Docker proxy backend, not a raw remote API endpoint.
+**Phase 2: COMPLETE — verified 2026-09-10.** Native Tailscale retains its stable
+node ID and identity keys as `koija.tailc28ab1.ts.net` / `tag:ssh`.
+`svc:ninerouter` / `tag:ninerouter` serves private HTTPS 443 to
+`127.0.0.1:20128`, with only that native node manually approved and no Funnel.
+Use `https://ninerouter.tailc28ab1.ts.net/v1` as the API base; DNS resolves to
+captured Service VIPs. TLS, the exact dashboard origin/login redirect, anonymous
+API **401**, and authenticated discovery of **66 models**, including both Qwen
+models, pass. AI units remain active; no gateway restart was required.
 
-The proposed next stage uses native kernel Tailscale Services: native host
-`koija` / `tag:ssh` and a separate `ninerouter:443` Service VIP. Services
-require host tagging, which removes personal ownership and Taildrop eligibility.
-Fresh preferences show **four DriveShares**; an approved tagged-host migration
-must preserve owner wildcard read/write access through the Taildrive capability,
-host `drive:share` and client `drive:access`. Renaming changes Taildrive mount
-and bookmark paths; see the [owner/file-sharing requirements](.github/context/PROJECT/network-services.md#owner-identity-and-file-sharing).
-Phase 1 preserved the in-memory DriveShares fingerprint and count of four;
-capture does not export share definitions. The original owner stays pinned privately.
-Rename, tagging and Service activation await the user's personal-identity
-choice; native identity, SSH settings and preferences are preserved, with no
-tag, rename or tailnet API writes. Checked owner SSH to
-local user `koija` must remain available; external SSH login is untested.
+All **four DriveShares** retain their fingerprint and native SSH settings are
+preserved. Checked owner SSH/network policy tests pass before and after tagging.
+The applied change adds the owner Drive grant and host `drive:share`, preserves
+client `drive:access` and the wildcard network grant, and removes only the exact
+obsolete `tag:ninerouter` Funnel attribute. App access is not owner-only.
+Taildrop is now disabled by the approved tagging; Taildrive mounts/bookmarks
+use native hostname `koija`.
+
+Home/repository capture and idempotent unit replay are complete. Tailscale,
+router and Hindsight checks pass; dotfiles validates **844 templates**, **7 unit
+links** and no missing values; the guard finds zero issues in **924 files**.
+**Remote owner SSH, Taildrive end-to-end access and inference smoke tests were
+not run.** See the [owner/file-sharing requirements](.github/context/PROJECT/network-services.md#owner-identity-and-file-sharing).
 
 The root native daemon owns networking and SSH. Starting `9router.service`
 pulls in and re-executes the user coordinator to restore private configuration,
-without another userspace daemon or startup API/model launches. This dependency
-path passed verification. Retired app helpers and unit/endpoints templates are
+without another userspace daemon, API credentials, provisioning or API/model
+probes at startup. Guarded one-off admin provisioning manually approves only
+the pinned stable native node; `autoApprovers` stays unchanged. Native Serve
+automatically advertises the Service. Clients 1.94+ use Service routes by
+default; older Linux clients need individually reviewed `accept-routes`,
+without global changes. Temporary one-off migration tooling is not a repository
+or startup dependency; replay now validates the captured Service idempotently.
+Retired app helpers and unit/endpoints templates are
 removed from the repository; snapshot capture excludes obsolete live app artifacts.
 The owner template and masked/offline home state remain. The invalid IPset
 policy is not retried. See
 [Tailscale setup and validation](.github/context/PROJECT/network-services.md#tailscale-setup-and-cutover).
 
-HTTPS certificates pass; the dashboard keeps its exact origin/login redirect.
-Authenticated `/v1/models` returns 66 models with the required Qwen IDs;
-anonymous API requests return 401. AI units are active, Hindsight's authenticated
-API is ready, and anonymous API/dashboard-data access is rejected. Database and
-EasyLlama health pass. No full login, external SSH, off-tailnet public-access or
-inference smoke tests were performed.
+Historical Phase 1, 2026-09-10: node-level private HTTPS, gateway/Hindsight
+restarts and dependency/health checks passed before rename/tagging. See the
+dated report for those checks; no full-login or off-tailnet probe is claimed.
 
 The baseline gateway uses user `9router.service`; its old GUI autostart is
 disabled and `9router-local` starts that unit. Native npm 9router is no longer
 a restoration prerequisite. Router identity/configuration bundles remain private;
 Git contains placeholders. Preserve skills and private keys in place; Tailscale
 capture includes non-secret configuration, never daemon identity/key exports.
+Private `network.json` now captures the exact Service definition/tags, VIP
+addresses and approved stable node ID under `network.service`, alongside
+listeners/backends. Git captures this non-secret operator metadata; credentials
+remain private and use placeholders. Restoring metadata does not
+grant external API permission, provision or approve a host. See the
+[restoration boundary](.github/context/PROJECT/network-services.md#identity-restoration-boundary).
 See [network service operations](.github/context/PROJECT/network-services.md)
 for recovery boundaries and the dated verification report.
 

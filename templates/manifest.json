@@ -4961,7 +4961,7 @@
       "source": "root/home/user/.config/tailscale/network.json.tmpl",
       "target": ".config/tailscale/network.json",
       "mode": "0600",
-      "sha256": "6ac4d71bd73cc7a68b1315423482c177eecf4b958fbaf52fac48b8f09b5dc551"
+      "sha256": "3aafbf6217e076dc50060d2bdccd129e6572d724333d50600f4247d84a56721b"
     },
     {
       "source": "root/home/user/.config/tailscale/default.env.tmpl",
