@@ -322,18 +322,7 @@
     "rustfmt"
   ],
   "rust_targets": [],
-  "go": [
-    {
-      "package": "github.com/gmuxapp/gmux/cli/gmux/cmd/gmux",
-      "binary": "gmux",
-      "local_build": true
-    },
-    {
-      "package": "github.com/gmuxapp/gmux/services/gmuxd/cmd/gmuxd",
-      "binary": "gmuxd",
-      "local_build": true
-    }
-  ],
+  "go": [],
   "exclusions": [
     "package versions and duplicate runtime installations",
     "system packages and project virtual environments",

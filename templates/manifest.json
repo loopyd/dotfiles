@@ -4382,12 +4382,6 @@
       "sha256": "9396294a3f8f18286716242528d7c40cabe30998125dbdc10d30241adcd34989"
     },
     {
-      "source": "root/home/user/.config/gmux/host.toml.tmpl",
-      "target": ".config/gmux/host.toml",
-      "mode": "0600",
-      "sha256": "4d60e54f80eed6d3a2ab3dab1b753c895116e48e1e3a06e1de50ab5355fa9be0"
-    },
-    {
       "source": "root/home/user/.config/gtk-2.0/gtkfilechooser.ini.tmpl",
       "target": ".config/gtk-2.0/gtkfilechooser.ini",
       "mode": "0600",
@@ -4896,12 +4890,6 @@
       "target": ".local/share/applications/ghidra.desktop",
       "mode": "0600",
       "sha256": "6eb1b354492e6e293864106d8df453a3794b9fc8113ca6a9be6fae6df8fb6fb4"
-    },
-    {
-      "source": "root/home/user/.local/share/applications/gmux.desktop.tmpl",
-      "target": ".local/share/applications/gmux.desktop",
-      "mode": "0600",
-      "sha256": "38095d3bb3cdc45581bfec0772a97e66263a4aa166f2d4c05b27b587308420e7"
     },
     {
       "source": "root/home/user/.local/share/applications/mimeapps.list.tmpl",

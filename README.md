@@ -241,8 +241,8 @@ old exposed command wrappers when present. npm globals stay in the resolved,
 user-owned Node prefix; uv/Cargo/Rustup/Go destinations are restricted to the user
 account rather than inherited system prefixes. Cargo registry
 tools use `cargo install --locked`; release-built Go packages use `go install` with
-`@latest`. The two local/development Go binaries (`gmux`, `gmuxd`) remain explicit
-manual source rebuilds, not guessed remote package installs. Local/direct Python
+`@latest`. Local/development Go builds require their original source and explicit
+manual rebuilds, not guessed remote package installs. Local/direct Python
 sources are inventoried separately and require their original source installs;
 they are never silently replaced by similarly named PyPI packages. Retired Pi packages
 are fully inventoried but skipped unless `--include-retired-pi` is explicitly used.
