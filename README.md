@@ -324,10 +324,17 @@ they are not silently rebuilt or pulled from an assumed public registry.
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions
 as other components; bootstrap selects them with `--with-network` or
-`--only tailscale,router`. The Compose definition keeps 9router 0.5.69
+`--only tailscale,router`. The Compose definition keeps 9router 0.5.75
 pinned by digest, **2 CPUs**, **4 GiB `/dev/shm`** and the existing `~/.9router`
 data. Its verified backend is loopback-only `127.0.0.1:20128`; host Tailscale
 socket/binary mounts are removed and internal publication is set to `false`.
+
+Gateway updates apply the reviewed Compose pin, not floating `latest`. Update
+the template and manifest hash, render the reviewed Compose change, and retain
+a consistent private SQLite backup before `bash scripts/router.sh update`.
+Unlike that direct command, `bootstrap.sh update --only router` also selects
+Docker/NVIDIA, Tailscale and EasyLlama updates. See
+[router maintenance](.github/context/PROJECT/network-services.md#router-maintenance).
 
 **Phase 2: COMPLETE — verified 2026-09-10.** Native Tailscale retains its stable
 node ID and identity keys as `koija.tailc28ab1.ts.net` / `tag:ssh`.
@@ -353,9 +360,12 @@ links** and no missing values; the guard finds zero issues in **924 files**.
 not run.** See the [owner/file-sharing requirements](.github/context/PROJECT/network-services.md#owner-identity-and-file-sharing).
 
 The root native daemon owns networking and SSH. Starting `9router.service`
-pulls in and re-executes the user coordinator to restore private configuration,
-without another userspace daemon, API credentials, provisioning or API/model
-probes at startup. Guarded one-off admin provisioning manually approves only
+pulls in and re-executes the user coordinator to restore private configuration.
+A read-only readiness wait of up to 120 seconds accommodates the boot interval
+when the daemon is active but its netmap is not yet online. Once ready, unchanged
+strict preflight and apply checks run; the unit uses `TimeoutStartSec=150s`.
+Startup adds no second daemon, API credentials, provisioning or API/model probes.
+Guarded one-off admin provisioning manually approves only
 the pinned stable native node; `autoApprovers` stays unchanged. Native Serve
 automatically advertises the Service. Clients 1.94+ use Service routes by
 default; older Linux clients need individually reviewed `accept-routes`,

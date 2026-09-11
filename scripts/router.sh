@@ -8,7 +8,7 @@ COMPOSE=(docker compose --project-name 9router --file "${HOME}/.config/9router/c
 
 usage() {
     printf '%s\n' 'Usage: router.sh <install|update|uninstall|check> [--dry-run] [--no-start]' \
-        'Uses the captured 0.5.69 image; data and credentials survive uninstall.'
+        'Uses the rendered Compose image pin; data and credentials survive uninstall.'
 }
 
 parse_args() {

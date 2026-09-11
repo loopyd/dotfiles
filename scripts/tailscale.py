@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import subprocess
 import stat
+import time
 
 from network import decode_files, restore_files, run
 
@@ -39,8 +40,13 @@ def native_lock(name='native.lock'):
         yield
 
 
-def native(arguments):
-    return run(['/usr/bin/tailscale', '--socket=/var/run/tailscale/tailscaled.sock', *arguments], capture=True)
+def native(arguments, timeout=None, deadline=None):
+    if deadline is not None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError('Native Tailscale readiness deadline expired')
+        timeout = remaining if timeout is None else min(timeout, remaining)
+    return run(['/usr/bin/tailscale', '--socket=/var/run/tailscale/tailscaled.sock', *arguments], capture=True, timeout=timeout)
 
 
 def exact(actual, expected):
@@ -98,14 +104,14 @@ def captured():
     return expected
 
 
-def preferences(expected):
-    prefs = json.loads(native(['debug', 'prefs']).stdout)
+def preferences(expected, deadline=None):
+    prefs = json.loads(native(['debug', 'prefs'], deadline=deadline).stdout)
     if any(key not in prefs or not exact(prefs[key], value) for key, value in expected['prefs'].items()):
         raise ValueError('Tailscale preferences differ from the captured configuration')
 
 
-def inspect(expected):
-    current = json.loads(native(['status', '--json']).stdout)
+def inspect(expected, deadline=None):
+    current = json.loads(native(['status', '--json'], deadline=deadline).stdout)
     node = current['Self']
     if (current.get('BackendState') != 'Running' or node['ID'] != expected['node_id']
             or node.get('DNSName') != expected['dns_name']
@@ -114,8 +120,8 @@ def inspect(expected):
         raise ValueError('Native Tailscale identity, DNS or tags differ from the capture')
     if 'https' not in (node.get('CapMap') or {}):
         raise ValueError('HTTPS must already be enabled by the tailnet administrator')
-    preferences(expected)
-    return serve_config(json.loads(native(['serve', 'status', '--json']).stdout))
+    preferences(expected, deadline=deadline)
+    return serve_config(json.loads(native(['serve', 'status', '--json'], deadline=deadline).stdout))
 
 
 def empty_exposure(actual):
@@ -146,12 +152,44 @@ def check():
     print('Native Tailscale identity, preferences and private HTTPS exposure match')
 
 
-def preflight():
-    expected = captured()
-    actual = inspect(expected)
+def preflight(expected=None, deadline=None):
+    if expected is None:
+        expected = captured()
+    actual = inspect(expected, deadline=deadline)
     if not exact(actual, expected['serve']) and not empty_exposure(actual):
         raise ValueError('Existing exposure differs; refusing to replace it')
     print('Native Tailscale private HTTPS preflight passed')
+
+
+def wait():
+    expected = captured()
+    deadline = time.monotonic() + 120
+    print('Waiting up to 120 seconds for native Tailscale readiness', flush=True)
+    while time.monotonic() < deadline:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            current = json.loads(native(['status', '--json'], timeout=min(5, remaining)).stdout)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            current = {}
+        state = current.get('BackendState')
+        if state in {'NeedsLogin', 'NeedsMachineAuth', 'Stopped'}:
+            raise ValueError('Native Tailscale requires administrator action before startup')
+        node = current.get('Self') or {}
+        tailnet = current.get('CurrentTailnet') or {}
+        if (state == 'Running' and node.get('Online') and node.get('ID')
+                and node.get('DNSName') and node.get('CapMap')
+                and tailnet.get('MagicDNSSuffix')):
+            try:
+                preflight(expected, deadline=deadline)
+            except subprocess.TimeoutExpired as error:
+                raise TimeoutError('Native Tailscale preflight readiness timed out') from error
+            return
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(2, remaining))
+    raise TimeoutError('Native Tailscale readiness timed out after 120 seconds')
 
 
 def apply():
@@ -186,18 +224,21 @@ def identity(home):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['check', 'preflight', 'apply', 'identity'])
+    parser.add_argument('command', choices=['check', 'preflight', 'wait', 'apply', 'identity'])
     parser.add_argument('--home', type=Path, default=Path.home())
     args = parser.parse_args()
     if args.command == 'identity':
         identity(args.home)
     else:
-        {'check': check, 'preflight': preflight, 'apply': apply}[args.command]()
+        {'check': check, 'preflight': preflight, 'wait': wait, 'apply': apply}[args.command]()
 
 
 if __name__ == '__main__':
     try:
         main()
+    except TimeoutError:
+        print('Native Tailscale readiness timed out; dependent services were not started.', file=sys.stderr)
+        raise SystemExit(1)
     except Exception:
         print('Tailscale operation failed; verify native identity, private HTTPS capture and required privileges. Private details withheld.', file=sys.stderr)
         raise SystemExit(1)

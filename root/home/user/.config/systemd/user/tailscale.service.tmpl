@@ -3,8 +3,8 @@ Description=Restore captured private ninerouter Tailscale HTTPS exposure
 
 [Service]
 Type=oneshot
-ExecStartPre=/usr/bin/systemctl is-active --quiet tailscaled.service
-ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py preflight
+TimeoutStartSec=150
+ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py wait
 ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py apply
 
 [Install]

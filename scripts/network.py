@@ -19,8 +19,8 @@ def decode_tables(document):
     return tables
 
 
-def run(arguments, capture=False):
-    return subprocess.run(arguments, check=True, capture_output=capture, text=True)
+def run(arguments, capture=False, timeout=None):
+    return subprocess.run(arguments, check=True, capture_output=capture, text=True, timeout=timeout)
 
 
 def restore_tables(database, tables):

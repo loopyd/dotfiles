@@ -4943,7 +4943,7 @@
       "source": "root/home/user/.config/9router/compose.yaml.tmpl",
       "target": ".config/9router/compose.yaml",
       "mode": "0600",
-      "sha256": "42ca35771facf1c7586f9b8605a751bf3743c416b022a868b2903e1891ca5033"
+      "sha256": "b6ca87b1f9080afbff9085e814e48c489ed6f77ad4766c34589ed849881a3dab"
     },
     {
       "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
@@ -4955,7 +4955,7 @@
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
       "target": ".config/systemd/user/tailscale.service",
       "mode": "0600",
-      "sha256": "2e6b7a67af1e1ea5c454baa00699c4b5f7f420d538ef6d59356a95d29b49f86d"
+      "sha256": "548430bc9ae39acc3ae207a2d4b308defabb253f507789ad5c6d76366ef493d0"
     },
     {
       "source": "root/home/user/.config/tailscale/network.json.tmpl",

@@ -109,7 +109,7 @@ for a fresh host without these locally built images.
 
 ## Preserved Configuration
 
-- 9router remains version **0.5.69**, pinned by manifest digest, with **2 CPUs**
+- The reviewed Compose pin is 9router **0.5.75**, pinned by image digest, with **2 CPUs**
   and **4 GiB `/dev/shm`**. The verified Docker backend binds only
   `127.0.0.1:20128`; raw tailnet/LAN port 20128 is not the public API contract.
   Loopback binding replaces the baseline's LAN-accessible host-network listener.
@@ -129,6 +129,30 @@ for a fresh host without these locally built images.
   authentication and separate PostgreSQL data. Its old userspace Tailscale node
   stays offline; no private Hindsight HTTPS readiness is claimed. Earlier ACME
   failures concern that retired deployment, not proof about the new gateway.
+
+## Router Maintenance
+
+Updates converge to the reviewed Compose pin, never automatically to `latest`.
+Version **0.5.75** uses image digest
+`sha256:7c893bc2c27ecea2ae337abd5eacfec9e5763091b3a3b7862fc0625b770bb156`.
+
+1. Verify the upstream release and image version, update the Compose template
+   digest, and recompute its source-file SHA-256 in `templates/manifest.json`.
+2. Retain the previous Compose file and a consistent SQLite backup outside Git.
+   Use SQLite's backup API, not a plain copy of a live database file.
+3. Materialize and install only the reviewed Compose change using the existing
+   renderer. Its CLI has no single-file selector; a full render changes other
+   captured files too. Preserve authentication, identity, mounts and limits.
+4. Preview `bash scripts/router.sh update --dry-run`, then run
+   `bash scripts/router.sh update`. This isolates the gateway update;
+   `bootstrap.sh update --only router` also selects Docker/NVIDIA, Tailscale and
+   EasyLlama updates.
+5. Run `bash scripts/router.sh check`; verify image/version, private HTTPS login,
+   anonymous API rejection, required Qwen discovery, chat/embedding requests and
+   authenticated Hindsight health. Record actual results.
+
+The updater has no automatic rollback. Keep the old image and private backups;
+stop the gateway before any database recovery, never overwrite a live database.
 
 ## Router Deployment And Recovery
 
