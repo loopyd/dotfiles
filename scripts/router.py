@@ -115,7 +115,7 @@ def prepare():
         restore_files(data(), decode_files(json.loads(identity.read_text())))
     if (data() / 'db/data.sqlite').exists():
         private_settings()
-    installed_helpers(['router.py', 'network.py'])
+    installed_helpers(['router.py', 'network.py', 'readiness.py'])
 
 
 def initialize():

@@ -3,6 +3,8 @@ Description=Restore captured private Tailscale HTTPS services
 
 [Service]
 Type=oneshot
+Restart=on-failure
+RestartSec=15
 TimeoutStartSec=150
 ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py wait
 ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/tailscale.py apply

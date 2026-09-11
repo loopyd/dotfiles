@@ -43,10 +43,86 @@ the tailnet VIP, not a second device. Phase 2 below records the earlier 9router 
   gateway. Removal reverses dependency order.
 
 Bootstrap selects Docker/NVIDIA → EasyLlama → 9router → Hindsight for the captured
-local AI stack; PostgreSQL precedes Hindsight. Existing AI unit dependencies and
-database data remain intact. Phase 1 pulls in and re-executes the native user
-coordinator as a dependency of starting `9router.service`. This start path was
-verified; a full host reboot was not tested.
+local AI stack; PostgreSQL precedes Hindsight. Starting `9router.service` pulls
+in and re-executes the native user coordinator. Earlier migration checks verified
+that start path; the subsequent reboot failure and recovery change are recorded
+below. Database data remain intact.
+
+## Boot Recovery
+
+**Observed reboot failure, 2026-09-10 22:07 PDT.** Docker was not yet active at
+user login, so EasyLlama and `hindsight-db.service` failed their immediate
+`ExecStartPre` checks. Each recovered after one restart. Their ordered `Requires`
+dependencies cancelled the 9router/Hindsight start jobs before the consumers
+could execute; the consumers' restart policies therefore never ran. The native
+Tailscale coordinator succeeded: inactive is normal after this oneshot completes.
+
+The recovery change replaces those `Requires` edges with `Wants` plus `After`.
+Each consumer now waits or fails in its own `ExecStartPre`, allowing its restart
+policy to retry after 15 seconds when prerequisites remain unavailable. Shared
+`scripts/readiness.py`, installed at `~/.local/lib/dotfiles/readiness.py`, provides
+`wait docker|router|hindsight` with a default **180-second bound per attempt**:
+
+| Wait | Required evidence |
+| --- | --- |
+| `docker` | System `docker.service` active and Docker daemon responsive; used by EasyLlama and PostgreSQL |
+| `router` | Docker ready, `easyllama.service` active and strict native `tailscale.py check` successful |
+| `hindsight` | Docker ready, database and 9router units active, PostgreSQL `pg_isready` and authenticated router model discovery successful |
+
+Probes use fixed subprocess commands with bounded execution and suppressed
+stdout/stderr; status messages contain no credentials or probe output. Router
+discovery uses existing private authentication through its helper, without model
+inference. This does not add tailnet API credentials or probes to the coordinator.
+Router database-presence/preflight checks and existing container readiness checks
+remain in place. Installer/helper payloads and the template manifest carry the
+shared helper and revised units.
+
+`TimeoutStartSec` budgets are 420 seconds for EasyLlama (180-second Docker wait
+plus its existing 180-second readiness check), 330 for PostgreSQL (180-second
+Docker wait plus 120-second `pg_isready` check), and 210 each for 9router/Hindsight
+(180-second prerequisite wait plus remaining startup work). No router
+`ExecStartPost` is added; Hindsight's gate verifies authenticated router discovery.
+The coordinator retains its 120-second native wait and 150-second startup
+budget, adding `Restart=on-failure` / `RestartSec=15`. Success remains inactive.
+These bounds limit individual attempts, not total recovery time or eventual
+success while prerequisites remain unavailable.
+
+`PartOf` preserves explicit stop/restart propagation: Tailscale or EasyLlama →
+9router, and database or 9router → Hindsight. An intentional stop leaves affected
+units stopped until explicitly started; automatic retry is for startup/runtime
+failure, not an instruction to undo an operator stop. Readiness probes only
+observe prerequisites and do not start or stop dependencies.
+
+**Recovery validation.** Mock probes pass immediate,
+delayed, timeout and exception cases. An isolated two-unit systemd rehearsal
+using the same `readiness.wait` with a temporary marker probe also passes:
+forced initial upstream `ExecStartPre` failure caused one upstream retry and
+one consumer retry, then both became active automatically. Restart propagation
+and explicit-stop persistence pass; temporary units were cleaned up. Real Docker,
+models and the database were untouched.
+
+**Deployment and live verification.** Code and security reviews found zero
+blockers. Five unit files and three helpers were deployed with prior-file backups
+and a user daemon reload; systemd unit verification passes. Starting Hindsight
+pulled in 9router and the native coordinator while already-running EasyLlama and
+PostgreSQL stayed untouched. Router/EasyLlama helper receipts were refreshed.
+
+- Hindsight authenticated API health and anonymous API/dashboard denial pass.
+  HTTPS login returns **200**; anonymous `/api/list` returns **401**.
+- Router discovery returns **66 models**, including the required Qwen models;
+  private HTTPS `/dashboard` returns the expected **307** login redirect.
+- EasyLlama verifies all **three pinned containers** and authenticated model
+  discovery. Strict native Tailscale checks pass.
+- All three EasyLlama containers and PostgreSQL retain their container IDs and
+  `StartedAt` values. Router/Hindsight are active/running with **zero restarts**;
+  EasyLlama/PostgreSQL are active with **one restart each**, from the original
+  boot failures, not new failures. The coordinator succeeded and is normally
+  inactive after oneshot completion.
+
+**No full reboot after the fix has been performed.** Live health checks, the
+isolated rehearsal and mock results do not prove corrected full-host boot
+recovery. Images, keys, authentication, policy, native daemons and persistent
+data are preserved.
 
 ## EasyLlama Snapshot
 
@@ -292,8 +368,8 @@ Verified runtime results, 2026-09-10 (PDT):
   was required.
 
 HTTPS was tested from this host through the tailnet VIP, **not a second device**.
-Remote-client SSH and Taildrive end-to-end tests remain unperformed; no
-off-tailnet public-access probe or full host reboot test is claimed.
+Remote-client SSH and Taildrive end-to-end tests remain unperformed. These HTTPS
+checks included neither an off-tailnet public-access probe nor a host reboot.
 
 ### Owner Identity And File Sharing
 
@@ -326,13 +402,14 @@ suppresses activation and does not stop an already running unit.
 The user coordinator is limited to restoring reviewed private native
 configuration. Explicit admin provisioning and approval precede activation;
 temporary migration tooling is not a repository or startup dependency.
-Routine startup consumes no tailnet API
-credentials, does no provisioning/enrollment or tailnet API mutation, and
-launches no model/API probes. It must verify expected native identity and tags
+Coordinator startup consumes no tailnet API credentials, does no
+provisioning/enrollment or tailnet API mutation, and launches no model/API probes.
+It must verify expected native identity and tags
 before applying reviewed Service configuration and must not restore Funnel.
 Starting `9router.service` pulls it in and re-executes its configuration action.
 Phase 2 replay of `tailscale.service` idempotently validated the captured Service.
-No full host reboot test was performed.
+The later reboot incident, recovery validation and remaining reboot limitation are recorded in
+[boot recovery](#boot-recovery).
 
 Receipt-checked removal preserves native SSH, private configuration, daemon
 identity state, credentials, skills and backend data. It does not log out,
@@ -405,8 +482,10 @@ synced. Local identity/state data remain outside capture.
   there is no ongoing migration blocker.
 
 **Remote owner SSH, Taildrive end-to-end access and inference smoke tests
-were not run.** Model discovery establishes inventory only. No full host reboot test or
-off-tailnet public-access probe is claimed.
+were not run.** Model discovery establishes inventory only. Phase 2 verification
+included neither a full host reboot nor an off-tailnet public-access probe; see
+[boot recovery](#boot-recovery) for the later incident, verified recovery checks
+and remaining reboot limitation.
 
 Historical Phase 1, 2026-09-10: private node-level HTTPS replaced Funnel before
 tagging/rename. Gateway and Hindsight restarts, coordinator dependency checks,

@@ -67,6 +67,7 @@ install_clients() {
 }
 
 activate_services() {
+    run_maybe_dry install -Dm0644 "${SCRIPT_DIR}/readiness.py" "${HOME}/.local/lib/dotfiles/readiness.py"
     run_maybe_dry safe_sudo systemctl enable --now docker.service
     if [[ "${DRY_RUN}" != true ]] && ! docker info >/dev/null 2>&1; then
         err 'Docker is inaccessible to this user; log in again after Docker group setup. Do not run this installer as root.'

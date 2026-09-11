@@ -4727,13 +4727,13 @@
       "source": "root/home/user/.config/systemd/user/hindsight-db.service.tmpl",
       "target": ".config/systemd/user/hindsight-db.service",
       "mode": "0600",
-      "sha256": "1890a901127daae4fed23ece5e297bfbc6ab383b3ad8a917b672456fe9ac85ff"
+      "sha256": "486f6fcee9db315514a885126f80933ca83cb1ff8915514bdfc1dad134fec84e"
     },
     {
       "source": "root/home/user/.config/systemd/user/hindsight.service.tmpl",
       "target": ".config/systemd/user/hindsight.service",
       "mode": "0600",
-      "sha256": "233f0516e5f6500875cb72877f883aa0bf3607cdbc0c15484f60659f6e1df5e8"
+      "sha256": "d74d05ff6e1019dc966966b23838964a6de692b2fdf5d0ef0232865cb264e040"
     },
     {
       "source": "root/home/user/.config/tmux/tmux.conf.tmpl",
@@ -4949,13 +4949,13 @@
       "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
       "target": ".config/systemd/user/9router.service",
       "mode": "0600",
-      "sha256": "c753de2cffb8fcd3a45200f9553a44f458261185722fd7d08eb187bc34860258"
+      "sha256": "ff578050a462d0c3bcf64fcc627661b5733c8a4a19bfc599ec8517c5d2284b1e"
     },
     {
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
       "target": ".config/systemd/user/tailscale.service",
       "mode": "0600",
-      "sha256": "f23ad1e03849024c076d552153365c2078e890f03e05167af972c588c2cb7fd1"
+      "sha256": "d2ced0c17c4d01737bb19f547b1d5534a48dc337094988ca2c8cc73ec7a81f56"
     },
     {
       "source": "root/home/user/.config/tailscale/network.json.tmpl",
@@ -5057,7 +5057,7 @@
       "source": "root/home/user/.config/systemd/user/easyllama.service.tmpl",
       "target": ".config/systemd/user/easyllama.service",
       "mode": "0600",
-      "sha256": "a9ccbe81fbf73eff045516c92c6441d11dee3c38436051f10f8693604640056b"
+      "sha256": "8605f85cc4eee0ee3979ab214f3500c7df4d56d4e083a5fb7377112e13656ff9"
     },
     {
       "source": "root/home/user/.config/tailscale/owner.json.tmpl",

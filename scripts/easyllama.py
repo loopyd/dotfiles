@@ -102,7 +102,7 @@ def prepare():
                 source.mkdir(parents=True, mode=0o700)
             if not source.exists():
                 raise ValueError('A captured bind mount is unavailable')
-    installed_helpers(['easyllama.py', 'network.py'])
+    installed_helpers(['easyllama.py', 'network.py', 'readiness.py'])
 
 
 def containers(services):

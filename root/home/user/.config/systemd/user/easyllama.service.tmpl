@@ -4,14 +4,13 @@ Before=9router.service hindsight.service
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/systemctl is-active --quiet docker.service
-ExecStartPre=/usr/bin/docker info --format {{.ServerVersion}}
+ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/readiness.py wait docker
 ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py run
 ExecStartPost=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py wait
 ExecStopPost=-/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py stop
 Restart=on-failure
 RestartSec=15
-TimeoutStartSec=240
+TimeoutStartSec=420
 TimeoutStopSec=200
 UMask=0077
 

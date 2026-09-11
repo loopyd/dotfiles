@@ -59,8 +59,14 @@ Concise repository terms used across .github/context.
 
 ## Native coordinator
 
-- Meaning: User service restoring reviewed private configuration through root-owned native `tailscaled.service`. Gateway start re-executes it; Phase 2 unit replay idempotently validates the captured Service. Startup has no API credentials, provisioning, extra userspace daemons or API/model probes. Admin reprovisioning and approval are separate; no full host reboot test is claimed.
+- Meaning: User oneshot restoring reviewed private configuration through root-owned native `tailscaled.service`; successful completion normally leaves it inactive. Gateway start re-executes it; failure retries after 15 seconds. Replay has no tailnet API credentials, provisioning, extra daemons or model/API probes. Admin provisioning and approval remain separate.
 - References: [Runtime lifecycle](PROJECT/network-services.md#runtime-lifecycle)
+
+## Bounded startup recovery
+
+- Meaning: Shared `scripts/readiness.py wait docker|router|hindsight` probes prerequisites for up to 180 seconds per attempt. `Wants`/`After` allows a consumer's `ExecStartPre` to fail and invoke its own restart policy; `PartOf` propagates explicit stop/restart operations. Intentional stops remain stopped until explicitly started. The bound applies to each wait, not total recovery time.
+- Verification: Deployed with passing mock, isolated systemd recovery/restart/stop and live health checks; no full reboot after the fix performed.
+- References: [Boot recovery and verification limits](PROJECT/network-services.md#boot-recovery)
 
 ## Retired Tailscale app nodes
 

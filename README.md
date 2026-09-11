@@ -229,8 +229,8 @@ renderer, not rewritten by the runtime-only updater. No Codex session is launche
 It enables/starts the system Docker daemon, pulls only missing digest-pinned
 images from the rendered Compose configuration, reloads the user service manager,
 enables both units for login, then starts `hindsight-db.service` before
-`hindsight.service`. The app also requires the database unit; both units check the
-system Docker daemon. `--no-start` enables the user units without starting them;
+`hindsight.service`. Bounded startup probes check Docker, database readiness and
+9router discovery; see [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery). `--no-start` enables the user units without starting them;
 `check` validates configuration and authenticated endpoints without mutation.
 Install leaves active units running. Update stops the app, restarts the database,
 then restarts the app to apply configured container pins; `--no-start` suppresses
@@ -339,7 +339,8 @@ Docker stack with its **0.6.0 source revision and immutable local image IDs**.
 Use `--with-easyllama` or `--only easyllama` in bootstrap; Hindsight and 9router
 select it automatically for install/update. The user supervisor adopts matching
 running containers without model reload, starts them at login and stops them on
-unit shutdown. Dependency ordering and restart propagation cover the local stack.
+unit shutdown. Ordered startup, bounded readiness waits and explicit stop/restart
+propagation cover the local stack; see [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery).
 
 Captured configuration, mode profiles and chat templates live under
 `~/.config/easyllama`; `EASYLLAMA_ROOT` preserves the existing model/cache root.
@@ -388,10 +389,10 @@ not run.** See the [owner/file-sharing requirements](.github/context/PROJECT/net
 
 The root native daemon owns networking and SSH. Starting `9router.service`
 pulls in and re-executes the user coordinator to restore private configuration.
-A read-only readiness wait of up to 120 seconds accommodates the boot interval
-when the daemon is active but its netmap is not yet online. Once ready, unchanged
-strict preflight and apply checks run; the unit uses `TimeoutStartSec=150s`.
-Startup adds no second daemon, API credentials, provisioning or API/model probes.
+Its native readiness wait remains 120 seconds with `TimeoutStartSec=150s`;
+failures retry after 15 seconds. Successful oneshot completion normally leaves
+`tailscale.service` inactive. The coordinator uses no tailnet API credentials,
+provisioning or model/API probes; strict native checks remain required.
 Guarded one-off admin provisioning manually approves only
 the pinned stable native node; `autoApprovers` stays unchanged. Native Serve
 automatically advertises the Service. Clients 1.94+ use Service routes by
@@ -409,7 +410,22 @@ The invalid IPset policy is not retried. See
 
 Historical Phase 1, 2026-09-10: node-level private HTTPS, gateway/Hindsight
 restarts and dependency/health checks passed before rename/tagging. See the
-dated report for those checks; no full host reboot test or off-tailnet probe is claimed.
+dated report for those checks; no off-tailnet probe is claimed.
+
+The **2026-09-10 22:07 PDT reboot** exposed a Docker/login race: EasyLlama and
+PostgreSQL recovered after one restart each, but dependency failures cancelled
+9router/Hindsight starts before their restart policies could run. The recovery
+change uses shared `readiness.py` waits of up to **180 seconds per attempt** and
+`Wants`/`After` ordering so unavailable prerequisites fail the consumer's own
+startup and trigger its retry policy. `PartOf` preserves explicit stop/restart
+propagation; an intentional stop remains stopped until explicitly started.
+This bounds each wait, not total recovery time. Code/security reviews have no
+blockers; mock probes, isolated systemd recovery/restart/stop rehearsal and live
+health/authentication checks pass. Deployment preserved the three EasyLlama
+containers and database container IDs/start times. **No full reboot after the
+fix has been performed.**
+See [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery)
+for readiness gates, timeout budgets and evidence limits.
 
 The baseline gateway uses user `9router.service`; its old GUI autostart is
 disabled and `9router-local` starts that unit. Native npm 9router is no longer
