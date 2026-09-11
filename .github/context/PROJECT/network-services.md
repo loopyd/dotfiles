@@ -355,6 +355,38 @@ Hindsight/proxy/9router log window had no error, timeout or 429 markers. An
 embedding log's numeric `429` marker is ambiguous and is **not evidence of an
 HTTP 429 error**. This limited window does not establish a sustained error-free run.
 
+### Hindsight LLM Concurrency Trial (2026-09-11)
+
+**Reliability trial deployed by app-only restart at 21:18:10 UTC.** Active
+global/retain/reflect/consolidation LLM caps: **3/1/2/1** (original **4/2/2/1**).
+Added `HINDSIGHT_API_REFLECT_MAX_CONTEXT_TOKENS=32768` (default **100000**) and
+`HINDSIGHT_API_CONSOLIDATION_LLM_BATCH_SIZE=2` (default **8**); bank configuration
+confirms batch **2**.
+
+Native prompts reached **53–63K tokens** against **65536-token slots**, with
+**300-second read deadlines**. Worker `.queued` measures local permit waits.
+DB idle/no lock waits and unsaturated embeddings point toward LLM workload;
+concurrency-only trials still produced two fresh ReadTimeouts.
+
+The reflection threshold triggers earlier synthesis/history summarization,
+**not a hard input cap**, and may reduce context depth. Smaller consolidation
+batches group fewer new facts but may require more calls; **no hard token limit**.
+Models, authentication/credentials, low/medium reasoning, **300/600-second**
+timeouts, resources, bank strategies, DB concurrency **2**, chunk batch **4** and
+automatic reflection/observations/consolidation remain unchanged.
+
+Foreground reflection: **HTTP 200/nonempty, 459.508 s**; background: **224.267 s**.
+Recall: **44.527 s cold / 25.919 s follow-up**, latter **HTTP 200/nonempty**.
+Final **447-second** window: memory **1533→1535 (+2)**, completed retains **27
+unchanged**, failed **0**, errors/timeouts **0**; broader monitoring found none
+for **≥8 minutes**. The original retried operation remains pending: **imports
+are incomplete**. Overall memory **1465→1535** spans all trials, not throughput evidence.
+Code/configuration, health/authentication and render/secret checks passed.
+This bounded reliability trial proves neither a fix nor a speed/quality gain;
+context handling changes only through earlier compaction and smaller batches.
+Private backups: `~/.local/share/hindsight/backups/timeout-tuning-*`; no raw data
+included here. The following table is **historical, not active**.
+
 ### Applied Hindsight Settings
 
 These settings describe the earlier 8B trial checkpoint; API CPUs do not describe
@@ -365,7 +397,7 @@ Compose/native-library env.
 | --- | --- |
 | API container | `cpus: 8`, `mem_limit: 6G` (baseline 2 CPUs/3G), `memswap_limit: 8G` total RAM plus swap; `shm_size: 4G` unchanged |
 | Workers | `WORKER_MAX_SLOTS=4`; `WORKER_RETAIN_RESERVED_SLOTS=1`, `WORKER_CONSOLIDATION_RESERVED_SLOTS=1`, `WORKER_REFRESH_MENTAL_MODEL_RESERVED_SLOTS=1` |
-| LLM/retain | `LLM_MAX_CONCURRENT=4`, composed with `RETAIN_LLM_MAX_CONCURRENT=2`, `CONSOLIDATION_LLM_MAX_CONCURRENT=1`, `REFLECT_LLM_MAX_CONCURRENT=2`; `RETAIN_CHUNK_BATCH_SIZE=4` |
+| LLM/retain (historical; [current trial](#hindsight-llm-concurrency-trial-2026-09-11)) | `LLM_MAX_CONCURRENT=4`, composed with `RETAIN_LLM_MAX_CONCURRENT=2`, `CONSOLIDATION_LLM_MAX_CONCURRENT=1`, `REFLECT_LLM_MAX_CONCURRENT=2`; `RETAIN_CHUNK_BATCH_SIZE=4` |
 | Embeddings | `EMBEDDINGS_OPENAI_BATCH_SIZE=4`; unused concurrency env removed |
 | Application DB/recall | `DB_POOL_MIN_SIZE=4`, `DB_POOL_MAX_SIZE=24`, `RETAIN_MAX_CONCURRENT=2`, `RECALL_MAX_CONCURRENT=4` |
 | FlashRank | `RERANKER_FLASHRANK_BATCH_SIZE=8`; `OMP_NUM_THREADS=2`, `OPENBLAS_NUM_THREADS=2`, `MKL_NUM_THREADS=2` |
