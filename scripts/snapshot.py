@@ -215,7 +215,7 @@ def capture(args):
     exclusions = Counter()
     links = []
     roots = ['.config', '.agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
-    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.cargo/env', '.rustup/settings.toml']
+    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.cargo/env', '.rustup/settings.toml']
     candidates = [home / name for name in fixed if (home / name).exists()]
     for prefix in roots:
         base = home / prefix

@@ -316,6 +316,17 @@ Plugin build dependencies (Rust, Bun/Node, etc.) must be available; use user-too
 restoration first. Logs, session history, locks, release-note caches and installed
 plugin payloads are excluded. Plugin code stays in its original repositories.
 
+The captured Codex integration v8 adds Herdr's `SessionStart` registration in
+`~/.codex/hooks.json` alongside all three Hindsight hooks. Rendering restores both
+that registration and the exact managed `~/.codex/herdr-agent-state.sh`, with
+manifest hashes and file modes; the snapshot fixed-file allowlist retains the
+script on future captures. Verified rendering reproduces both live artifacts;
+`herdr integration status` reports `codex: current (v8)` for the previous live
+installation and an isolated restore with hooks enabled. Start a new Codex session inside Herdr to
+trigger `SessionStart`; this status check does not prove UI behavior, which remains
+untested. This sync captures configuration only; it changes no live home files,
+Codex trust configuration or policies, installer behavior, or binaries.
+
 Alacritty always compiles the captured `0.18.0-dev` source revision
 `f99dc71708d31d5c32d4b3fa611f9a87bf22657e`, rather than substituting a stable
 release. Install and update never reuse an existing binary; the build must report

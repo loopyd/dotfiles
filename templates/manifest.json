@@ -1001,7 +1001,13 @@
       "source": "root/home/user/.codex/hooks.json.tmpl",
       "target": ".codex/hooks.json",
       "mode": "0600",
-      "sha256": "f4668accf00fc4b7948371ab805865452be76d0cf5e8e43d7be103a024edf76a"
+      "sha256": "24cc09e53a02003e59ac5e84385bcd584c7b1f7cd07cbf8ec92ddc3f58346108"
+    },
+    {
+      "source": "root/home/user/.codex/herdr-agent-state.sh.tmpl",
+      "target": ".codex/herdr-agent-state.sh",
+      "mode": "0700",
+      "sha256": "38a90a2a99872d06dcbc978e7613406cdd852dbb07503abd7a113f518d5951f3"
     },
     {
       "source": "root/home/user/.codex/rules/default.rules.tmpl",

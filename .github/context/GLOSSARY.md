@@ -78,6 +78,11 @@ Concise repository terms used across .github/context.
 - Meaning: Captured public `services` map holds both Services' definitions/tags, VIPs, listeners/backends and approved stable native node ID; historical `retired_device` metadata is removed. Git captures non-secret metadata and canonical credential placeholders. Snapshot refresh preserves authored restoration overrides and excludes live trust caches/runtime noise. Metadata is not authorization; API permission, admin reprovisioning and manual approval remain separate from startup, without broader auto-approval.
 - References: [Network identity boundary](PROJECT/network-services.md#identity-restoration-boundary)
 
+## Herdr Codex integration
+
+- Meaning: Captured v8 `SessionStart` registration and managed script, restored together while preserving all three Hindsight hooks; retained by the snapshot allowlist. Live status reports current; a new Codex session inside Herdr is required, with UI behavior untested.
+- References: [Herdr and Alacritty](../../README.md#herdr-and-alacritty)
+
 ## symlink policy
 
 - Meaning: Host-derived symlinks are not stored in overlay; recreate via scripts/bootstrap.

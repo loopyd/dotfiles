@@ -4,20 +4,18 @@
       {
         "hooks": [
           {
-            "type": "command",
             "command": "node \"@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/codex-sessionstart-hook.js\"",
-            "timeout": 30
+            "timeout": 30,
+            "type": "command"
           }
         ]
-      }
-    ],
-    "UserPromptSubmit": [
+      },
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "node \"@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/codex-hook.js\"",
-            "timeout": 30
+            "command": "bash '@@DOTFILES:HOME@@/.codex/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
           }
         ]
       }
@@ -26,9 +24,20 @@
       {
         "hooks": [
           {
-            "type": "command",
             "command": "node \"@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/codex-stop-hook.js\"",
-            "timeout": 60
+            "timeout": 60,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "node \"@@DOTFILES:HOME@@/.hindsight/coding-agents/dist/codex-hook.js\"",
+            "timeout": 30,
+            "type": "command"
           }
         ]
       }
