@@ -355,16 +355,260 @@ Hindsight/proxy/9router log window had no error, timeout or 429 markers. An
 embedding log's numeric `429` marker is ambiguous and is **not evidence of an
 HTTP 429 error**. This limited window does not establish a sustained error-free run.
 
+### EasyLlama GPU Swapping (2026-09-12)
+
+The user selected llama-swap arbitration rather than disabling local Qwen chat
+or shrinking either model's context. Both `qwen3-chat` and `qwen3-embeddings`
+now belong to the single `gpu` group with `swap: true` and `exclusive: true`.
+The separate CPU embedding group is removed. [Upstream group semantics](https://github.com/mostlygeek/llama-swap/blob/main/docs/kb/guides/routing/groups-and-matrix.md)
+allow only one member of a swapping group to run at once. EasyLlama's existing
+held `/run` and synchronous `/sleep` lifecycle commands start the requested
+backend and wait for the previous process to exit before GPU reuse; no native
+code changes or model image updates were needed.
+
+The embedding command uses all CUDA0 layers, `--fit off`, four CPU threads,
+and `GGML_CUDA_ENABLE_UNIFIED_MEMORY=0` to avoid CPU fallback. Its container now
+has four CPUs, 12 GiB host RAM, no additional host swap and 4 GiB `/dev/shm`.
+Model FP16 precision, FP16 KV, 1,024 dimensions, last-token pooling, four slots,
+131,072 total context and batch/ubatch 512 are unchanged. FlashRank MiniLM stays
+on CPU with batch size 8; Hindsight's LLM stays on 9router Luna Responses.
+
+All normal chat/embedding clients must use authenticated 9router, which forwards
+to llama-swap at port 8080. Native 9000/9001 endpoints and lifecycle wake controls
+are diagnostics, not alternative production routes: bypassing arbitration can
+load both models and exhaust VRAM. Do not independently prewarm both backends.
+The existing 1,800-second idle TTL remains; cached files help reloads but no
+subsecond switching or persistent native-chat KV state is promised.
+
+Ten synthetic requests through 9router passed, including four concurrent mixed
+requests. Warm-file switch-and-request times were 1.739 seconds into embeddings
+and 3.708–3.785 seconds into chat; initial embedding load took 2.354 seconds.
+Contended embedding requests took up to 5.514 seconds, and a resident embedding
+request took 12 ms. All responses were HTTP 200. Ninety-three lifecycle samples
+found no simultaneous awake pair or unavailable controller; inspected logs and
+container state showed no OOM, load/connection failure or restart. Sampling is
+not a proof about every instant, and these short synthetic requests do not bound
+waiting behind long chat generations. Aggregate evidence:
+`/tmp/hindsight-swap-check.json`.
+
+Persist the group in `root/home/user/.config/easyllama/proxy.yaml.tmpl`, the
+command/resources in its sibling `compose.yaml.tmpl`, and the source command in
+`config/config.qwen.yml.tmpl`; maintain their manifest hashes. Private rendering
+must match `~/.config/easyllama` and the bound EasyLlama runtime proxy file.
+For changes, stop dependent services and EasyLlama before replacing owned
+containers: its supervisor correctly rejects command/resource drift. Preserve
+the previous configuration for rollback. A renamed old container with the same
+Compose service labels may be replaced automatically; do not rely on its name
+as a durable rollback backup. Preserve volumes and model caches. Restart EasyLlama, 9router and
+Hindsight in dependency order. The initial dependency stop also stops 9router;
+the database need not stop.
+
+Rollback restores the prior CPU command, resource limits and split groups from
+the preceding template versions, updates manifest hashes and private rendering,
+and recreates the embedding container through the same supervisor. Never restore
+split groups while GPU embeddings remain enabled. Neither migration direction
+resets the bank, changes vector identity or retries failed imports.
+
+Post-deployment native synthetic batches took 1.130 seconds serially and
+1.023 concurrently; minimum cosine to the earlier CPU reference was 0.999454.
+The GPU used approximately 16.5 GiB once active. All four user units (EasyLlama,
+9router, Hindsight and PostgreSQL) were active, authenticated Hindsight readiness
+and anonymous-access rejection passed, and renderer validation passed 864 files
+with no missing values. No GPU-trial or migration rollback container remains;
+unrelated older containers were not removed. EasyLlama's tracked source stays
+unchanged; only its private generated proxy configuration changes outside dotfiles.
+
+### GPU Embedding and CPU FlashRank Trial (2026-09-12)
+
+Historical isolated trial; the GPU deployment gate below was subsequently
+resolved by the user's explicit choice of [GPU swapping](#easyllama-gpu-swapping-2026-09-12).
+
+The user chose to keep FlashRank's existing `ms-marco-MiniLM-L-12-v2` on CPU.
+The installed ONNX session reports only `CPUExecutionProvider`. Its approximately
+34 MB model remains unchanged; [upstream model sizes](https://github.com/PrithivirajDamodaran/FlashRank)
+do not describe process RSS. Keep batch size 8: on 32 synthetic candidates,
+three-pass median timings were 1.406/1.393/1.601 seconds for batch 8/16/32;
+larger batches changed scores, and batch 32 raised cumulative benchmark-process
+peak RSS from 380 to 509 MiB. There is no clear tuning win to deploy.
+
+An isolated full-GPU Qwen3 Embedding 0.6B trial preserved model, 1,024 dimensions,
+last pooling, four 32K-token slots, FP16 KV, and batch/ubatch 512. Logs confirm
+29/29 layers and all KV layers on CUDA0. Four synthetic batches took 1.287 seconds
+serially and 1.240 concurrently, versus 43.003/42.973 on the loaded CPU baseline.
+These 33–35x ratios are bounded synthetic results, not sustained ingestion gains.
+Mixed-length CPU/GPU minimum cosine was 0.999454, similar to CPU self-variation;
+a separate labelled semantic probe achieved 0.999992 and identical top-three
+rankings on four queries. Corpus-wide parity is not established.
+
+**At trial time, not deployed:** this profile uses approximately 16.5 GiB GPU memory, including
+14 GiB KV, and cannot coexist with the current approximately 29 GiB local Qwen
+chat profile on the 32 GiB RTX 5090. Local chat was unloaded only for the trial;
+CPU embeddings continued serving Hindsight. Resolve the user's local-chat
+preference before activation; do not silently reduce context or add swapping.
+That deployment decision is now superseded by the swapping configuration. Local evidence:
+`/tmp/hindsight-gpu-tune/REPORT.md`.
+
+### Hindsight Luna Inference (2026-09-12)
+
+The user authorized existing corpus content and future memory requests to reach
+the external Codex/Luna provider through authenticated local 9router. Its model
+listing contains `cx/gpt-5.6-luna`; Hindsight now selects that explicit route,
+not a fallback combo, with `LLM_PROVIDER=openai-responses` and the unchanged
+local `/v1` base URL and gateway credential. This is an HTTP provider, not a
+Codex CLI launch or direct Codex credential configuration.
+
+Use Responses rather than Chat Completions: the synthetic chat probe ignored
+the requested JSON schema. Responses passed structured extraction and a
+medium-reasoning tool round trip in 1.7–2.3 seconds per synthetic request.
+Two actual Hindsight prompt/schema replays returned complete, valid outputs:
+1,062 source characters in 27.95 seconds (1,490 output tokens), and 11,956
+characters in 42.72 seconds (2,309 tokens). These are bounded single trials,
+not equal-quality throughput or pricing evidence. The larger sample retained
+6/12 literal reference anchors; do not deploy larger chunks based on speed alone.
+The short sample preserved redacted verification text instead of reconstructing
+those checks as passed, but source-quality and oversized-job recovery gates remain.
+
+Remove the four Qwen-specific `*_LLM_EXTRA_BODY`/`LLM_EXTRA_BODY` settings;
+native `*_REASONING_EFFORT` settings remain low for LLM/retain and medium for
+consolidation/reflect. Strict schema, existing concurrency, completion budgets,
+timeouts, chunk strategies and authentication remain unchanged. Embeddings stay
+on local Qwen3 Embedding 0.6B through `qwen3-chat/qwen3-embeddings`, with 1,024
+dimensions and concurrency four. No re-embedding, bank reset or failed-job retry
+is part of this switch. Hindsight alone is restarted; native model and database
+containers are not restarted or removed.
+
+Configuration lives in `root/home/user/.config/hindsight/server.env.tmpl` and
+the private rendered `~/.config/hindsight/server.env`; update its manifest hash
+when editing the template. Rollback requires restoring `LLM_PROVIDER=openai`,
+`LLM_MODEL=qwen-combo` and the prior Qwen chat-template extra bodies (low for
+LLM/retain, medium for consolidation/reflect), then restarting only Hindsight.
+Neither direction changes embedding identity or undoes already-extracted facts.
+Local aggregate replay evidence: `/tmp/hindsight-luna-test/summary.json`.
+
+Activation at 18:21:35 UTC passed authenticated API readiness and anonymous
+API/dashboard rejection checks. The running container's complete embedding-env
+hash matches the pre-switch snapshot. Initial production traces include successful
+retain extraction, consolidation and reflection tool calls; no parse, timeout,
+assertion or authentication errors appeared in the inspected startup interval.
+Warnings remain: DB acquisition took 68–76 ms, and a reflection hit its existing
+32,768-token context budget and forced final synthesis. These are not evidence
+that the import backlog or reflection-quality issues are resolved. Renderer
+validation passes all 864 files with no missing values; no native library,
+gateway/plugin code, model image or embedding settings changed.
+
+### Hindsight Larger-Output Trial (2026-09-12)
+
+Ten non-streaming requests through the authenticated local Qwen combo passed
+JSON/schema validation and ended naturally, with the existing 16,384-token
+output budget and the real gateway response-header deadline. Production
+ingestion stayed active; no chunk sizes, strategies or queued payloads changed.
+
+The same 11,956-character history sample produced:
+
+| Chunk limit | Requests | Total request time | Output tokens | Literal reference coverage |
+| --- | ---: | ---: | ---: | ---: |
+| 3,000 characters | 5 | 494.97 s | 24,949 | 11/12 |
+| 6,000 characters | 3 | 341.95 s | 16,512 | 7/12 |
+| 12,000 characters | 1 | 190.21 s | 8,570 | 7/12 |
+
+A second 11,838-character Git-history sample passed at 12,000 characters in
+121.65 seconds, producing 6,707 tokens. No tested request hit a token cap,
+gateway timeout or exact duplicate-fact loop. Literal reference matching is only
+a coverage proxy, not semantic validation; extracted fact counts differed too.
+These are single trials under changing live load, not equivalent-quality
+throughput benchmarks.
+
+Some bad verification wording originates in already-redacted source fragments
+such as `453 [REDACTED]ed`. Do not reconstruct secrets or assume larger chunks
+repair damaged input. Two background Hindsight parse warnings occurred despite
+all diagnostic responses passing; production parsing is not declared fixed.
+Larger chunks are technically viable on these samples, but global rollout and
+checkpoint-changing retries remain deferred pending coverage checks and
+provenance-preserving subdivision of oversized jobs. Local content-free evidence:
+`/tmp/hindsight-large-output-test/REPORT.md`.
+
+### Hindsight Coverage and Recovery Rehearsal (2026-09-12)
+
+Four further non-streaming Qwen requests added generic reference-preservation
+and redaction-uncertainty instructions to the same history sample. All returned
+valid JSON/schema and stopped naturally within the existing output budget.
+
+| Chunk limit | Requests | Total request time | Output tokens | Literal reference coverage |
+| --- | ---: | ---: | ---: | ---: |
+| 6,000 characters | 3 | 331.59 s | 18,052 | 8/12 |
+| 12,000 characters | 1 | 210.42 s | 8,734 | 7/12 |
+
+Coverage remains below the earlier 3,000-character 11/12 proxy. More importantly,
+outputs still misinterpret redacted verification results, including reconstructing
+successful checks. **The prompt failed the factual-fidelity gate**; valid JSON
+does not justify rollout. These single trials ran under varying background load.
+No prompt, strategy or chunk-size change was deployed.
+
+A separate read-only rehearsal matched all 27 committed chunks of a 728-chunk
+failed Git-history job with 156 memories. It proposes 88 bounded parts for the
+remaining 701 chunks, excluding existing checkpoints. Nothing was submitted.
+Before application, require source-fidelity validation, fresh identity pins,
+durable provenance/supersession covering parent retries, and a rollback design
+that preserves shared derived data. Failed operations cannot be cancelled;
+cancelled operations remain retryable, so cancellation alone cannot enforce
+supersession. Local diagnostic reports, not durable source payloads:
+`/tmp/hindsight-coverage-test/REPORT.md` and
+`/tmp/hindsight-recovery-rehearsal/REPORT.md`.
+
+### Hindsight Retain Admission Trial (2026-09-12)
+
+**Provisional:** `HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2` (previously 1),
+with global LLM concurrency 3. Retain-operation concurrency remains 2 and
+worker capacity remains 4, including one shared slot. Lowering the application
+gate alone would queue already-claimed jobs; removing the shared worker slot
+would block unreserved import, export and maintenance task types. Neither change
+was adopted. Models, authentication, strict schemas, reflection wall timeout
+1000 seconds, embeddings and other concurrency limits are unchanged.
+
+Two 15-minute production windows, baseline 15:50:30–16:05:30 UTC and candidate
+16:23:46–16:38:46 UTC after restart/warm-up:
+
+| Measurement | Baseline → candidate |
+| --- | --- |
+| Successful extraction calls | 11 → 13 |
+| Extraction output tokens | 56,772 → 74,302 |
+| New memories / document rows | 137 / 2 → 175 / 1 |
+| Fully completed retain jobs | 0 → 0 |
+| Median extraction trace duration | 1,787.88 → 625.01 s |
+| Matched median native duration | 87.83 → 94.18 s |
+| JSON-parse warnings | 0 → 2 |
+
+No new failed retain operations, HTTP 502s, header timeouts, assertions, OOMs or
+automatic container restarts were observed. Parse warnings triggered provider
+retries; their cause is not established. Global and per-operation strict-schema
+inheritance was checked. The candidate is not a demonstrated reliability fix:
+inputs differ, restarting resets queue age, and neither window completed a retain
+job. Consolidation calls fell 13→11 while reflection calls rose 6→9. Preserve
+these trade-offs rather than claiming a universal throughput improvement.
+
+An offline run of the unchanged chunker on 11 failed payloads produced
+917 / 605 / 457 / 231 chunks at 3000 / 4500 / 6000 / 12000 characters. One
+2,151,632-character Git-history payload accounts for 728 baseline chunks. The
+single heading-only fragment disappeared at larger sizes, but larger outputs
+could exceed model/transport budgets. No chunk-size, strategy or payload change
+was deployed. Bound oversized jobs while preserving source and recovery
+checkpoints before broadly retrying this backlog. Local content-free evidence:
+`/tmp/hindsight-admission-trial/`.
+
 ### Hindsight LLM Concurrency Trial (2026-09-11)
 
-**Reliability trial deployed by app-only restart at 21:18:10 UTC.** Active
+**Historical reliability trial, deployed by app-only restart at 21:18:10 UTC.** Then-current
 global/retain/reflect/consolidation LLM caps: **3/1/2/1** (original **4/2/2/1**).
 Added `HINDSIGHT_API_REFLECT_MAX_CONTEXT_TOKENS=32768` (default **100000**) and
 `HINDSIGHT_API_CONSOLIDATION_LLM_BATCH_SIZE=2` (default **8**); bank configuration
 confirms batch **2**.
 
-Native prompts reached **53–63K tokens** against **65536-token slots**, with
-**300-second read deadlines**. Worker `.queued` measures local permit waits.
+Native prompts reached **53–63K tokens**, with **300-second read deadlines**.
+The earlier **65536-token slot** comparison was incorrect: current `/slots`
+exposes `n_ctx=262144` for each chat slot with `--kv-unified`.
+This is shared unified capacity across four slots, not four independent
+262144-token allocations; the prompt sizes alone do not establish proximity
+to a fixed slot limit. Worker `.queued` measures local permit waits.
 DB idle/no lock waits and unsaturated embeddings point toward LLM workload;
 concurrency-only trials still produced two fresh ReadTimeouts.
 
@@ -397,7 +641,7 @@ Compose/native-library env.
 | --- | --- |
 | API container | `cpus: 8`, `mem_limit: 6G` (baseline 2 CPUs/3G), `memswap_limit: 8G` total RAM plus swap; `shm_size: 4G` unchanged |
 | Workers | `WORKER_MAX_SLOTS=4`; `WORKER_RETAIN_RESERVED_SLOTS=1`, `WORKER_CONSOLIDATION_RESERVED_SLOTS=1`, `WORKER_REFRESH_MENTAL_MODEL_RESERVED_SLOTS=1` |
-| LLM/retain (historical; [current trial](#hindsight-llm-concurrency-trial-2026-09-11)) | `LLM_MAX_CONCURRENT=4`, composed with `RETAIN_LLM_MAX_CONCURRENT=2`, `CONSOLIDATION_LLM_MAX_CONCURRENT=1`, `REFLECT_LLM_MAX_CONCURRENT=2`; `RETAIN_CHUNK_BATCH_SIZE=4` |
+| LLM/retain (historical; [current trial](#hindsight-retain-admission-trial-2026-09-12)) | `LLM_MAX_CONCURRENT=4`, composed with `RETAIN_LLM_MAX_CONCURRENT=2`, `CONSOLIDATION_LLM_MAX_CONCURRENT=1`, `REFLECT_LLM_MAX_CONCURRENT=2`; `RETAIN_CHUNK_BATCH_SIZE=4` |
 | Embeddings | `EMBEDDINGS_OPENAI_BATCH_SIZE=4`; unused concurrency env removed |
 | Application DB/recall | `DB_POOL_MIN_SIZE=4`, `DB_POOL_MAX_SIZE=24`, `RETAIN_MAX_CONCURRENT=2`, `RECALL_MAX_CONCURRENT=4` |
 | FlashRank | `RERANKER_FLASHRANK_BATCH_SIZE=8`; `OMP_NUM_THREADS=2`, `OPENBLAS_NUM_THREADS=2`, `MKL_NUM_THREADS=2` |
@@ -443,6 +687,58 @@ needed; preserve chat and DB volumes. Hindsight rollback is separately scoped.
 [hindsight-config]: https://github.com/vectorize-io/hindsight/blob/main/hindsight-docs/docs/developer/configuration.md
 [onnx-threading]: https://onnxruntime.ai/docs/performance/tune-performance/threading.html
 
+## Hindsight Profile Tuning
+
+**Applied 2026-09-11; bounded validation complete.**
+Runtime `get_config` verifies `HINDSIGHT_API_EMBEDDINGS_MAX_CONCURRENT_REQUESTS`
+**2→4**, embedding batch **4**, global LLM concurrency **3**. Native embedding
+remains **four slots, 32768 tokens/slot**, with unchanged CPU/memory; gateway
+admission remains **0**, avoiding the earlier 503 regression.
+Chat limits: **24→8 CPUs**, RAM **62.5→32 GiB**, total RAM-plus-swap
+**94.5→40 GiB**; threads/batch threads **8**, cache RAM **16384→4096 MiB**,
+checkpoints **32→8**. Models, weights, image pins, MTP, GPU placement, Q8 KV,
+**262144 shared context/four slots**, authentication, reasoning, timeouts and
+reflection budget are unchanged. No extension, library or source edits.
+
+| Probe | Baseline → candidate | Interpretation |
+| --- | --- | --- |
+| 32 embeddings, two workers | 53.849 → 46.359 s | Warm-up/cache-hit bias; no speedup claim |
+| 32 embeddings, four workers | 53.079 → 52.840 s | Approximately equal; no demonstrated embedding speed gain |
+| Four parallel chat calls | 1.168 → 1.698 s cold / 1.530 s warm | Warm outputs 173 → 186 tokens; not strictly deterministic; slowdown cannot be ruled out |
+| Long chat, 17,748 prompt tokens | 4.569 → 6.024 s mostly cold / 4.665 s warm | Warm comparison: 81 output tokens each |
+
+All **64 isolated vectors per profile** passed 1024-dimensional/unit-norm checks.
+The initial synthetic chat omitted `stream:false`, producing an invalid response
+envelope; explicit false passed. This was a benchmark fix, not a production change.
+Baseline chat cgroup current/peak was **19.3/21.5 GiB**, mostly anonymous memory,
+without OOM/swap; RTX 5090 VRAM was **30809/32607 MiB (~30.1/31.8 GiB)**. Candidate isolated
+peak **4.55 GiB** used fresh caches: reduced limits are verified, but this comparison
+does not prove a causal reduction in memory use.
+
+After ingestion resumed, **16/16 mixed-traffic vectors** passed at
+**11.676–34.262 s**; long chat **0.992 s** was a cache hit. Recall returned
+**three results in 59.918 s** under stress; normal probes returned three each in
+**27.496/27.791 s**. Residual normal-recall latency remains; without a comparable
+baseline, causality is unestablished. One CPU snapshot showed Hindsight **~800%**,
+embedding **~100%**, chat **~120%**, suggesting investigation of application CPU
+work, not proving a reranker cause. FlashRank `ms-marco-MiniLM-L-12-v2`,
+`RERANK_MAX_CONCURRENT=8` and `OMP=8` remain unchanged.
+
+All services are active with no automatic restarts; replay is active/exited
+successfully. Since startup **23:23:54 UTC**, the observed window has no ERROR,
+timeout, OOM or assertion events; warnings include slow DB acquisition
+**60–103 ms** and the existing reflection-budget guard forcing final synthesis.
+Ingestion advanced **2070→2094 memories**,
+**69→70 documents**, completed retains **33→34**, with no failed operations.
+This bounded progress does not establish full-backlog completion.
+
+Exact-profile checks and supervised adoption of Compose project
+`easyllama-profile-20260911` pass; images and embedding/proxy container IDs are
+unchanged. The old chat container remains stopped with suffix `-rollback-20260911`;
+private recovery snapshots are at `~/.local/share/easyllama/backups/profile-20260911`.
+Three configuration templates and manifest hashes changed. Checks: renderer **864 files/
+7 links/no missing values**, secrets guard **945 files/zero findings**.
+
 ## Hindsight 0.6B Migration
 
 Unmodified source and 0.6B CPU embeddings replace the historical 8B requirements.
@@ -456,7 +752,8 @@ lacks remote embedding concurrency; this build still reports package **0.9.2**.
 Label by commit, `dotfiles/hindsight:48b62ee08170`, not a fabricated release.
 Verified image ID:
 `sha256:28cc61a710db573b9e7701c9545b89e120a1a48d6c6d2279cb895a555e160f5f`.
-Actual `get_config` confirms parallel embedding batch concurrency **2** through
+At the migration checkpoint, `get_config` confirmed parallel embedding batch
+concurrency **2** (now **4**; see [profile tuning](#hindsight-profile-tuning)) through
 `HINDSIGHT_API_EMBEDDINGS_MAX_CONCURRENT_REQUESTS`. This is **not a universal
 per-request hard cap**: upstream single-batch/concurrency-1 fast paths bypass the
 shared semaphore.

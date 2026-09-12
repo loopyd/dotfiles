@@ -9,13 +9,9 @@ routing:
       groups:
         gpu:
           swap: true
-          exclusive: false
+          exclusive: true
           members:
           - qwen3-chat
-        cpu:
-          swap: false
-          exclusive: false
-          members:
           - qwen3-embeddings
 models:
   qwen3-chat:

@@ -144,11 +144,27 @@ Capture `autoReflect: false` and `reflectToolTimeoutMs: 660000` (11 minutes) in
 `root/home/user/.hindsight/coding-agent.json.tmpl`, and `tool_timeout_sec = 720`
 (12 minutes) under `[mcp_servers.hindsight]` in
 `root/home/user/.codex/config.toml.tmpl`. Keep the existing server reflect wall
-limit at 600 seconds. `autoReflect: false` disables automatic reflection in the
+limit at 1000 seconds. The explicit tool retains its shorter client deadlines;
+background refreshes can use the full server budget. `autoReflect: false`
+disables automatic reflection in the
 25-second hook window; SessionStart knowledge context, transcript capture,
 ingestion and the `shared` bank remain enabled. The explicit tool may need a new
 Codex session or MCP reconnect to load changed timeouts. This configuration change
 needs no service restart, source edit, reinstall, hook disabling or Herdr change.
+
+### Hindsight LLM route
+
+EasyLlama now swaps local Qwen chat and full-GPU Qwen embeddings within one
+exclusive llama-swap group. FlashRank MiniLM remains on CPU. Context sizes and
+embedding identity are unchanged; clients must route through 9router/llama-swap,
+not independently wake both native backends. [Switching measurements and lifecycle](.github/context/PROJECT/network-services.md#easyllama-gpu-swapping-2026-09-12).
+
+Hindsight uses `cx/gpt-5.6-luna` through authenticated local 9router's Responses
+API (`LLM_PROVIDER=openai-responses`). The user authorized external inference
+over existing and future memory content. Embeddings remain local Qwen3 Embedding
+0.6B, 1,024 dimensions, concurrency four; no reimport or re-embedding is needed.
+Keep low reasoning for LLM/retain and medium for consolidation/reflect; remove
+Qwen-only chat-template extra bodies. See [validation and rollback](.github/context/PROJECT/network-services.md#hindsight-luna-inference-2026-09-12).
 
 ### Hindsight CPU embedding trial
 
@@ -170,7 +186,16 @@ All 19,381 records are queued, not fully processed; SQL shows three documents an
 161 memories, zero failed operations. The replay unit exited successfully.
 Unmodified Hindsight commit `48b62ee08170b464f4c42b6f133b7cb798a59b21` adds
 remote embedding concurrency absent from published 0.9.2; its package still reports
-0.9.2. Parallel batch concurrency is 2, not a universal per-request hard cap.
+0.9.2. At this migration checkpoint, parallel batch concurrency was 2, not a
+universal per-request hard cap. Applied [profile tuning](.github/context/PROJECT/network-services.md#hindsight-profile-tuning)
+now verifies concurrency **4**, chat **8 CPUs/32 GiB RAM/40 GiB RAM-plus-swap**,
+with models, pins, native context and authentication preserved. Bounded validation
+shows approximately equal four-worker embedding time (**53.079→52.840 s**),
+not a speed gain; chat comparisons do not establish no slowdown. Mixed-traffic
+recall took **59.918 s**; normal probes took **27.496/27.791 s**, three results each.
+Residual recall latency remains, without a comparable baseline to establish cause.
+Ingestion advanced **2070→2094 memories**, **69→70 documents**, completed retains
+**33→34**, with no failed operations; full-backlog completion is not established.
 Official Qwen3 Embedding 0.6B FP16 runs on CPU: width 1024, native context 32768,
 eight threads/four slots/context131072, batch/microbatch512, LAST pooling.
 Qwen chat, FlashRank and authentication are unchanged. The old 8B database remains
