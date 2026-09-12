@@ -355,6 +355,76 @@ Hindsight/proxy/9router log window had no error, timeout or 429 markers. An
 embedding log's numeric `429` marker is ambiguous and is **not evidence of an
 HTTP 429 error**. This limited window does not establish a sustained error-free run.
 
+### Hindsight Reflection Context Budget (2026-09-12)
+
+Reflection now selects `cx/gpt-5.6-terra` using
+`HINDSIGHT_API_REFLECT_LLM_MODEL`, inheriting the global Responses provider,
+local gateway URL and credential. Consolidation also selects Terra through
+`HINDSIGHT_API_CONSOLIDATION_LLM_MODEL`; Luna remains the default for retain.
+Consolidation keeps medium reasoning and concurrency one. Embeddings and
+FlashRank are unchanged. Both aliases have the same gateway-declared context
+window. Live configuration and templates retain
+the 250,000-token guard, medium reasoning and existing concurrency/timeouts.
+
+Global `~/.hindsight/coding-agent.json` and its template now set
+`autoReflect: true`, restoring first-prompt synthesis in new Codex sessions.
+The installed `dist/codex-hook.js` currently sets `HOOK_REFLECT_CAP_MS = 2e4`
+(20 seconds), despite stale comments saying 25 seconds. The 660,000 ms explicit
+tool timeout and 1,000-second server wall limit do not increase that hard hook
+cap; slow automatic reflections can still time out. No plugin source is changed.
+Terra passed synthetic Responses strict-JSON extraction and a medium-reasoning
+recall tool round trip in 1.60–2.01 seconds per request. These small probes do
+not establish full-corpus reflection latency or guarantee the hook deadline.
+Rollback removes the reflect and consolidation model overrides and sets
+`autoReflect: false` in live/template settings, updates manifest hashes and
+restarts Hindsight.
+
+At the user's request, `HINDSIGHT_API_REFLECT_MAX_CONTEXT_TOKENS` is now
+**250,000**, leaving 22,000 tokens below the installed 9router
+`cx/gpt-5.6-luna` declared context window of 272,000. The user corrected the
+full-window proposal to preserve this margin. This supersedes both the original
+32,768 cap and the interim upstream-default 100,000 setting. Under the original
+cap, warnings forced final synthesis at
+37,565–60,670 estimated accumulated tokens on iterations 3–4. This is the
+reflection context guard, not the 1,000-second wall timeout or a completion-token
+limit. The installed 9router Luna capability table declares a 272,000-token
+context and 128,000-token maximum output; this is gateway metadata, not an
+independent measurement of the provider's ultimate limit.
+
+Keep the guard enabled rather than suppressing warnings or dropping evidence.
+The 10-iteration limit, 1,000-second wall timeout, 300-second LLM timeout, medium
+reflection reasoning, concurrency two, recall/source settings and uncapped
+reflection synthesis output remain unchanged. Larger loops can consume more
+tokens and time, and reflections that exceed 250,000 estimated tokens may still
+legitimately force synthesis. The 22,000-token margin is not an enforced output
+reservation. Tool results can overshoot the estimate before the guard runs,
+and synthesis/output may exceed the provider's remaining context; this is not a
+guarantee against overflow or warnings. This change does not establish answer
+correctness or fix unrelated extraction queueing.
+
+The runtime env file and `root/home/user/.config/hindsight/server.env.tmpl`
+must agree; update its manifest hash and restart only Hindsight to apply.
+Rollback restores the interim 100,000 (or original 32,768) through those same
+files and lifecycle. Do not reset
+the bank, change models or embeddings, or alter plugin/native code for this
+adjustment. Earlier 32K-budget observations below remain historical evidence.
+
+Historical validation at 100,000: the shared-bank ConfigResolver confirmed that
+cap and unchanged iteration/time/reasoning/concurrency settings. Those traces
+include successful 52K–82K-token inputs, above the former cap. A bounded shared-bank
+reflection completed HTTP 200 in 497.865 seconds, returning 4,018 characters;
+aggregate usage was 340,371 input and 6,592 output tokens across its calls, not
+one context window. No provider-context overflow, timeout or error appeared in
+the inspected interval. One larger reflection still reached approximately
+144,155 estimated accumulated tokens on iteration 5 and invoked protected final
+synthesis. This is remaining legitimate budget enforcement, not a claim that all
+warnings disappeared; the guard is evaluated after tool results and can overshoot.
+The user subsequently selected 250,000 tokens rather than this default.
+No speedup or semantic-correctness claim follows from HTTP success.
+Local aggregate probe result: `/tmp/hindsight-reflection-budget-check.json`.
+Renderer validation, live/template equality, changed-file secret scanning and
+`git diff --check` pass.
+
 ### EasyLlama GPU Swapping (2026-09-12)
 
 The user selected llama-swap arbitration rather than disabling local Qwen chat
@@ -452,7 +522,8 @@ That deployment decision is now superseded by the swapping configuration. Local 
 
 The user authorized existing corpus content and future memory requests to reach
 the external Codex/Luna provider through authenticated local 9router. Its model
-listing contains `cx/gpt-5.6-luna`; Hindsight now selects that explicit route,
+listing contains `cx/gpt-5.6-luna`; Hindsight selects that explicit default route
+(reflection and consolidation subsequently override it with Terra),
 not a fallback combo, with `LLM_PROVIDER=openai-responses` and the unchanged
 local `/v1` base URL and gateway credential. This is an HTTP provider, not a
 Codex CLI launch or direct Codex credential configuration.

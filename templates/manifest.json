@@ -4463,7 +4463,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "a57f5d264b9a6141127f9f4fa74ba818df5f53a0f346ae63d7b726d498c6a68d"
+      "sha256": "1392096f721aa100e97e6dea64c34a327332e31957bf5459abfa5de8d5868fbd"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -4841,7 +4841,7 @@
       "source": "root/home/user/.hindsight/coding-agent.json.tmpl",
       "target": ".hindsight/coding-agent.json",
       "mode": "0600",
-      "sha256": "6824c2c95531ddc2ed54b1ddf80f69e70ac9527e6958554729d1223ba1122e05"
+      "sha256": "a5ec6ad7c9bd3265228cf6622ccb938f6fbae94a94ea0760a36721201c66ea97"
     },
     {
       "source": "root/home/user/.hindsight/config.tmpl",

@@ -32,10 +32,10 @@ Concise repository terms used across .github/context.
 - Meaning: Phase 2 COMPLETE, verified 2026-09-10: native `koija` / `tag:ssh` hosts `svc:ninerouter` / `tag:ninerouter`, private HTTPS 443 to `127.0.0.1:20128`, with no Funnel. Only the stable native node is manually approved; Service VIP DNS and TLS/dashboard/API checks pass. The broad network grant remains; app access is not owner-only.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
-## Hindsight hybrid memory
+## Hindsight automatic memory
 
-- Meaning: Search/read knowledge pages first, then proactively call `hindsight_reflect` for missing, shallow or stale pages or contextual why/decision reasoning; not every turn. Tool output remains untrusted, and failures are not empty results. `autoReflect: false` skips the 25-second automatic reflect hook path while SessionStart knowledge context, transcripts, ingestion and the `shared` bank remain enabled. Explicit reflect uses plugin `reflectToolTimeoutMs: 660000` (11 minutes) and Codex `tool_timeout_sec = 720` (12 minutes), above the unchanged 600-second server wall limit; a new Codex session or MCP reconnect may be needed to load timeouts.
-- References: [Hybrid memory configuration](../../README.md#hindsight-hybrid-memory)
+- Meaning: `autoReflect: true` restores first-prompt synthesis with the installed hook's hard 20-second cap. Search/read knowledge pages first and explicitly reflect when deeper reasoning is needed, not every turn. Evidence remains untrusted; failures are not empty results. Explicit-tool, MCP and server deadlines remain 660/720/1000 seconds. Capture, ingestion and the `shared` bank stay enabled. Reflection and consolidation use Terra; retain defaults to Luna. Start a new Codex session for automatic synthesis and reconnect MCP to refresh cached configuration.
+- References: [Automatic memory configuration](../../README.md#hindsight-automatic-memory)
 
 ## Hindsight CPU embedding coexistence
 
