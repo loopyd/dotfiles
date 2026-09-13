@@ -32,6 +32,11 @@ Concise repository terms used across .github/context.
 - Meaning: Phase 2 COMPLETE, verified 2026-09-10: native `koija` / `tag:ssh` hosts `svc:ninerouter` / `tag:ninerouter`, private HTTPS 443 to `127.0.0.1:20128`, with no Funnel. Only the stable native node is manually approved; Service VIP DNS and TLS/dashboard/API checks pass. The broad network grant remains; app access is not owner-only.
 - References: [Setup and cutover](PROJECT/network-services.md#tailscale-setup-and-cutover)
 
+## Qwen GPU reranking
+
+- Meaning: EasyLlama's Qwen-mode `qwen3-reranker` endpoint uses compact BGE weights on GPU alongside the embedder. Chat swaps out both search models. Hindsight's built-in Cohere-compatible adapter calls authenticated EasyLlama directly; LLMs and embeddings stay on 9router, which lacks a rerank route.
+- References: [Deployment and measurements](PROJECT/network-services.md#easyllama-qwen-gpu-reranking-2026-09-13)
+
 ## Hindsight automatic memory
 
 - Meaning: `autoReflect: true` restores first-prompt synthesis with the installed hook's hard 20-second cap. Search/read knowledge pages first and explicitly reflect when deeper reasoning is needed, not every turn. Evidence remains untrusted; failures are not empty results. Explicit-tool, MCP and server deadlines remain 660/720/1000 seconds. Capture, ingestion and the `shared` bank stay enabled. Reflection and consolidation use Terra; retain defaults to Luna. Start a new Codex session for automatic synthesis and reconnect MCP to refresh cached configuration.

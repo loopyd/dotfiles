@@ -4,6 +4,8 @@ This index tracks curated research and historical documentation under .github/co
 
 ## Core Context
 
+- qwen-gpu-reranking: [Qwen GPU reranking](PROJECT/network-services.md#easyllama-qwen-gpu-reranking-2026-09-13) - Compact BGE reranker co-resident with GPU embeddings; chat swaps out both. Four-container supervisor and artifact pin captured. Hindsight uses authenticated EasyLlama directly with user approval because 9router lacks this route; real loaded searches pass.
+- hindsight-concurrency: [Luna/Terra tuning](PROJECT/network-services.md#hindsight-lunaterra-concurrency-2026-09-13) - Global LLM 8, retain/consolidation/reflect 4/2/4; six worker slots and four retain operations. Synthetic load gates passed; embeddings, recall and DB limits are unchanged. Short measurements do not establish sustained provider capacity.
 - coding-standards: [PROJECT/coding-standards.md](PROJECT/coding-standards.md)
 - network-services: [PROJECT/network-services.md](PROJECT/network-services.md) - Local AI lifecycle, private restoration and dated migration checks. Retired app artifacts stay excluded; owner template and local identity/data are preserved.
 - boot-recovery: [Boot recovery](PROJECT/network-services.md#boot-recovery) - 2026-09-10 22:07 PDT reboot exposed Docker/login dependency cancellation. Shared 180-second readiness waits and consumer retries are deployed; reviews have no blockers, mock/isolated recovery checks and live health/authentication checks pass. EasyLlama/database container IDs and start times are unchanged; no full reboot after the fix performed.

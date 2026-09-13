@@ -355,14 +355,150 @@ Hindsight/proxy/9router log window had no error, timeout or 429 markers. An
 embedding log's numeric `429` marker is ambiguous and is **not evidence of an
 HTTP 429 error**. This limited window does not establish a sustained error-free run.
 
+### EasyLlama Qwen GPU Reranking (2026-09-13)
+
+Current deployment adds `qwen3-reranker` to Qwen mode using BGE reranker v2 M3
+Q8_0, not Qwen-family reranker weights. Its 635,676,416-byte artifact is pinned
+by revision and SHA-256 in `~/.config/easyllama/reranker.json`. Model download,
+verification, four-container ownership, startup, shutdown and health checks
+are handled by `scripts/easyllama.py`; its existing `model` node restores both
+embedding and reranking artifacts without replacing mismatched existing files.
+The same pinned Qwen inference image is reused; no native image rebuild.
+The corresponding EasyLlama source/package release is `v0.6.3`; this does not
+relabel the older captured image build or change its deployment revision pin.
+
+The new loopback backend uses port 9004 and lifecycle port 9005, two native
+slots, full CUDA placement, 16,384 aggregate context tokens, 8,192 batch/microbatch,
+two CPU threads, 2 CPUs, 8 GiB RAM/no additional swap and 4 GiB `/dev/shm`.
+GPU chat and search groups are mutually exclusive; search has `swap: false`
+and contains embeddings plus reranking, both `ttl: 0`. They stay resident
+together during search but unload for large chat. `concurrencyLimit: 0` allows
+native queueing instead of rejecting bursts at the proxy. Do not bypass the
+proxy with independently awakened GPU backends.
+
+Installed and upstream 9router have no rerank route; authenticated requests to
+`/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
+direct EasyLlama routing for reranking only. Hindsight uses `RERANKER_PROVIDER=cohere`,
+model `qwen3-reranker`, full URL `http://127.0.0.1:8080/v1/rerank`, timeout 120
+seconds and the existing EasyLlama API credential rendered privately. This
+built-in Cohere-compatible HTTP adapter makes no Cohere cloud call. LLM and
+embedding routes remain on 9router; inactive FlashRank settings/cache are kept
+for rollback. No Hindsight, plugin or 9router source edits.
+
+Validation: five small semantic probes passed (1.313 seconds cold, 10–21 ms
+warm), followed by four concurrent 300-document batches completing in 2.508
+seconds total. All 1,200 scores were finite, document indices complete and each
+known relevant document ranked first. These simple synthetic cases do not
+establish general relevance parity between BGE and the retired FlashRank model.
+The same four real low-budget shared-bank searches timed out at 90 seconds each
+with CPU FlashRank under both old and proposed LLM concurrency. GPU reranking
+returned all four successfully in 4.504–10.438 seconds (10.439 seconds total),
+with ingestion active and unchanged search candidate/token budgets. Afterward,
+Hindsight used 422 MiB RAM and 2.72% CPU in one snapshot, versus ~800% CPU during
+the earlier saturated CPU search burst; this is not a matched steady-state CPU
+benchmark. Total GPU memory in use while search models were co-resident was
+17,836 MiB of 32,607 MiB, including other allocations on the device. A later
+per-process sample confirmed GPU allocations for both native search backends.
+
+A second loaded search burst completed in 9.304 seconds (individual requests
+3.987–9.302 seconds). Four CPU samples taken during that burst showed Hindsight
+at 0.90–10.59% CPU and 560–562 MiB RAM; the separate GPU reranker used
+70.90–100.93% CPU, within its two-CPU quota. The 120-second production window
+at 01:24:09–01:26:10 UTC added 59 memories and two documents, with 16 successful
+Luna extraction calls and no failed LLM traces in that window. The earlier
+120-second baseline added 23 memories/two documents and nine extraction calls.
+These differing short workload windows are observational, not a controlled
+end-to-end ingestion speedup or evidence that the large backlog is complete.
+
+Search → local Qwen chat → search passed through the authorized gateways:
+chat 4.071 seconds, embedder return 1.758 seconds, reranker return 1.302 seconds.
+The corrected sampler observed 28 backend snapshots, including both search
+models together and chat alone, with no observed overlap. Sampling is not proof
+of every transient state; `/tmp/easyllama-search-swap.json` retains the evidence.
+All 30 existing EasyLlama unit tests and related Ruff checks pass; the two earlier
+sandbox-only generated-file write failures passed on the authorized rerun.
+
+Evidence on the originating host: `/tmp/easyllama-rerank-results.json`,
+`/tmp/easyllama-rerank-load.json`, `/tmp/hindsight-concurrency-recall-control.json`,
+`/tmp/hindsight-concurrency-recall-gpu.json`. No benchmark facts were ingested.
+Private rollout backups are under `~/.local/state/dotfiles/qwen-rerank-*`.
+Rollback can first restore `RERANKER_PROVIDER=flashrank` and the previous LLM
+caps, then restart only Hindsight. Removing the fourth backend also requires
+restoring the matching three-container supervisor, deployment and proxy files;
+never replace these independently while the owning unit is running. Preserve
+model caches and databases.
+
+Sources: [llama.cpp reranking API](https://github.com/ggml-org/llama.cpp/tree/master/tools/server#post-reranking-rerank-documents-according-to-a-given-query),
+[GPUStack artifact](https://huggingface.co/gpustack/bge-reranker-v2-m3-GGUF),
+[llama-swap group/TTL configuration](https://github.com/mostlygeek/llama-swap/blob/main/docs/config.example.yaml),
+[Hindsight configuration](https://hindsight.vectorize.io/developer/configuration).
+
+### Hindsight Luna/Terra Concurrency (2026-09-13)
+
+Deployed after GPU reranking validation: global LLM concurrency 8; Luna retain LLM 4; Terra
+consolidation LLM 2; Terra reflect LLM 4; retain operations 4; worker slots 6.
+The previous values were 3/2/1/2/2/4 respectively. Keep one reserved worker
+slot each for retain, consolidation and mental-model refresh, leaving three
+shared slots. Global and per-operation LLM limits compose: background retain
+plus consolidation can consume six of eight permits; other unscoped calls,
+including mental-model delta operations, also consume global permits. This is
+headroom, not a strict priority guarantee for interactive reflection.
+
+The shared bank serializes consolidation operations; its existing internal
+tag-group parallelism is four, with overlapping scopes additionally serialized.
+Increasing reserved consolidation worker slots cannot parallelize the same bank.
+Do not increase embedding concurrency/batch four, recall concurrency four,
+DB pool 4–24 or container resources without separate
+evidence: these are local hardware/retrieval constraints, not Terra/Luna limits.
+Reasoning, models, context budgets, timeouts, authentication and automatic
+reflection remain unchanged. No native code, plugin code or gateway code edits.
+
+Research: OpenAI's [Codex usage guidance](https://developers.openai.com/codex/pricing/)
+describes plan/model/task-dependent usage, not a fixed Luna/Terra concurrency
+entitlement. [API rate-limit guidance](https://platform.openai.com/docs/guides/rate-limits)
+describes RPM/TPM and backoff, but API-key limits must not be assumed for this
+Codex gateway route. No rate-limit headers were returned by these probes.
+[Hindsight configuration](https://hindsight.vectorize.io/developer/configuration)
+documents the composed caps, worker reservations and per-bank consolidation
+parallelism; the installed implementation agrees. Its default global 32 is
+not a recommendation to immediately use 32 on this shared endpoint.
+
+Synthetic Responses probes used 13,439-character duplicate/dated service facts,
+exact eight-fact structured-output checks, low reasoning for Luna extraction,
+medium reasoning for Terra consolidation and a recall-tool round trip for
+reflection. They did not ingest benchmark facts into memory. Four fixed jobs
+per model/stage, then eight mixed jobs/stage, all completed correctly: 44 HTTP
+requests total, no observed 429/timeouts/schema failures.
+
+| Workload | Concurrency | Batch seconds | Jobs/minute |
+| --- | ---: | ---: | ---: |
+| Luna extraction, four jobs | 1 / 2 / 4 | 14.367 / 9.999 / 3.716 | 16.70 / 24.00 / 64.58 |
+| Terra consolidation, four jobs | 1 / 2 / 4 | 13.232 / 6.931 / 3.484 | 18.14 / 34.63 / 68.88 |
+| Mixed extraction/consolidation/reflection, eight jobs | 4 / 8 | 18.076 / 6.137 | 26.55 / 78.21 |
+
+These are short synthetic bursts while ordinary ingestion continued, not
+sustained provider capacity, full-context reflection latency or corpus-ingestion
+speedups. Evidence on the originating host: `/tmp/hindsight-concurrency-probe.py`,
+`/tmp/hindsight-concurrency-models.json`, `/tmp/hindsight-concurrency-mixed.json`.
+Observe the real queue separately before/after rollout; LLM trace durations can
+include semaphore waits and must not be called pure generation time. One earlier
+mental-model refresh failed with `MentalModelRefreshError` and an empty-output
+indicator at 00:48:01 UTC, before tuning; it is not a new concurrency regression.
+
+Rollback restores global/retain/consolidation/reflect LLM caps to 3/2/1/2,
+retain operations to 2 and worker slots to 4 in live/template `server.env`,
+refreshes its manifest hash, and restarts only Hindsight. Back off on new 429s,
+timeouts, malformed outputs, sustained queue growth or resource pressure rather
+than raising retry counts or switching providers. Leave independent services up.
+
 ### Hindsight Reflection Context Budget (2026-09-12)
 
 Reflection now selects `cx/gpt-5.6-terra` using
 `HINDSIGHT_API_REFLECT_LLM_MODEL`, inheriting the global Responses provider,
 local gateway URL and credential. Consolidation also selects Terra through
 `HINDSIGHT_API_CONSOLIDATION_LLM_MODEL`; Luna remains the default for retain.
-Consolidation keeps medium reasoning and concurrency one. Embeddings and
-FlashRank are unchanged. Both aliases have the same gateway-declared context
+Consolidation keeps medium reasoning; the later concurrency and GPU reranking
+profiles are above. Embeddings are unchanged. Both aliases have the same gateway-declared context
 window. Live configuration and templates retain
 the 250,000-token guard, medium reasoning and existing concurrency/timeouts.
 

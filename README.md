@@ -156,10 +156,12 @@ server model changes require restarting only Hindsight.
 
 ### Hindsight LLM route
 
-EasyLlama now swaps local Qwen chat and full-GPU Qwen embeddings within one
-exclusive llama-swap group. FlashRank MiniLM remains on CPU. Context sizes and
-embedding identity are unchanged; clients must route through 9router/llama-swap,
-not independently wake both native backends. [Switching measurements and lifecycle](.github/context/PROJECT/network-services.md#easyllama-gpu-swapping-2026-09-12).
+EasyLlama Qwen mode keeps full-GPU embeddings and compact BGE reranking together
+in a persistent search group. Large Qwen chat swaps out that group. Hindsight
+uses EasyLlama's authenticated `/v1/rerank` directly through its built-in
+Cohere-compatible adapter; 9router has no rerank route. LLMs and embeddings
+continue through 9router. No native backend should be independently awakened.
+[GPU reranking deployment and validation](.github/context/PROJECT/network-services.md#easyllama-qwen-gpu-reranking-2026-09-13).
 
 Hindsight defaults to `cx/gpt-5.6-luna`, with
 `HINDSIGHT_API_REFLECT_LLM_MODEL=cx/gpt-5.6-terra` and
@@ -176,6 +178,12 @@ below the gateway-declared 272,000-token window for both models. The 1,000-secon
 wall timeout and other safeguards remain. This margin is not a hard output reservation;
 large tool results or synthesis can still overflow, and token use may increase.
 See [reflection budget](.github/context/PROJECT/network-services.md#hindsight-reflection-context-budget-2026-09-12).
+
+### Hindsight concurrency
+
+The global LLM cap is eight, with retain/consolidation/reflect caps of 4/2/4.
+Six worker slots and four retain operations increase ingestion parallelism;
+embedding and recall concurrency remain four. See the [measured profile and rollback](.github/context/PROJECT/network-services.md#hindsight-lunaterra-concurrency-2026-09-13).
 
 ### Hindsight CPU embedding trial
 

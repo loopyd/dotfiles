@@ -39,7 +39,7 @@ def configuration():
     directory, deployment = deployment_configuration()
     command = ['docker', 'compose', '--project-name', 'easyllama', '--file', str(directory / 'compose.yaml')]
     services = json.loads(execute([*command, 'config', '--format', 'json']).stdout)['services']
-    if set(services) != {'proxy', 'chat', 'embeddings'} or set(deployment['images']) != set(services):
+    if set(services) != {'proxy', 'chat', 'embeddings', 'reranker'} or set(deployment['images']) != set(services):
         raise ValueError('Unexpected EasyLlama service set')
     for role, service in services.items():
         if service['image'] != deployment['images'][role]['id'] or service.get('network_mode') != 'host' or service.get('ports'):
@@ -56,11 +56,12 @@ class ModelRedirectHandler(HTTPRedirectHandler):
         return super().redirect_request(request, response, code, message, headers, new_url)
 
 
-def model_configuration():
+def model_configuration(name='model.json'):
     directory, deployment = deployment_configuration()
-    pin = json.loads((directory / 'model.json').read_text())
-    if pin.get('format') != 1 or pin.get('repository') != 'Qwen/Qwen3-Embedding-0.6B-GGUF' or pin.get('file') != 'Qwen3-Embedding-0.6B-f16.gguf':
-        raise ValueError('Unexpected embedding model recipe')
+    pin = json.loads((directory / name).read_text())
+    recipes = {'model.json': ('Qwen/Qwen3-Embedding-0.6B-GGUF', 'Qwen3-Embedding-0.6B-f16.gguf'), 'reranker.json': ('gpustack/bge-reranker-v2-m3-GGUF', 'bge-reranker-v2-m3-Q8_0.gguf')}
+    if pin.get('format') != 1 or (pin.get('repository'), pin.get('file')) != recipes[name]:
+        raise ValueError('Unexpected model recipe')
     if not re.fullmatch(r'[0-9a-f]{40}', pin['revision']) or not re.fullmatch(r'[0-9a-f]{64}', pin['sha256']) or type(pin['size']) is not int or pin['size'] <= 0:
         raise ValueError('Embedding model requires a full revision, size and SHA-256 pin')
     root = Path(deployment['root'])
@@ -84,12 +85,17 @@ def verify_model(target, pin):
 
 def model(check_only=False, dry_run=False):
     if dry_run:
-        print('DRY-RUN: verify the pinned Qwen 0.6B embedding weights or download the exact revision when absent; no writes or downloads')
+        print('DRY-RUN: verify pinned embedding and reranker weights or download exact revisions when absent; no writes or downloads')
         return
-    pin, target = model_configuration()
+    for name in ['model.json', 'reranker.json']:
+        restore_model(name, check_only)
+
+
+def restore_model(name, check_only):
+    pin, target = model_configuration(name)
     if check_only or target.exists():
         verify_model(target, pin)
-        print('Pinned Qwen 0.6B embedding weights verified')
+        print('Pinned model verified:', pin['file'])
         return
     target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     descriptor = os.open(target.parent / '.dotfiles-model.lock', os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
@@ -101,7 +107,7 @@ def model(check_only=False, dry_run=False):
         download_model(target, pin)
     finally:
         os.close(descriptor)
-    print('Pinned Qwen 0.6B embedding weights downloaded and verified; other model weights preserved')
+    print('Pinned model downloaded and verified:', pin['file'])
 
 
 def download_model(target, pin):
@@ -241,7 +247,7 @@ def health():
     key = json.loads((directory / 'config.json').read_text())['credentials']['api_key']
     with urlopen(Request('http://127.0.0.1:8080/v1/models', headers={'Authorization': 'Bearer ' + key}), timeout=15) as response:
         models = {entry['id'] for entry in json.load(response)['data']}
-    if not {'qwen3-chat', 'qwen3-embeddings'}.issubset(models):
+    if not {'qwen3-chat', 'qwen3-embeddings', 'qwen3-reranker'}.issubset(models):
         raise ValueError('Captured Qwen models missing')
 
 
@@ -250,10 +256,10 @@ def check():
     _directory, _deployment, services, _command = configuration()
     images()
     observed = containers(services)
-    if len(observed) != 3 or any(not container['State']['Running'] for _role, container in observed):
+    if len(observed) != 4 or any(not container['State']['Running'] for _role, container in observed):
         raise ValueError('EasyLlama stack is not running')
     health()
-    print('Three pinned EasyLlama containers, captured limits/mounts and authenticated Qwen discovery verified')
+    print('Four pinned EasyLlama containers, captured limits/mounts and authenticated Qwen discovery verified')
 
 
 def wait():
@@ -336,7 +342,7 @@ def inspect_owned(record):
 
 def stop_owned(records):
     failed = False
-    for record in sorted(records, key=lambda entry: ['proxy', 'chat', 'embeddings'].index(entry['role'])):
+    for record in sorted(records, key=lambda entry: ['proxy', 'chat', 'embeddings', 'reranker'].index(entry['role'])):
         try:
             if inspect_owned(record) is not None:
                 execute(['docker', 'stop', '--time', '60', record['id']])
@@ -440,7 +446,7 @@ def supervise():
     try:
         override = ownership().parent / ('compose-' + invocation + '.json')
         write_state(override, {'services': {role: {'labels': {'dotfiles.easyllama.transaction': invocation}} for role in services}})
-        for role in ['chat', 'embeddings', 'proxy']:
+        for role in ['chat', 'embeddings', 'reranker', 'proxy']:
             if stopping.is_set():
                 return
             if role not in observed:
@@ -463,7 +469,7 @@ def supervise():
                 stopping.wait(2)
         else:
             raise ValueError('EasyLlama endpoint did not become healthy')
-        if len(state['records']) != 3:
+        if len(state['records']) != 4:
             raise ValueError('Could not establish ownership of the full stack')
         current = containers(services)
         same_owners(state, current)

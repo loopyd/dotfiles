@@ -4463,7 +4463,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "1392096f721aa100e97e6dea64c34a327332e31957bf5459abfa5de8d5868fbd"
+      "sha256": "665204c5ad0141fd48a97d3c9845ca03a3c537ad16e10fff23aeb0811d972751"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -4997,19 +4997,19 @@
       "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
       "target": ".config/easyllama/deployment.json",
       "mode": "0600",
-      "sha256": "2becf32586a50865cb281af623d5e4fc8f7c33796319c73ba4b66da5d52f0e70"
+      "sha256": "940e792d4a2e863d3d0389d6790eff9e7dee20f0be3bef544845877c79d33312"
     },
     {
       "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
       "target": ".config/easyllama/proxy.yaml",
       "mode": "0600",
-      "sha256": "8b5024c2746eba1e6e82157132617c4c8b3946c4218cf529545a63038e614437"
+      "sha256": "9cf2de1f1c68d6e4d5e9c937e094cf11c9e40de36e7df10fe05b0c3d11360f2f"
     },
     {
       "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
       "target": ".config/easyllama/compose.yaml",
       "mode": "0600",
-      "sha256": "0534e67c35ec4100ab5aa804f266acd6ffd9d0d335490a222fcba47e9715ac6a"
+      "sha256": "d96c7695189f5508d17a58d90636c0b6641d261e8de80323a927d7c8d3eef4da"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
@@ -5027,7 +5027,7 @@
       "source": "root/home/user/.config/easyllama/config/config.qwen.yml.tmpl",
       "target": ".config/easyllama/config/config.qwen.yml",
       "mode": "0600",
-      "sha256": "efc73d00c4493d3d144376d9d98ccaaba1173afdb49bc82a5cb5a0a4db1ae44e"
+      "sha256": "143121249220f81c33ba0bed883ad15110a6a9cbad689ec614af78d0d758fbec"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.spiritbuun.yml.tmpl",
@@ -5184,6 +5184,12 @@
       "target": ".config/easyllama/model.json",
       "mode": "0600",
       "sha256": "92e8a316e1a3b07b28f2d36bba17d30e930c83870e660097966803baeb77d054"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/reranker.json",
+      "target": ".config/easyllama/reranker.json",
+      "mode": "0600",
+      "sha256": "b7dffc84c69876ba7f6d5fbf014ccbb68470a95324127d10a99b8d3b2cf83f7a"
     }
   ],
   "symlinks": [

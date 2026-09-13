@@ -12,7 +12,12 @@ routing:
           exclusive: true
           members:
           - qwen3-chat
+        search:
+          swap: false
+          exclusive: true
+          members:
           - qwen3-embeddings
+          - qwen3-reranker
 models:
   qwen3-chat:
     concurrencyLimit: 0
@@ -25,6 +30,7 @@ models:
     checkEndpoint: /v1/models
     useModelName: qwen3-chat
   qwen3-embeddings:
+    ttl: 0
     concurrencyLimit: 0
     name: Qwen3 Embeddings 0.6B FP16
     description: Dense embedding model for vector search, RAG, similarity
@@ -33,5 +39,15 @@ models:
     proxy: http://127.0.0.1:9001
     checkEndpoint: /v1/models
     useModelName: qwen3-embeddings
+  qwen3-reranker:
+    ttl: 0
+    concurrencyLimit: 0
+    name: BGE Reranker v2 M3 Q8_0
+    description: Compact GPU reranking in Qwen mode, co-resident with embeddings
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9005/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9005/sleep
+    proxy: http://127.0.0.1:9004
+    checkEndpoint: /v1/models
+    useModelName: qwen3-reranker
 apiKeys:
 - @@DOTFILES:SECRET_EASYLLAMA_CONFIG_EASYLLAMA_CONFIG_JSON_API_KEY@@

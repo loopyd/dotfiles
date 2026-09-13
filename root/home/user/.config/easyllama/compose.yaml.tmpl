@@ -315,7 +315,7 @@ services:
       timeout: 5000000000ns
       start_period: 20000000000ns
       retries: 3
-  embeddings:
+  embeddings: &qwen_search_backend
     image: sha256:22da284f1b87f7a44012043658c5da2e5e282d04a1539a20f491960d95f47676
     container_name: easyllama-qwen-llamacpp-qwen3-embeddings
     network_mode: host
@@ -469,4 +469,38 @@ services:
       interval: 30000000000ns
       timeout: 5000000000ns
       start_period: 20000000000ns
+      retries: 3
+  reranker:
+    <<: *qwen_search_backend
+    container_name: easyllama-qwen-llamacpp-qwen3-reranker
+    command:
+    - /opt/venv/bin/easyllama
+    - lifecycle
+    - --host
+    - 127.0.0.1
+    - --port
+    - '9005'
+    - --
+    - /bin/sh
+    - -lc
+    - exec /opt/venv/bin/easyllama server qwen --bin /app/bin/llama-server-qwen --host
+      127.0.0.1 --port 9004 --model /root/.cache/huggingface/hub/models--gpustack--bge-reranker-v2-m3-GGUF/snapshots/3093af03b1a635e67b084b1d8c03c5f5e020fd05/bge-reranker-v2-m3-Q8_0.gguf
+      --n-gpu-layers all --device CUDA0 --fit off --threads 2 --threads-batch 2
+      --ctx-size 16384 --batch-size 8192 --ubatch-size 8192 --parallel 2
+      --embedding --pooling rank --reranking --no-warmup --no-webui
+    labels:
+      easyllama.managed: 'true'
+      easyllama.mode: qwen
+      easyllama.port: '9004'
+      easyllama.stop-signal: SIGTERM
+      easyllama.type: llamacpp
+    cpus: 2.0
+    mem_limit: 8589934592
+    memswap_limit: 8589934592
+    shm_size: 4294967296
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, 'http://127.0.0.1:9005/health']
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
       retries: 3
