@@ -17,6 +17,11 @@ from scope import game_package, without_games
 ROOT = Path(__file__).resolve().parents[1]
 NAME = re.compile(r'(?:@[a-z0-9_.-]+/)?[A-Za-z0-9][A-Za-z0-9_.-]*')
 PI_PREFIXES = ('@earendil-works/pi-', '@mariozechner/pi-', '@plannotator/pi-', '@samfp/pi-', 'pi-')
+EXCLUDED_PACKAGES = {'blender', 'bof3-ghidra', 'ghidra', 'ollama', 'pyghidra', 'reaper'}
+
+
+def excluded_package(name):
+    return name.casefold() in EXCLUDED_PACKAGES
 
 
 def require(condition, message):
@@ -47,13 +52,18 @@ def snapshot():
     alternate = {}
     for manager, relative in [('bun', '.bun/install/global/package.json'), ('pnpm', '.local/share/pnpm/global/5/package.json'), ('yarn', '.config/yarn/global/package.json')]:
         path = home / relative
-        alternate[manager] = sorted(json.loads(path.read_text()).get('dependencies', {})) if path.exists() else []
+        alternate[manager] = (sorted(
+            name for name in json.loads(path.read_text()).get('dependencies', {})
+            if not excluded_package(name)
+        ) if path.exists() else [])
     python = {}
     for site in sorted((home / '.local/lib').glob('python*/site-packages')):
         packages, requested = set(), set()
         for metadata in site.glob('*.dist-info/METADATA'):
             require(not (metadata.parent / 'direct_url.json').exists(), 'Review direct/local Python sources before capture')
             name = email.parser.Parser().parsestr(metadata.read_text())['Name']
+            if excluded_package(name):
+                continue
             packages.add(name)
             if (metadata.parent / 'REQUESTED').exists():
                 requested.add(name)
@@ -67,6 +77,8 @@ def snapshot():
             group = managed.setdefault(site.parent.name.removeprefix('python'), {'packages': [], 'sources': []})
             for metadata in site.glob('*.dist-info/METADATA'):
                 name = email.parser.Parser().parsestr(metadata.read_text())['Name']
+                if excluded_package(name):
+                    continue
                 group['packages'].append(name)
                 direct = metadata.parent / 'direct_url.json'
                 if direct.exists() and name != 'pip':
@@ -89,7 +101,9 @@ def snapshot():
     for source, options in json.loads(crates.read_text()).get('installs', {}).items() if crates.exists() else []:
         require('(registry+https://github.com/rust-lang/crates.io-index)' in source, 'Review non-registry Cargo source before capture')
         require(not options.get('features') and not options.get('no_default_features') and not options.get('all_features'), 'Review custom Cargo features before capture')
-        cargo.append(source.split()[0])
+        package = source.split()[0]
+        if not excluded_package(package):
+            cargo.append(package)
     components, targets = set(), set()
     for path in (home / '.rustup/toolchains').glob('*/lib/rustlib/components'):
         host = re.fullmatch(r'(?:\d+\.\d+\.\d+|stable|beta|nightly(?:-\d{4}-\d{2}-\d{2})?)-(.+)', path.parents[2].name)
@@ -118,7 +132,7 @@ def snapshot():
             fields = [line.strip().split('\t') for line in result.stdout.splitlines()]
             package = next((parts[1] for parts in fields if len(parts) > 1 and parts[0] == 'path'), '')
             module = next((parts for parts in fields if len(parts) > 2 and parts[0] == 'mod'), None)
-            if module:
+            if module and not excluded_package(path.name) and not excluded_package(package.rsplit('/', 1)[-1]):
                 go[package] = {'package': package, 'binary': path.name, 'local_build': module[2] == '(devel)'}
     npm_config = {}
     npmrc = home / '.npmrc'
@@ -130,10 +144,10 @@ def snapshot():
                 url = urlsplit(value)
                 require(url.scheme == 'https' and url.hostname and not url.username and not url.password and not url.query, 'Registry URL needs private review')
             npm_config[key] = value
-    return without_games({
+    captured = without_games({
         'format': 1,
         'captured_on': datetime.date.today().isoformat(),
-        'mise_installed': sorted(mise),
+        'mise_installed': sorted(name for name in mise if not excluded_package(name)),
         'npm': sorted(npm),
         'retired_pi': sorted(name for name in npm if name.startswith(PI_PREFIXES)),
         'npm_config': npm_config,
@@ -145,8 +159,11 @@ def snapshot():
         'rust_components': sorted(components),
         'rust_targets': sorted(targets),
         'go': sorted(go.values(), key=lambda entry: entry['package']),
-        'exclusions': ['package versions and duplicate runtime installations', 'system packages and project virtual environments', 'games, game servers, launchers and emulator packages', 'caches, compiled artifacts, registry credentials and telemetry'],
+        'exclusions': ['package versions and duplicate runtime installations', 'system packages and project virtual environments', 'games, game servers, launchers and emulator packages', 'Blender, Ghidra, Ollama and REAPER packages', 'caches, compiled artifacts, registry credentials and telemetry'],
     })
+    captured['npm'] = [name for name in captured['npm'] if not excluded_package(name)]
+    captured['uv_tools'] = [name for name in captured['uv_tools'] if not excluded_package(name)]
+    return captured
 
 
 def configuration():
@@ -172,7 +189,12 @@ def validate(manifest):
         names += packages
     require(all(isinstance(name, str) and NAME.fullmatch(name) for name in names), 'Invalid package name')
     require(not any(game_package(name) for name in names + manifest['mise_installed']), 'Game packages are outside dotfiles scope')
+    require(not any(excluded_package(name) for name in names + manifest['mise_installed']), 'Excluded application packages are outside dotfiles scope')
     require(not any(game_package(entry['binary']) for entry in manifest['go']), 'Game binaries are outside dotfiles scope')
+    require(not any(
+        excluded_package(entry['binary']) or excluded_package(entry['package'].rsplit('/', 1)[-1])
+        for entry in manifest['go']
+    ), 'Excluded application binaries are outside dotfiles scope')
     require(all(re.fullmatch(r'3\.\d+', minor) for minor in manifest['python_user']), 'Invalid Python runtime selector')
     require(all(re.fullmatch(r'3\.\d+', minor) for minor in manifest['python_managed']), 'Invalid managed Python runtime selector')
     require(all(isinstance(tool, str) and not tool.startswith('-') and not any(character.isspace() for character in tool) for tool in manifest['mise_installed']), 'Invalid mise tool identifier')

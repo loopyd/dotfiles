@@ -17,7 +17,7 @@ Use it when creating, updating, or refactoring shell scripts, especially install
   action prefixes and suffixes. Utilities and libraries use noun categories too.
 - Every component exposes `install`, `update`, `uninstall`, `check` and common
   `--dry-run` handling. Require an explicit action; reject invalid input before
-  side effects. Retain useful domain nodes, such as Ghidra `run` or desktop `export`.
+  side effects. Retain useful domain nodes, such as desktop `export`.
 - Route lifecycle parsing, receipts and common checks through `delib.sh` and
   `lifecycle.py`; keep component installation policy in its noun file. Helpers
   need meaningful domain commands, not artificial lifecycle no-ops.

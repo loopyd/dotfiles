@@ -433,7 +433,100 @@ Sources: [llama.cpp reranking API](https://github.com/ggml-org/llama.cpp/tree/ma
 [llama-swap group/TTL configuration](https://github.com/mostlygeek/llama-swap/blob/main/docs/config.example.yaml),
 [Hindsight configuration](https://hindsight.vectorize.io/developer/configuration).
 
+### Hindsight retain progress and reflect contention (2026-09-13)
+
+Full database counts disproved the apparent retain stall: completed retain jobs
+were absent from the newest-operations sample. Before this fix, 301 retain jobs
+had completed and roughly 15,600 child jobs remained pending. Batch parents and
+children overlap; count runnable children with `exclude_parents=true`.
+
+The prior global LLM cap of three could be occupied by two retain requests and
+one consolidation request, delaying reflect. The global cap is now five;
+per-operation retain/consolidation/reflect caps remain 2/1/2. The automatic
+reflect deadline is 180 seconds inside a 210-second Codex hook. These values
+supersede the earlier timeout profile below. Other models, limits and retry
+settings remain unchanged.
+
+The dotfiles adapter also runs MCP with `--mcp` and status with
+`--status --repo PATH`. It replaces the upstream first-page active count with
+the server totals for pending and processing jobs, excluding batch parents.
+Failed counts remain unknown and cannot report synced. `--check` checks the
+installed source shapes; incompatible MCP/status shapes fail visibly, while
+the prompt hook preserves upstream fallback. Installed plugin bundles remain
+untouched. Reconnect MCP or start a new session to load the new entry point.
+
+Verification: the original question completed through the actual prompt hook
+with `reflect_ok` in 39.19 seconds, with no model-permit wait. Fresh MCP and
+status processes reported over 15,600 active jobs. The database recorded 37
+new retained facts and 13 consolidation observations after the application
+restart by 05:53:55 UTC. The two active retain jobs had not yet completed;
+committed facts independently establish progress. No new provider errors were
+observed in this window. The backlog remains incomplete; this does not establish
+sustained throughput or eliminate possible future provider timeouts.
+
+Rollback copies are under `~/.local/state/dotfiles/hindsight-progress-20260913T054950Z`.
+Restore the files listed in its manifest and restart only Hindsight if restoring
+server settings. The database, gateway and model services were not restarted.
+
+### Hindsight timeout reliability (2026-09-13)
+
+Historical profile; superseded by the retain-progress settings above.
+
+The session-start reflection at 05:03:41 UTC completed on the server in
+30.585 seconds, after the client abandoned it at 20.009 seconds. Its three-page
+fallback took 53 ms. The upstream Codex prompt hook hard-caps automatic reflect
+at 20 seconds, independently of explicit-tool and server limits.
+
+The captured prompt hook now runs `~/.local/lib/dotfiles/hindsight-hook.mjs`
+with a 90-second host timeout and a 60-second reflect request budget. The adapter
+uses Node's synchronous module loader hook (Node >=22.15) to change one verified
+statement in the loaded Codex prompt module. It never edits installed runtime
+files; other modules, hooks, authentication and fallback behavior stay upstream.
+`--check` rejects incompatible runtime shapes. Execution warns and uses the
+unaltered official hook if an update changes that shape. Auto-update remains on.
+
+Real extraction logs after the earlier synthetic concurrency probes showed
+multi-minute permit waits and 9router upstream stream disconnects followed by
+502/503 responses and 30-second model cooldowns. Restore global LLM concurrency
+3, per-operation retain/consolidation/reflect 2/1/2, four worker slots and two
+retain operations. Initial retry backoff becomes 40 seconds: the provider's ±20% jitter gives
+32–48 seconds, clearing the 30-second cooldown. Preserve the existing
+60-second backoff maximum, retry count and task deadlines. Keep Luna/Terra
+routing, Qwen embeddings, reranking, chunk sizes and database limits unchanged.
+This reduces pressure and premature retries; it does not repair remote sockets.
+
+All 17 recorded retention failures predate the current server start. Nine of
+12 failed child jobs report committed facts (541 collectively); failed status
+alone must not trigger blind replay. Parent jobs and children are overlapping
+counts. The integration's `activeOps` reads only the first operations page, so
+use paginated server results to assess the complete backlog.
+
+Validation: a local mock-server check through the installed runtime completed a
+21-second reflection with `reflect_ok`; the deployed automatic hook returned
+context without fallback in 50.36 seconds against live Hindsight. Isolated
+capture/restore preserved the adapter byte-for-byte. Renderer checks passed for
+866 files/7 links, with no missing values; the credential guard scanned 947
+files with zero findings. Touched Markdown, Node/Python syntax and diff checks
+passed. All four changed live files match their rendered templates.
+
+Only Hindsight restarted; the gateway, database and model containers kept their
+start times. Authentication checks passed. At 05:27:06 UTC, 196 seconds after the
+final restart, two retains reported 7 and 9 committed facts and consolidation
+had processed 22 memories, with no new error/timeout log lines. Neither retain
+had finished during that final observation window; the backlog is incomplete.
+These checks establish operation, not sustained throughput or freedom from
+future upstream disconnects. Private rollback copies are under
+`~/.local/state/dotfiles/hindsight-reliability-20260913T052002Z`.
+
+Rollback restores the previous prompt command/30-second host deadline and
+removes the adapter-specific client timeout; restores LLM
+caps 8/4/2/4, six worker slots, four retain operations and five-second initial
+backoff. Restart only Hindsight after server settings change; preserve the
+database and import state.
+
 ### Hindsight Luna/Terra Concurrency (2026-09-13)
+
+Historical burst-test profile; superseded by the timeout reliability settings above.
 
 Deployed after GPU reranking validation: global LLM concurrency 8; Luna retain LLM 4; Terra
 consolidation LLM 2; Terra reflect LLM 4; retain operations 4; worker slots 6.

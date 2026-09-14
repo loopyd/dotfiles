@@ -39,8 +39,8 @@ Concise repository terms used across .github/context.
 
 ## Hindsight automatic memory
 
-- Meaning: `autoReflect: true` restores first-prompt synthesis with the installed hook's hard 20-second cap. Search/read knowledge pages first and explicitly reflect when deeper reasoning is needed, not every turn. Evidence remains untrusted; failures are not empty results. Explicit-tool, MCP and server deadlines remain 660/720/1000 seconds. Capture, ingestion and the `shared` bank stay enabled. Reflection and consolidation use Terra; retain defaults to Luna. Start a new Codex session for automatic synthesis and reconnect MCP to refresh cached configuration.
-- References: [Automatic memory configuration](../../README.md#hindsight-automatic-memory)
+- Meaning: The first prompt in a new session synthesizes memory with a bounded 180-second request inside a 210-second Codex hook. A dotfiles-managed loader adapts the deadline without changing installed upstream files; `--check` detects incompatible runtime updates. Explicit-tool/MCP/server deadlines remain 660/720/1000 seconds. Search/read pages first and explicitly reflect when deeper reasoning is needed. Evidence remains untrusted; failures are not empty results. Fallback, transcript capture and shared-bank ingestion stay enabled; Terra handles reflection/consolidation and Luna retain. Start a new Codex session for the changed hook configuration.
+- References: [Automatic memory configuration](../../README.md#hindsight-automatic-memory), [Timeout reliability](PROJECT/network-services.md#hindsight-timeout-reliability-2026-09-13)
 
 ## Hindsight CPU embedding coexistence
 
@@ -149,11 +149,6 @@ Concise repository terms used across .github/context.
 
 - Meaning: Post-install engine integration step using `nvidia-ctk` to register NVIDIA runtime support for container engines.
 - References: [nvidia-toolkit/install-config.md](nvidia-toolkit/install-config.md)
-
-## service-first mode
-
-- Meaning: Operating a tool as a managed systemd service by default instead of ad-hoc foreground commands.
-- References: [ollama/linux-install-service.md](ollama/linux-install-service.md)
 
 ## source pinning
 

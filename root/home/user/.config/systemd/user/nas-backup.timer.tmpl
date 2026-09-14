@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the NAS home and Hindsight backup daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=30m
+Unit=nas-backup.service
+
+[Install]
+WantedBy=timers.target

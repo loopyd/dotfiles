@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+import json
+import os
+from pathlib import Path
+import stat
+
+
+path = Path.home() / ".config/dotfiles/values.json"
+if path.is_symlink():
+    raise SystemExit("Refusing symlink values file")
+status = path.stat()
+if status.st_uid != os.getuid() or status.st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+    raise SystemExit("Private values file ownership or mode is unsafe")
+password = json.loads(path.read_text()).get("SECRET_SUDO_PASSWORD")
+if not isinstance(password, str) or not password or "\n" in password or "\0" in password:
+    raise SystemExit("SECRET_SUDO_PASSWORD is missing or invalid")
+os.write(1, password.encode() + b"\n")

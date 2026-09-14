@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+CONFIG="${XDG_CONFIG_HOME:-${HOME}/.config}/dotfiles/nas-backup.json"
+STATE="${XDG_STATE_HOME:-${HOME}/.local/state}/nas-backup"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/nas-backup-${UID}.lock"
+COMPOSE=()
+MOUNT_POINT=""
+BACKUP_ROOT=""
+RETENTION_DAYS=""
+COMPOSE_FILE=""
+RESTART_HINDSIGHT=false
+
+die() { printf 'nas-backup: %s\n' "$*" >&2; exit 1; }
+
+load_config() {
+    [[ -f "$CONFIG" && ! -L "$CONFIG" ]] || die "missing protected configuration: $CONFIG"
+    local -a values=()
+    mapfile -d '' -t values < <(python3 - "$CONFIG" <<'PY'
+import json, os, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+d = json.loads(p.read_text())
+names = ("mount_point", "backup_directory", "retention_days", "compose_file")
+v = [d.get(n) for n in names]
+if not all(isinstance(x, str) and "\0" not in x and "\n" not in x for x in v): raise SystemExit(2)
+mount, relative, days, compose = v
+r = pathlib.Path(relative)
+if not pathlib.Path(mount).is_absolute() or r.is_absolute() or not r.parts or {".", ".."}.intersection(r.parts): raise SystemExit(2)
+if not days.isdigit() or not 1 <= int(days) <= 3650 or not pathlib.Path(compose).is_absolute(): raise SystemExit(2)
+for item in v: print(item, end="\0")
+PY
+    ) || die 'invalid backup configuration'
+    [[ "${#values[@]}" -eq 4 ]] || die 'invalid backup configuration'
+    MOUNT_POINT="${values[0]}"
+    BACKUP_ROOT="${MOUNT_POINT}/${values[1]}"
+    RETENTION_DAYS="${values[2]}"
+    COMPOSE_FILE="${values[3]}"
+    COMPOSE=(docker compose --project-name hindsight --file "$COMPOSE_FILE")
+}
+
+lock() {
+    mkdir -p "$STATE"
+    chmod 700 "$STATE"
+    exec 9>"$LOCK"
+    flock -n 9 || die 'another backup or restore is already running'
+}
+
+require_writable_nas() {
+    [[ -d "$MOUNT_POINT" ]] || die "mount point does not exist: $MOUNT_POINT"
+    findmnt -rn -M "$MOUNT_POINT" -t cifs -O rw >/dev/null || die "$MOUNT_POINT is not a writable CIFS mount"
+    mkdir -p "$BACKUP_ROOT" || die "cannot write backup root: $BACKUP_ROOT"
+    [[ ! -L "$BACKUP_ROOT" ]] || die 'backup root may not be a symlink'
+}
+
+prune() {
+    python3 - "$BACKUP_ROOT" "$RETENTION_DAYS" <<'PY'
+import datetime, pathlib, re, shutil, sys
+root = pathlib.Path(sys.argv[1])
+cutoff = datetime.datetime.now(datetime.timezone.utc).timestamp() - int(sys.argv[2]) * 86400
+for parent, pattern, directories in (
+    (root / "archives", re.compile(r"(?:nas-backup|hindsight|pre-restore)-\d{8}T\d{6}Z\.tar\.zst"), False),
+):
+    if not parent.is_dir() or parent.is_symlink(): continue
+    for child in parent.iterdir():
+        if child.is_symlink() or not pattern.fullmatch(child.name) or child.stat().st_mtime >= cutoff: continue
+        if directories and child.is_dir(): shutil.rmtree(child)
+        elif not directories and child.is_file(): child.unlink()
+PY
+}
+
+create_archive() {
+    local prefix="${1:-nas-backup}" include_home="${2:-true}" home_source="${3:-$HOME}"
+    local stamp name stage source partial destination members
+    stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+    name="${prefix}-${stamp}.tar.zst"
+    mkdir -p "$STATE/staging" "$BACKUP_ROOT/archives"
+    stage="$(mktemp -d "$STATE/staging/hindsight.XXXXXX")"
+    mkdir -p "$stage/.nas-backup-metadata"
+    source="$stage/.nas-backup-metadata/hindsight.zip"
+    members="$stage/members.txt"
+    partial="$BACKUP_ROOT/archives/.${name}.partial"
+    destination="$BACKUP_ROOT/archives/$name"
+    (
+        trap 'rm -rf -- "$stage"; rm -f -- "$partial"' EXIT
+        [[ -f "$COMPOSE_FILE" && ! -L "$COMPOSE_FILE" ]] || die "missing Hindsight Compose file: $COMPOSE_FILE"
+        docker info >/dev/null 2>&1 || die 'Docker is unavailable'
+        "${COMPOSE[@]}" run --rm --no-deps --entrypoint hindsight-admin --volume "$stage:/backup" app backup /backup/.nas-backup-metadata/hindsight.zip
+        [[ -s "$source" ]] || die 'Hindsight produced an empty snapshot'
+        unzip -tq "$source" >/dev/null || die 'Hindsight snapshot archive validation failed'
+        if [[ "$include_home" == true ]]; then
+            [[ -d "$home_source" && ! -L "$home_source" ]] || die "home archive source is unavailable: $home_source"
+            tar --create --file=- --one-file-system --acls --xattrs \
+                --exclude='./.nas-backup-metadata/***' \
+                --exclude='./.cache/***' \
+                --exclude='./.local/share/Trash/***' \
+                --exclude='./.local/share/hindsight/postgres/***' \
+                --exclude='./.local/share/hindsight/cache/***' \
+                --exclude='./.local/state/hindsight/***' \
+                --exclude='./.local/state/dotfiles/***' \
+                --exclude='./.local/state/nas-backup/***' \
+                --exclude='**/.cache/***' \
+                --exclude='**/__pycache__/***' \
+                --exclude='**/node_modules/***' \
+                --exclude='**/.venv/***' \
+                --exclude='**/.nfs*' \
+                --exclude='**/.~lock.*#' \
+                --exclude='**/.*.sw?' \
+                --exclude='**/*~' \
+                --exclude='**/tmp/***' \
+                --exclude='**/temp/***' \
+                -C "$home_source" . -C "$stage" .nas-backup-metadata/hindsight.zip \
+                | zstd -T1 --ultra -22 --quiet -o "$partial"
+        else
+            tar --create --file=- -C "$stage" .nas-backup-metadata/hindsight.zip \
+                | zstd -T1 --ultra -22 --quiet -o "$partial"
+        fi
+        zstd --test --quiet "$partial"
+        tar --use-compress-program='zstd -d --quiet' --list --file="$partial" > "$members"
+        grep -Eq '^\./?\.nas-backup-metadata/hindsight\.zip$' "$members" || die 'Backup tarball lacks the Hindsight database snapshot'
+        sync "$partial"
+        mv -f -- "$partial" "$destination"
+    )
+    printf 'Compressed restore point: %s\n' "$destination"
+}
+
+home_mirror() {
+    local current
+    current="$BACKUP_ROOT/home-current"
+    mkdir -p "$current"
+    rsync \
+        --recursive --links --safe-links --times --one-file-system \
+        --delete-delay --delete-excluded \
+        --exclude='/.nas-backup-metadata/***' \
+        --exclude='/.cache/***' \
+        --exclude='/.local/share/Trash/***' \
+        --exclude='/.local/share/hindsight/postgres/***' \
+        --exclude='/.local/share/hindsight/cache/***' \
+        --exclude='/.local/state/hindsight/***' \
+        --exclude='/.local/state/dotfiles/***' \
+        --exclude='/.local/state/nas-backup/***' \
+        --exclude='/**/.cache/***' \
+        --exclude='/**/__pycache__/***' \
+        --exclude='/**/node_modules/***' \
+        --exclude='/**/.venv/***' \
+        --exclude='/**/.rsync-partial/***' \
+        --exclude='/**/.nfs*' \
+        --exclude='/**/.~lock.*#' \
+        --exclude='/**/.*.sw?' \
+        --exclude='/**/*~' \
+        --exclude='/**/tmp/***' \
+        --exclude='/**/temp/***' \
+        "${HOME}/" "$current/"
+    for required in .config/dotfiles/values.json .config/samba/nas-01.credentials; do
+        if [[ -f "$HOME/$required" ]]; then
+            [[ -f "$current/$required" && ! -L "$current/$required" ]] || die "home mirror is missing required private file: $required"
+            cmp -s -- "$HOME/$required" "$current/$required" || die "home mirror verification failed for: $required"
+        fi
+    done
+    printf 'Home mirror: %s\n' "$current"
+}
+
+confirm_restore() {
+    local description="$1" assume_yes="${2:-}"
+    [[ "$assume_yes" != --yes ]] || return 0
+    [[ -t 0 ]] || die 'restore requires an interactive confirmation or --yes'
+    local confirmation
+    printf 'Restore home files from %s? Type RESTORE: ' "$description" >&2
+    read -r confirmation
+    [[ "$confirmation" == RESTORE ]] || die 'restore cancelled'
+}
+
+resolve_archive() {
+    local requested="$1" snapshot snapshots_root
+    [[ "$requested" == /* ]] || requested="$BACKUP_ROOT/archives/$requested"
+    snapshot="$(realpath -e -- "$requested")" || die 'snapshot does not exist'
+    snapshots_root="$(realpath -e -- "$BACKUP_ROOT/archives")"
+    [[ "$(dirname "$snapshot")" == "$snapshots_root" && "$snapshot" == *.tar.zst ]] || die 'snapshot must be a .tar.zst directly inside the configured archive directory'
+    printf '%s\n' "$snapshot"
+}
+
+validate_archive() {
+    local snapshot="$1" members="$2"
+    zstd --test --quiet "$snapshot" || die 'snapshot compression validation failed'
+    tar --use-compress-program='zstd -d --quiet' --list --file="$snapshot" > "$members"
+    python3 - "$members" <<'PY'
+from pathlib import PurePosixPath
+import sys
+for raw in open(sys.argv[1], encoding="utf-8", errors="surrogateescape"):
+    name = raw.rstrip("\n")
+    path = PurePosixPath(name)
+    if not name or path.is_absolute() or ".." in path.parts or "\0" in name:
+        raise SystemExit("unsafe archive member: " + repr(name))
+PY
+}
+
+require_home_members() {
+    python3 - "$1" <<'PY'
+import sys
+members = []
+for raw in open(sys.argv[1], encoding="utf-8", errors="surrogateescape"):
+    name = raw.rstrip("\n").removeprefix("./").rstrip("/")
+    if not name or name == ".nas-backup-metadata" or name.startswith(".nas-backup-metadata/"):
+        continue
+    if name == "hindsight/database.zip":
+        continue
+    members.append(name)
+if not members:
+    raise SystemExit("selected archive does not contain a home snapshot")
+PY
+}
+
+restore_home() (
+    local requested="${1:-}" assume_yes="${2:-}" source description stage="" snapshot=""
+    if [[ "$requested" == --yes ]]; then
+        assume_yes=--yes
+        requested=""
+    fi
+    if [[ -z "$requested" || "$requested" == latest ]]; then
+        source="$BACKUP_ROOT/home-current"
+        description='the current NAS mirror'
+        [[ -d "$source" && ! -L "$source" ]] || die 'the current home mirror is unavailable'
+        [[ -f "$source/.config/dotfiles/values.json" && -f "$source/.config/samba/nas-01.credentials" ]] || die 'the current home mirror is missing required private configuration'
+    else
+        snapshot="$(resolve_archive "$requested")"
+        stage="$(mktemp -d "$STATE/staging/restore-home.XXXXXX")"
+        mkdir -p "$stage/home"
+        validate_archive "$snapshot" "$stage/members.txt"
+        require_home_members "$stage/members.txt"
+        tar --use-compress-program='zstd -d --quiet' --extract --file="$snapshot" --directory="$stage/home" \
+            --exclude='./.nas-backup-metadata' --exclude='./.nas-backup-metadata/***' \
+            --exclude='.nas-backup-metadata' --exclude='.nas-backup-metadata/***' \
+            --exclude='hindsight/database.zip'
+        source="$stage/home"
+        description="$(basename "$snapshot")"
+    fi
+    trap '[[ -z "$stage" ]] || rm -rf -- "$stage"' EXIT
+    confirm_restore "$description" "$assume_yes"
+    create_archive pre-restore true "$HOME"
+    rsync --recursive --links --safe-links --times \
+        --exclude='/.nas-backup-metadata/***' \
+        --exclude='/.local/state/nas-backup/***' \
+        "$source/" "$HOME/"
+    printf 'Home restore completed from %s\n' "$description"
+)
+
+latest_snapshot() {
+    find "$BACKUP_ROOT/archives" -maxdepth 1 -type f \( -name 'nas-backup-*.tar.zst' -o -name 'hindsight-*.tar.zst' \) -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-
+}
+
+restore_hindsight() {
+    local requested="${1:-latest}" confirmation snapshot stage database members member
+    [[ "$requested" != latest ]] || requested="$(latest_snapshot)"
+    [[ -n "$requested" ]] || die 'no Hindsight snapshot is available'
+    snapshot="$(resolve_archive "$requested")"
+    stage="$(mktemp -d "$STATE/staging/restore.XXXXXX")"
+    trap 'rm -rf -- "$stage"; if [[ "$RESTART_HINDSIGHT" == true ]]; then systemctl --user start hindsight.service; fi' EXIT
+    members="$stage/members.txt"
+    validate_archive "$snapshot" "$members"
+    if grep -Eq '^\./?\.nas-backup-metadata/hindsight\.zip$' "$members"; then
+        member="$(grep -E '^\./?\.nas-backup-metadata/hindsight\.zip$' "$members" | head -n1)"
+    elif grep -Fxq 'hindsight/database.zip' "$members"; then
+        member='hindsight/database.zip'
+    else
+        die 'snapshot does not contain a Hindsight database export'
+    fi
+    if [[ "${2:-}" != --yes ]]; then
+        [[ -t 0 ]] || die 'restore requires an interactive confirmation or --yes'
+        printf 'Replace the live Hindsight database with %s? Type RESTORE: ' "$(basename "$snapshot")" >&2
+        read -r confirmation
+        [[ "$confirmation" == RESTORE ]] || die 'restore cancelled'
+    fi
+    create_archive pre-restore false
+    database="$stage/database.zip"
+    tar --use-compress-program='zstd -d --quiet' --extract --to-stdout --file="$snapshot" "$member" > "$database"
+    unzip -tq "$database" >/dev/null || die 'embedded Hindsight snapshot validation failed'
+    systemctl --user stop hindsight.service
+    RESTART_HINDSIGHT=true
+    "${COMPOSE[@]}" run --rm --no-deps --entrypoint hindsight-admin --volume "$stage:/backup:ro" app restore /backup/database.zip --yes
+    systemctl --user start hindsight.service
+    RESTART_HINDSIGHT=false
+    trap - EXIT
+    printf 'Hindsight restore completed: %s\n' "$snapshot"
+}
+
+status() {
+    findmnt -M "$MOUNT_POINT" -o TARGET,SOURCE,FSTYPE,VFS-OPTIONS,FS-OPTIONS
+    printf 'Backup root: %s\n' "$BACKUP_ROOT"
+    local latest
+    latest="$(latest_snapshot 2>/dev/null || true)"
+    printf 'Latest Hindsight snapshot: %s\n' "${latest:-none}"
+}
+
+usage() {
+    printf '%s\n' \
+        'Usage: nas-backup backup' \
+        '       nas-backup restore [latest|SNAPSHOT.tar.zst] [--yes]' \
+        '       nas-backup restore-hindsight [latest|SNAPSHOT.tar.zst] [--yes]' \
+        '       nas-backup snapshot-hindsight' \
+        '       nas-backup status'
+}
+
+main() {
+    load_config
+    case "${1:-}" in
+        status) status ;;
+        backup)
+            lock
+            require_writable_nas
+            home_mirror
+            create_archive nas-backup true "$BACKUP_ROOT/home-current"
+            prune
+            ;;
+        snapshot-hindsight)
+            lock
+            require_writable_nas
+            create_archive hindsight false
+            prune
+            ;;
+        restore-hindsight)
+            lock
+            require_writable_nas
+            restore_hindsight "${2:-latest}" "${3:-}"
+            ;;
+        restore)
+            lock
+            require_writable_nas
+            restore_home "${2:-}" "${3:-}"
+            ;;
+        -h|--help|help) usage ;;
+        *) usage >&2; exit 2 ;;
+    esac
+}
+
+main "$@"

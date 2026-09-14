@@ -115,6 +115,7 @@ is_help_token() {
 
 safe_sudo() {
     local -a cmd=("$@")
+    local askpass="${HOME}/.local/lib/dotfiles/sudo-askpass"
     if [[ "${#cmd[@]}" -eq 0 ]]; then
         err "safe_sudo requires a command"
         return 1
@@ -131,11 +132,19 @@ safe_sudo() {
         if [[ "${SUDO_AUTHENTICATED}" -eq 0 ]]; then
             log "Requesting sudo authentication"
         fi
-        sudo -v
+        if [[ ! -t 0 && -x "${askpass}" ]]; then
+            SUDO_ASKPASS="${askpass}" SUDO_ASKPASS_REQUIRE=force sudo -A -v
+        else
+            sudo -v
+        fi
     fi
 
     SUDO_AUTHENTICATED=1
-    sudo "${cmd[@]}"
+    if [[ ! -t 0 && -x "${askpass}" ]]; then
+        SUDO_ASKPASS="${askpass}" SUDO_ASKPASS_REQUIRE=force sudo -A "${cmd[@]}"
+    else
+        sudo "${cmd[@]}"
+    fi
 }
 
 apt_update_once() {
@@ -198,13 +207,10 @@ lifecycle_payload() {
             LIFECYCLE_PACKAGES=(xboxdrv)
             [[ "${INSTALL_JSTEST}" != true ]] || LIFECYCLE_PACKAGES+=(jstest-gtk)
             LIFECYCLE_PATHS=("${BLACKLIST_PATH}" "${UDEV_RULES_PATH}" "${SERVICE_PATH}") ;;
-        blender) LIFECYCLE_PATHS=("${INSTALL_DIR}" "${SYMLINK_PATH}" "${DESKTOP_ENTRY_PATH}") ;;
-        reaper) LIFECYCLE_PATHS=("${INSTALL_PREFIX}/REAPER" /usr/local/bin/reaper "${REAPER_DESKTOP_ENTRY}") ;;
-        ghidra) LIFECYCLE_PATHS=("${INSTALL_DIR}" "${SYSTEM_LAUNCHER}" "${SYSTEM_LAUNCHER}.d" "${GHIDRA_DESKTOP_ENTRY}" "${HOME}/.local/share/applications/ghidra.desktop") ;;
         neovim) LIFECYCLE_PATHS=(/usr/local/bin/nvim /usr/local/share/nvim /usr/local/share/man/man1/nvim.1) ;;
-        ollama) LIFECYCLE_PATHS=("${INSTALL_DIR}/bin/ollama" "${INSTALL_DIR}/lib/ollama") ;;
         mise|herdr) LIFECYCLE_PATHS=("${HOME}/.local/bin/${LIFECYCLE_COMPONENT}") ;;
         hindsight) LIFECYCLE_PATHS=("${HOME}/.local/bin/hindsight") ;;
+        backup) LIFECYCLE_PACKAGES=(cifs-utils smbclient rsync unzip zstd) ;;
         alacritty)
             LIFECYCLE_PATHS=("${HOME}/.local/bin/alacritty" "${HOME}/.local/share/icons/hicolor/scalable/apps/Alacritty.svg"
                 "${HOME}/.local/share/bash-completion/completions/alacritty" "${HOME}/.config/fish/completions/alacritty.fish"
@@ -246,12 +252,9 @@ lifecycle_check() {
         tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;
         mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
         hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;
-        blender) "${INSTALL_DIR}/blender" --version ;;
-        reaper) test -x "${INSTALL_PREFIX}/REAPER/reaper" ;;
-        ghidra) test -x "${INSTALL_DIR}/ghidraRun" ;;
         neovim) /usr/local/bin/nvim --version ;;
-        ollama) test -x "${INSTALL_DIR}/bin/ollama" ;;
         8bitdo) test -f "${UDEV_RULES_PATH}" ;;
+        backup) check_backup ;;
     esac
     log "${LIFECYCLE_COMPONENT}: check passed"
 }
@@ -269,8 +272,8 @@ lifecycle_uninstall() {
             systemctl --user disable --now hindsight.service
             systemctl --user disable --now hindsight-db.service
             "${COMPOSE[@]}" down ;;
-        ollama) safe_sudo systemctl disable --now ollama.service ;;
         8bitdo) safe_sudo systemctl stop '8bitdo-ultimate-xinput@*.service' ;;
+        backup) deactivate_backup ;;
         hooks)
             if [[ "$(git -C "${SCRIPT_DIR}/.." config --local --get core.hooksPath || true)" == .githooks ]]; then
                 git -C "${SCRIPT_DIR}/.." config --local --unset core.hooksPath
@@ -289,10 +292,6 @@ lifecycle_dispatch() {
     LIFECYCLE_COMPONENT="$1"
     shift
     LIFECYCLE_ACTION="${1:-}"
-    if [[ "${LIFECYCLE_COMPONENT}" == ghidra && "${LIFECYCLE_ACTION}" == run ]]; then
-        main "$@"
-        return
-    fi
     case "${LIFECYCLE_ACTION}" in
         install|update|uninstall|check) shift ;;
         -h|--help|help) lifecycle_usage; usage; return ;;
@@ -310,12 +309,7 @@ lifecycle_dispatch() {
         esac
     done
     [[ "${verify}" != true || "${LIFECYCLE_ACTION}" == uninstall ]] || { err '--verify is only valid with uninstall'; return 2; }
-    if [[ "${LIFECYCLE_COMPONENT}" == ghidra ]]; then
-        if [[ "${LIFECYCLE_ACTION}" == uninstall || "${LIFECYCLE_ACTION}" == check ]]; then load_config; fi
-        parse_args install "${arguments[@]}"
-    else
-        parse_args "${arguments[@]}"
-    fi
+    parse_args "${arguments[@]}"
     lifecycle_payload
     if [[ "${dry_run}" == true ]]; then
         log "DRY-RUN: ${LIFECYCLE_ACTION} ${LIFECYCLE_COMPONENT}; no downloads, writes or service changes"
@@ -335,7 +329,7 @@ lifecycle_dispatch() {
         check) lifecycle_check ;;
         uninstall) lifecycle_uninstall ;;
         install|update)
-            if [[ "${LIFECYCLE_COMPONENT}" == ghidra ]]; then main install "${arguments[@]}"; else main "${arguments[@]}"; fi
+            main "${arguments[@]}"
             lifecycle_receipt record ;;
     esac
 }

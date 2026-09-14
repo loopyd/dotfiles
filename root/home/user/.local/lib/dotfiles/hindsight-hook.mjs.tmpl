@@ -1,0 +1,79 @@
+// Adapt known upstream entry points in memory; leave automatic updates intact.
+import { readFileSync } from 'node:fs';
+import { registerHooks } from 'node:module';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const root = join(homedir(), '.hindsight/coding-agents/dist');
+const entries = { hook: 'codex-hook.js', mcp: 'mcp-server.js', status: 'status.js' };
+const oldCount = `  async activeOperations() {
+    const r = await this.req("GET", this.bankUrl("/operations"));
+    try {
+      const j = await r.json();
+      const ops = j.operations ?? j.items ?? [];
+      return ops.filter((o) => !TERMINAL.has((o?.status || "").toLowerCase())).length;
+    } catch {
+      return 0;
+    }
+  }`;
+const newCount = `  async activeOperations() {
+    let total = 0;
+    for (const status of ["pending", "processing"]) {
+      const r = await this.req("GET", this.bankUrl(
+        "/operations?status=" + status + "&limit=1&exclude_parents=true"
+      ));
+      if (!r.ok) throw new Error("Operation count HTTP " + r.status);
+      const j = await r.json();
+      if (!Number.isSafeInteger(j.total) || j.total < 0) {
+        throw new Error("Missing valid operation total");
+      }
+      total += j.total;
+    }
+    return total;
+  }`;
+
+function replaceOnce(source, before, after) {
+  if (source.split(before).length !== 2) {
+    throw new Error('Unsupported Hindsight runtime; review the adapter after updating.');
+  }
+  return source.replace(before, after);
+}
+
+function adapt(source, mode) {
+  if (mode === 'hook') {
+    return replaceOnce(source,
+      'const timeoutMs = Math.min(cfg.reflectTimeoutMs, HOOK_REFLECT_CAP_MS);',
+      'const timeoutMs = Math.min(cfg.reflectTimeoutMs, 180000);');
+  }
+  source = replaceOnce(source, oldCount, newCount);
+  return replaceOnce(source, '(activeOps ?? 0) === 0', 'activeOps !== null && activeOps === 0');
+}
+
+if (process.argv[2] === '--check') {
+  for (const [mode, entry] of Object.entries(entries)) {
+    adapt(readFileSync(join(root, entry), 'utf8'), mode);
+  }
+  console.log('Hindsight adapter compatible: reflect <=180s (hook 210s); complete active job totals.');
+} else {
+  const mode = process.argv[2] === '--mcp' ? 'mcp' : process.argv[2] === '--status' ? 'status' : 'hook';
+  if (mode !== 'hook') process.argv.splice(2, 1);
+  else if (process.argv.length !== 2) throw new Error('Usage: hindsight-hook.mjs [--check|--mcp|--status ...]');
+  const runtime = pathToFileURL(join(root, entries[mode]));
+  registerHooks({
+    load(url, context, nextLoad) {
+      const result = nextLoad(url, context);
+      if (url !== runtime.href) return result;
+      try {
+        return { ...result, source: adapt(Buffer.from(result.source).toString('utf8'), mode) };
+      } catch (error) {
+        if (mode !== 'hook') throw error;
+        // Preserve upstream prompt fallback if an automatic update changes its shape.
+        console.error(error.message);
+        return result;
+      }
+    },
+  });
+  process.argv[1] = fileURLToPath(runtime);
+  await import(runtime.href);
+}

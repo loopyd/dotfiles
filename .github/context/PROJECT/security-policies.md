@@ -14,7 +14,7 @@
 ## Privilege model reminders
 
 - Docker group membership grants root-level privileges on the host.
-- Service users (for example `ollama`) should be non-login and least privilege.
+- Service users should be non-login and least privilege.
 
 ## Installer method guidance
 

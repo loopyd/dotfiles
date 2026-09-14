@@ -208,7 +208,6 @@ This file is the planning context for:
 ## Remaining Reconstruction/Refactor Gaps
 
 1. Standards drift in legacy installers
-- `scripts/blender.sh`, `scripts/reaper.sh`, `scripts/ghidra.sh`, and `scripts/8bitdo.sh` still duplicate helper logic instead of using `scripts/delib.sh` consistently.
 - `scripts/8bitdo.sh` still has shell robustness gaps relative to coding standards.
 
 2. Bootstrap phase drift
@@ -220,9 +219,6 @@ This file is the planning context for:
 - Checksum/digest verification remains inconsistent across archive installers.
 - Install/link target normalization (`/usr/bin`, `/usr/local/bin`, `/opt`) is not yet centralized.
 - User-state side effects (desktop entries/cache artifacts) are not fully modeled in reconstruction policy.
-
-4. Profile completeness gap
-- Default app path still includes heavy GUI installers without a documented minimal/headless baseline and retry policy for partial failures.
 
 ## Comprehensive Shell Refactor Handoff (Active)
 
@@ -253,16 +249,12 @@ This file is the planning context for:
 - `scripts/delib.sh`
 - `bootstrap.sh`
 - `scripts/8bitdo.sh`
-- `scripts/blender.sh`
 - `scripts/core.sh`
 - `scripts/docker.sh`
 - `scripts/gh.sh`
-- `scripts/ghidra.sh`
 - `scripts/hooks.sh`
 - `scripts/neovim.sh`
 - `scripts/nvidia.sh`
-- `scripts/ollama.sh`
-- `scripts/reaper.sh`
 
 ## Overlay/Security Guardrails And Exclusions
 

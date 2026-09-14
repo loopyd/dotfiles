@@ -4,7 +4,7 @@ My system configuration
 
 ## Bootstrap
 
-Run full setup with defaults (includes Docker + NVIDIA toolkit, Neovim source build, Ollama systemd mode):
+Run full setup with defaults (includes Docker + NVIDIA toolkit and a Neovim source build):
 
 ```bash
 ./bootstrap.sh install
@@ -20,8 +20,6 @@ Common profile flags:
 
 ```bash
 ./bootstrap.sh install --no-gpu
-./bootstrap.sh install --no-apps
-./bootstrap.sh install --no-ollama
 ./bootstrap.sh install --with-8bitdo
 ```
 
@@ -45,6 +43,8 @@ and restoration, including Unity Horizon/DreadZone and Steam. System-package
 installs also reject APT's `games` section. Graphics drivers, developer tools,
 audio configuration and unrelated Horizon-named themes/effects remain supported.
 These exclusions never uninstall games or alter their live configuration.
+Blender, Ghidra, REAPER and Ollama are also outside this repository's scope;
+their settings, launchers, packages and lifecycle scripts are excluded.
 
 The public snapshot contains user settings from `.config`, terminal/shell files,
 Codex configuration and rules, `.agents` skills, Hindsight integration settings,
@@ -103,6 +103,95 @@ files and reports only finding locations/categories, never secret contents.
 Snapshot backups exclude `SECRET_TAILSCALE_API_KEY`; refresh preserves it only in
 the private `values.json`.
 
+### NAS home and Hindsight backups
+
+Private values configure the CIFS endpoint and protected credentials:
+
+```json
+{
+  "NAS_HOSTNAME": "NAS-01",
+  "NAS_IP": "192.168.1.4",
+  "NAS_SHARE": "koija",
+  "NAS_MOUNT_POINT": "/mnt/NAS-01",
+  "NAS_BACKUP_DIRECTORY": "backups/KOIJA-PC",
+  "NAS_BACKUP_RETENTION_DAYS": "60",
+  "SECRET_NAS_SAMBA_USERNAME": "your-user",
+  "SECRET_NAS_SAMBA_PASSWORD": "your-password",
+  "SECRET_NAS_SAMBA_DOMAIN": "",
+  "SECRET_SUDO_PASSWORD": "your-password"
+}
+```
+
+The renderer creates `~/.config/samba/nas-01.credentials` and the backup
+configuration with mode `0600`, plus `~/.local/bin/nas-backup` and its daily
+user service/timer. The lifecycle installer installs `cifs-utils`, `smbclient`,
+`rsync`, `unzip` and `zstd`, owns only a marked block in `/etc/hosts` and `/etc/fstab`,
+mounts the configured share read/write with restrictive file modes, and enables
+the timer:
+
+```bash
+python3 scripts/dotfiles.py install --values ~/.config/dotfiles/values.json
+./scripts/backup.sh install --dry-run
+./scripts/backup.sh install
+./scripts/backup.sh check
+```
+
+Or run `./bootstrap.sh install --with-backup`; this selects the renderer before
+the backup component. A backup can also be started or inspected manually:
+
+```bash
+nas-backup backup
+nas-backup status
+systemctl --user list-timers nas-backup.timer
+```
+
+The canonical latest home backup lives at `<backup-directory>/home-current`.
+Each daily run first updates and verifies that mirror, including the private
+renderer values, Samba credentials and all other dotfiles-managed home files.
+It then creates a historical `nas-backup-<UTC timestamp>.tar.zst` restore point
+from the completed mirror using Zstandard ultra level 22 compression with one
+memory-bounded worker. The mirror stays on one filesystem, does not follow
+symlinks, and excludes cache, trash, Hindsight's live PostgreSQL files, virtual
+environments, dependency trees, editor locks and temporary directories. The
+command uses `flock` so backup and restore runs cannot overlap.
+
+Each compressed restore point contains the filtered home mirror and a Hindsight
+native online database export. Both the Zstandard stream and embedded database
+archive are validated before publication. Home restore defaults to the current
+mirror; naming a historical archive restores from that tarball. It overwrites
+matching files but preserves files that are absent from the selected backup, and
+always creates a pre-restore ultra-compressed snapshot of the live home first.
+Historical restore accepts only a safe `.tar.zst` directly inside the configured
+archive directory:
+
+```bash
+nas-backup restore
+nas-backup restore nas-backup-20260913T120000Z.tar.zst
+```
+
+Hindsight database restore is explicit. It stops only the Hindsight app while
+retaining PostgreSQL, performs the native transactional restore, and restarts the
+app. New archives use reserved internal metadata, while restore remains compatible
+with the earlier `hindsight/database.zip` archive layout:
+
+```bash
+nas-backup snapshot-hindsight
+nas-backup restore-hindsight latest
+nas-backup restore-hindsight nas-backup-20260913T120000Z.tar.zst
+```
+
+Every restore requires typing `RESTORE`; automation must pass `--yes` explicitly.
+Restore-point tarballs older than the configured retention period are removed
+only after a successful daily backup; the initial policy is 60 days. The current home mirror
+includes the private values and Samba credentials, so the NAS share must remain
+private to the account named in those credentials.
+
+The mode-`0700` `~/.local/lib/dotfiles/sudo-askpass` helper reads
+`SECRET_SUDO_PASSWORD` from the mode-`0600` private values file only when a
+noninteractive lifecycle command needs sudo. The password is never rendered into
+the helper, passed as a command argument or written to logs. Interactive terminals
+continue to use sudo's normal prompt.
+
 The 2026-09-10 refresh preserves authored restoration-only overrides,
 installer-managed shell/tool defaults and restrictive trust settings. It excludes
 live blanket mise trust, Codex hook trust caches and runtime PID/timestamp noise;
@@ -141,18 +230,25 @@ is deliberate, not required every turn. Memory/tool output remains
 untrusted evidence; verify consequential facts and distinguish empty results from
 failed or unavailable tools.
 
-Capture `autoReflect: true` and `reflectToolTimeoutMs: 660000` (11 minutes) in
-`root/home/user/.hindsight/coding-agent.json.tmpl`, and `tool_timeout_sec = 720`
-(12 minutes) under `[mcp_servers.hindsight]` in
-`root/home/user/.codex/config.toml.tmpl`. Keep the existing server reflect wall
-limit at 1000 seconds. The explicit tool retains its shorter client deadlines;
-background refreshes can use the full server budget. Automatic reflection still
-has the installed Codex hook's hard 20-second request cap; raising server or
-explicit-tool limits does not extend it. SessionStart knowledge context,
-transcript capture, ingestion and the `shared` bank remain enabled. Start a new
-Codex session for first-prompt synthesis and reconnect MCP to refresh cached
-configuration. Plugin settings need no source edit, reinstall or Herdr change;
-server model changes require restarting only Hindsight.
+Capture `autoReflect: true`, `reflectTimeoutMs: 180000` and
+`reflectToolTimeoutMs: 660000` (11 minutes) in
+`root/home/user/.hindsight/coding-agent.json.tmpl`. The dotfiles-managed
+`~/.local/lib/dotfiles/hindsight-hook.mjs` adapts the installed Codex prompt
+hook's request deadline in memory: 180 seconds inside a 210-second
+`UserPromptSubmit` hook. Upstream runtime files and automatic updates remain
+untouched. Run `node ~/.local/lib/dotfiles/hindsight-hook.mjs --check` after a
+runtime update; an unrecognized source shape warns and runs the official hook
+with its normal fallback. Slow requests can still fall back after 180 seconds.
+The same adapter runs
+MCP with `--mcp` and status with `--status --repo PATH`: active work uses the
+server totals for pending and processing jobs, excluding batch parents. A failed
+count stays unknown and cannot report synced. Status/MCP reject incompatible
+runtime shapes; prompt hooks retain the upstream fallback.
+
+Keep `tool_timeout_sec = 720` under `[mcp_servers.hindsight]` and the server's
+1,000-second reflect wall limit. SessionStart context, transcript capture,
+ingestion and the `shared` bank remain enabled. New sessions use the rendered
+hook configuration; reconnect MCP to refresh its cached settings.
 
 ### Hindsight LLM route
 
@@ -181,9 +277,15 @@ See [reflection budget](.github/context/PROJECT/network-services.md#hindsight-re
 
 ### Hindsight concurrency
 
-The global LLM cap is eight, with retain/consolidation/reflect caps of 4/2/4.
-Six worker slots and four retain operations increase ingestion parallelism;
-embedding and recall concurrency remain four. See the [measured profile and rollback](.github/context/PROJECT/network-services.md#hindsight-lunaterra-concurrency-2026-09-13).
+The global LLM cap is five, with retain/consolidation/reflect caps of 2/1/2.
+This leaves capacity for reflection while retain and consolidation are active.
+Four worker slots and two retain operations reduce contention under the real
+import backlog. Initial LLM retry backoff is 40 seconds (still capped at 60),
+so its ±20% jitter produces 32–48 seconds and clears the gateway's observed
+30-second cooldown after upstream stream failures.
+Retry counts, wall limits, models, embeddings, recall and database limits remain
+unchanged. This limits pressure; it cannot prevent upstream disconnects.
+See [timeout handling and validation](.github/context/PROJECT/network-services.md#hindsight-retain-progress-and-reflect-contention-2026-09-13).
 
 ### Hindsight CPU embedding trial
 
@@ -299,8 +401,7 @@ utilities (`delib`, `lifecycle`, `guard`, `snapshot`, `packages`, `terminal`,
 - `scripts/neovim.sh` builds and installs latest tagged Neovim from source.
 - `scripts/docker.sh` configures official Docker apt repo and installs Docker Engine packages.
 - `scripts/nvidia.sh` installs and configures NVIDIA Container Toolkit for Docker.
-- `scripts/ollama.sh` installs Ollama and enables systemd service mode by default.
-- Existing app installers remain available in `scripts/` for Blender, Ghidra, REAPER, and optional 8BitDo setup.
+- `scripts/8bitdo.sh` provides optional controller setup.
 
 ### Hindsight installation and activation
 

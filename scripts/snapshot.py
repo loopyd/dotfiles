@@ -24,7 +24,9 @@ TABLES = ('settings', 'providerNodes', 'providerConnections', 'combos', 'apiKeys
 NOISE = {'node_modules', '__pycache__', '.git', '.venv', 'venv', 'cache', 'caches', 'logs', 'log', 'tmp', 'temp', 'backups', 'backup', 'sessions', 'history', 'crashpad', 'crash reports', 'gpucache', 'code cache', 'service worker', 'storage', 'workspacestorage', 'globalstorage', 'extensions', 'plugins', 'databases', 'downloads', 'compiled', 'lazy', 'site-packages', 'mcp-oauth-locks', '.system', 'sample libraries', 'firmware', 'dev_flash', 'dev_hdd0', 'dev_hdd1', 'dev_bdvd'}
 PRIVATE_CONFIG = {'gh', 'google-chrome', 'chromium', 'mozilla', 'discord', 'dconf', 'dotfiles', 'evolution', 'goa-1.0', 'tailscale', 'electron', 'cinnamon-session', 'pi-hashline-edit-pro', 'sticky'}
 EXTENSIONS = {'.conf', '.toml', '.json', '.ini', '.yaml', '.yml', '.xml', '.desktop', '.list', '.rc', '.lua', '.vim', '.fish', '.sh', '.bash', '.css', '.svg', '.env', '.sql', '.txt', '.md', '.rules', '.service', '.socket', '.timer', '.target', '.path', '.dirs', '.locale', '.lst', '.properties', '.settings', '.config', '.py', '.js', '.mjs'}
-ROOT_FILES = ('.bashrc', '.bash_profile', '.bash_logout', '.profile', '.zshrc', '.zprofile', '.gitconfig', '.tmux.conf', '.asoundrc', '.gtkrc-2.0', '.gtkrc-xfce', '.nvidia-settings-rc', '.inputrc', '.Xresources', '.xprofile', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph')
+ROOT_FILES = ('.bashrc', '.bash_profile', '.bash_logout', '.profile', '.zshrc', '.zprofile', '.gitconfig', '.tmux.conf', '.asoundrc', '.gtkrc-2.0', '.gtkrc-xfce', '.nvidia-settings-rc', '.inputrc', '.Xresources', '.xprofile')
+EXCLUDED_APPLICATIONS = {'blender', 'ghidra', 'reaper'}
+EXCLUDED_LAUNCHERS = {'blender.desktop', 'cockos-reaper.desktop', 'ghidra.desktop', 'ollama.desktop'}
 
 
 def private_material(text, documentation=False):
@@ -137,6 +139,10 @@ def reason(path, is_dir=False):
     parts = path.parts
     lowered = [part.lower() for part in parts]
     name = path.name.lower()
+    if len(lowered) > 1 and parts[0] == '.config' and lowered[1] in EXCLUDED_APPLICATIONS:
+        return 'excluded application'
+    if parts[:3] == ('.local', 'share', 'applications') and name in EXCLUDED_LAUNCHERS:
+        return 'excluded application launcher'
     if str(path).startswith('.config/go/telemetry') or str(path) == '.config/uv/uv-receipt.json':
         return 'tool telemetry/installation receipt'
     if str(path) in {'.config/herdr/plugins.json', '.config/herdr/release-notes.json'}:
@@ -199,12 +205,35 @@ def capture(args):
     scrubber = Scrubber(home)
     collected = {}
     private_network = {'.config/9router/identity.json', '.config/9router/restore.json', '.config/tailscale/identity.json'}
+    private_nas = {
+        '.config/dotfiles/nas-backup.json',
+        '.config/samba/nas-01.credentials',
+        '.config/systemd/user/nas-backup.service',
+        '.config/systemd/user/nas-backup.timer',
+        '.local/bin/nas-backup',
+    }
     existing_values = json.loads(values_path.read_text()) if values_path.exists() else {}
     for key in ('SECRET_TAILSCALE_API_KEY', 'TAILSCALE_OWNER'):
         if isinstance(existing_values.get(key), str):
             scrubber.values[key] = existing_values[key]
     if isinstance(existing_values.get('EASYLLAMA_ROOT'), str):
         scrubber.values['EASYLLAMA_ROOT'] = existing_values['EASYLLAMA_ROOT']
+    nas_keys = {
+        'NAS_BACKUP_DIRECTORY', 'NAS_BACKUP_RETENTION_DAYS', 'NAS_HOSTNAME', 'NAS_IP',
+        'NAS_MOUNT_POINT', 'NAS_SHARE', 'SECRET_NAS_SAMBA_DOMAIN',
+        'SECRET_NAS_SAMBA_PASSWORD', 'SECRET_NAS_SAMBA_USERNAME',
+    }
+    preserve_nas = nas_keys.issubset(existing_values)
+    if preserve_nas:
+        scrubber.values.update({key: existing_values[key] for key in nas_keys})
+        for relative in private_nas:
+            if relative.startswith('.local/bin/'):
+                template = Path(__file__).resolve().parents[1] / 'templates/commands' / (Path(relative).name + '.tmpl')
+            elif relative == '.config/dotfiles/nas-backup.json':
+                template = Path(__file__).resolve().parents[1] / 'templates/nas-backup.json.tmpl'
+            else:
+                template = Path(__file__).resolve().parents[1] / 'root/home/user' / (relative + '.tmpl')
+            collected[relative] = (template.read_text(), relative == '.local/bin/nas-backup')
     network_keys = {'SECRET_ROUTER_IDENTITY', 'SECRET_ROUTER_TABLES', 'SECRET_TAILSCALE_IDENTITY'}
     preserve_network = network_keys.issubset(existing_values)
     if preserve_network:
@@ -215,7 +244,7 @@ def capture(args):
     exclusions = Counter()
     links = []
     roots = ['.config', '.agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
-    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.cargo/env', '.rustup/settings.toml']
+    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.local/lib/dotfiles/hindsight-hook.mjs', '.local/lib/dotfiles/sudo-askpass', '.cargo/env', '.rustup/settings.toml']
     candidates = [home / name for name in fixed if (home / name).exists()]
     for prefix in roots:
         base = home / prefix
@@ -234,6 +263,9 @@ def capture(args):
             continue
         if str(relative) in private_network:
             exclusions['private network bundle (preserved only as template)'] += 1
+            continue
+        if preserve_nas and str(relative) in private_nas:
+            exclusions['NAS backup configuration (preserved as authored template)'] += 1
             continue
         excluded = reason(relative)
         if source.is_symlink():
@@ -261,7 +293,7 @@ def capture(args):
         if str(relative).startswith('.local/bin/') and not text.startswith('#!'):
             exclusions['installed executable'] += 1
             continue
-        if str(relative).startswith('.local/bin/') and source.name not in {'9router-local', 'env', 'env.fish', 'archon'}:
+        if str(relative).startswith('.local/bin/') and source.name not in {'9router-local', 'env', 'env.fish', 'archon', 'nas-backup'}:
             exclusions['installed console entrypoint'] += 1
             continue
         if private_material(text, documentation=source.suffix == '.md'):
@@ -281,6 +313,8 @@ def capture(args):
     for relative, (text, executable) in sorted(collected.items()):
         if relative.startswith('.local/bin/'):
             template = 'templates/commands/' + Path(relative).name + '.tmpl'
+        elif relative == '.config/dotfiles/nas-backup.json':
+            template = 'templates/nas-backup.json.tmpl'
         else:
             template = 'root/home/user/' + relative + '.tmpl'
         sanitized = scrubber.scrub(text, relative)
@@ -294,7 +328,7 @@ def capture(args):
     used = set()
     for entry in entries:
         used.update(MARKER.findall((output / entry['source']).read_text()))
-    private_only = {'SECRET_TAILSCALE_API_KEY', 'TAILSCALE_OWNER'}
+    private_only = {'SECRET_TAILSCALE_API_KEY', 'SECRET_SUDO_PASSWORD', 'TAILSCALE_OWNER'}
     private_values = {name: value for name, value in scrubber.values.items() if name in used or name in private_only}
     if values_path.exists():
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
@@ -305,7 +339,7 @@ def capture(args):
     (output / 'templates').mkdir(parents=True, exist_ok=True)
     example = {name: None for name in sorted(used) if name not in {'HOME', 'USER', 'UID', 'GID'}}
     (output / 'templates/values.example.json').write_text(json.dumps(example, indent=2) + '\n')
-    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi (retired harness)']}
+    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.config/blender', '.config/ghidra', '.config/REAPER', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi (retired harness)']}
     (output / 'templates/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(json.dumps({'templates': len(entries), 'variables': len(example), 'unit_links': len(links), 'excluded_file_counts': dict(exclusions), 'private_values': str(values_path)}, indent=2))
 

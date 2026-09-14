@@ -5,7 +5,7 @@ This index tracks curated research and historical documentation under .github/co
 ## Core Context
 
 - qwen-gpu-reranking: [Qwen GPU reranking](PROJECT/network-services.md#easyllama-qwen-gpu-reranking-2026-09-13) - Compact BGE reranker co-resident with GPU embeddings; chat swaps out both. Four-container supervisor and artifact pin captured. Hindsight uses authenticated EasyLlama directly with user approval because 9router lacks this route; real loaded searches pass.
-- hindsight-concurrency: [Luna/Terra tuning](PROJECT/network-services.md#hindsight-lunaterra-concurrency-2026-09-13) - Global LLM 8, retain/consolidation/reflect 4/2/4; six worker slots and four retain operations. Synthetic load gates passed; embeddings, recall and DB limits are unchanged. Short measurements do not establish sustained provider capacity.
+- hindsight-concurrency: [Retain progress and reflect contention](PROJECT/network-services.md#hindsight-retain-progress-and-reflect-contention-2026-09-13) - Bounded 180-second automatic reflection with a 210-second Codex hook; upstream runtime untouched. LLM caps 5/2/1/2, four worker slots, two retains and 40-second initial retry backoff. Historical failed jobs can contain committed facts; full ingestion remains incomplete.
 - coding-standards: [PROJECT/coding-standards.md](PROJECT/coding-standards.md)
 - network-services: [PROJECT/network-services.md](PROJECT/network-services.md) - Local AI lifecycle, private restoration and dated migration checks. Retired app artifacts stay excluded; owner template and local identity/data are preserved.
 - boot-recovery: [Boot recovery](PROJECT/network-services.md#boot-recovery) - 2026-09-10 22:07 PDT reboot exposed Docker/login dependency cancellation. Shared 180-second readiness waits and consumer retries are deployed; reviews have no blockers, mock/isolated recovery checks and live health/authentication checks pass. EasyLlama/database container IDs and start times are unchanged; no full reboot after the fix performed.
@@ -31,7 +31,6 @@ This index tracks curated research and historical documentation under .github/co
 - docker-engine: [docker-engine/ubuntu-install.md](docker-engine/ubuntu-install.md) - Ubuntu apt repository setup, install sequence, and security caveats.
 - nvidia-toolkit: [nvidia-toolkit/install-config.md](nvidia-toolkit/install-config.md) - NVIDIA toolkit installation and Docker runtime configuration guidance.
 - github-cli: [github-cli/linux-install.md](github-cli/linux-install.md) - Official Linux installation path and discouraged package channels.
-- ollama: [ollama/linux-install-service.md](ollama/linux-install-service.md) - Install modes, service operation, and version pinning controls.
 - neovim: [neovim/source-build.md](neovim/source-build.md) - Latest-from-source build flow and reproducibility controls.
 - repro-security: [repro-security/policies.md](repro-security/policies.md) - Policy-level references for apt trust, privilege boundaries, and workflow security posture.
 

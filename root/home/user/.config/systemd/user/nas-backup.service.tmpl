@@ -1,0 +1,13 @@
+[Unit]
+Description=Mirror the home directory and snapshot Hindsight to the NAS
+Documentation=man:rsync(1)
+Wants=hindsight-db.service
+After=hindsight-db.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/nas-backup backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=infinity
