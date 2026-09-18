@@ -24,8 +24,8 @@ models:
     name: Qwen3.8 Chat 27B RVN Heretic Q4_K_M MTP
     description: Primary thinking/tool-use model; multilingual RVN Heretic Q4_K_M
       with embedded MTP served by llama.cpp
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9002/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9002/sleep
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9006/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9006/sleep
     proxy: http://127.0.0.1:9000
     checkEndpoint: /v1/models
     useModelName: qwen3-chat
@@ -34,18 +34,18 @@ models:
     concurrencyLimit: 0
     name: Qwen3 Embeddings 0.6B FP16
     description: Dense embedding model for vector search, RAG, similarity
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9003/sleep
-    proxy: http://127.0.0.1:9001
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9007/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9007/sleep
+    proxy: http://127.0.0.1:9002
     checkEndpoint: /v1/models
     useModelName: qwen3-embeddings
   qwen3-reranker:
     ttl: 0
     concurrencyLimit: 0
     name: BGE Reranker v2 M3 Q8_0
-    description: Compact GPU reranking in Qwen mode, co-resident with embeddings
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9005/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9005/sleep
+    description: Compact GPU cross-encoder co-resident with embeddings in Qwen mode
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/sleep
     proxy: http://127.0.0.1:9004
     checkEndpoint: /v1/models
     useModelName: qwen3-reranker

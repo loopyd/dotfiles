@@ -30,9 +30,29 @@ def execute(arguments):
 def deployment_configuration():
     directory = Path.home() / '.config/easyllama'
     deployment = json.loads((directory / 'deployment.json').read_text())
-    if deployment['version'] != '0.6.0' or deployment['revision'] != '94166edbd5e74a9e89741d889483b12bdb82907c':
+    if deployment['version'] != '0.6.3' or deployment['revision'] != '62d239d2448af253d7d66a9440d6b0a0a8810388':
         raise ValueError('Unexpected EasyLlama release pin')
     return directory, deployment
+
+
+def render_environment(environment, directory):
+    credentials = {}
+    with contextlib.suppress(OSError, ValueError, KeyError, TypeError):
+        credentials = json.loads((directory / 'config.json').read_text()).get('credentials', {})
+    rendered = {}
+    for key, value in environment.items():
+        value = value.replace('$$', '$')
+        for match in re.findall(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}', value):
+            resolved = os.environ.get(match) or credentials.get(match) or credentials.get(match.lower()) or None
+            if not resolved and value.strip() == '${' + match + '}':
+                break
+            if not resolved:
+                raise ValueError('Cannot resolve ${' + match + '} in the captured environment')
+            value = value.replace('${' + match + '}', resolved)
+        if value.strip().startswith('${'):
+            continue
+        rendered[key] = value
+    return rendered
 
 
 def configuration():
@@ -44,7 +64,7 @@ def configuration():
     for role, service in services.items():
         if service['image'] != deployment['images'][role]['id'] or service.get('network_mode') != 'host' or service.get('ports'):
             raise ValueError('EasyLlama image or network differs')
-        service['environment'] = {key: value.replace('$$', '$') for key, value in service['environment'].items()}
+        service['environment'] = render_environment(service.get('environment') or {}, directory)
         service['command'] = [value.replace('$$', '$') for value in service['command']]
     return directory, deployment, services, command
 
@@ -67,8 +87,14 @@ def model_configuration(name='model.json'):
     root = Path(deployment['root'])
     if not root.is_absolute() or root.resolve() != root or not root.is_dir():
         raise ValueError('Create the configured EasyLlama data root first')
-    target = root / 'cache/models' / ('models--' + pin['repository'].replace('/', '--')) / 'snapshots' / pin['revision'] / pin['file']
-    if target.resolve() != target or target.is_symlink():
+    repo_cache = root / 'cache/models' / ('models--' + pin['repository'].replace('/', '--'))
+    target = repo_cache / 'snapshots' / pin['revision'] / pin['file']
+    if target.is_symlink():
+        real = target.resolve()
+        if real.is_symlink() or not real.is_file() or not real.is_relative_to((root / 'cache/models').resolve()):
+            raise ValueError('Embedding model cache must not traverse symlinks')
+        target = real
+    elif target.resolve() != target:
         raise ValueError('Embedding model cache must not traverse symlinks')
     return pin, target
 
