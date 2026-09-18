@@ -49,6 +49,7 @@ install_clients() {
     if [[ "${DRY_RUN}" == true ]]; then
         log "DRY-RUN: install verified Hindsight CLI ${CLI_VERSION} (${platform}) into ~/.local/bin"
         run_maybe_dry npm exec --yes "--package=@vectorize-io/hindsight-coding-agents@${RUNTIME_VERSION}" -- hindsight-coding-agents update
+        log 'DRY-RUN: wire pi harness (extension in ~/.pi/agent/settings.json + skill)'
         return
     fi
     if [[ -f "${HOME}/.local/bin/hindsight" ]] && [[ "$(compute_sha256 "${HOME}/.local/bin/hindsight")" == "${checksum}" ]]; then
@@ -64,6 +65,20 @@ install_clients() {
         npm exec --yes "--package=@vectorize-io/hindsight-coding-agents@${RUNTIME_VERSION}" -- hindsight-coding-agents update
         python3 "${SCRIPT_DIR}/hindsight.py" runtime --minimum "${RUNTIME_VERSION}"
     fi
+    wire_agents
+}
+
+# Wire the pi harness to the staged coding-agent runtime: registers the extension in
+# ~/.pi/agent/settings.json and installs the skill under ~/.pi/agent/skills. Runs the
+# pinned staged installer offline (no npx, no network); idempotent on every update.
+wire_agents() {
+    local runner="${HOME}/.hindsight/coding-agents/dist/installer.js"
+    if [[ ! -f "${runner}" ]]; then
+        log 'WARNING: coding-agents runtime missing; skipping pi wiring'
+        return 0
+    fi
+    run_maybe_dry node "${runner}" install pi
+    log 'pi harness wired (extension + skill)'
 }
 
 activate_services() {

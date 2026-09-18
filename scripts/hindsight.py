@@ -281,6 +281,9 @@ def preflight():
         require(path.is_file() and '@@DOTFILES:' not in path.read_text(), 'Missing/unrendered file: ' + relative)
     codex = tomllib.loads((home / '.codex/config.toml').read_text())
     require(codex.get('features', {}).get('hooks') is True, 'Restore Codex hook configuration first')
+    require((home / '.pi/agent/skills/hindsight-coding-agent/SKILL.md').is_file(), 'pi harness skill missing; run scripts/hindsight.sh update')
+    pi_settings = json.loads((home / '.pi/agent/settings.json').read_text())
+    require(any('coding-agents/dist/pi.js' in entry for entry in (pi_settings.get('extensions') or [])), 'pi extension not registered in ~/.pi/agent/settings.json; run scripts/hindsight.sh update')
     verify_services(compose_services(home))
     for relative in ['.local/share/hindsight/postgres', '.local/share/hindsight/cache']:
         require((home / relative).is_dir(), 'Render persistent directory first: ' + relative)
