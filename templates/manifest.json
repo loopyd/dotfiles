@@ -2867,7 +2867,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "d2f8bd16411ce81e7dac9c05c62f1bce9073e4d2c5ec491c4189c98083608632"
+      "sha256": "f4f2f7a4fe5c846255247e49f1ca1934abaa913d1ce402f0cfc1ebea548e9927"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -3245,7 +3245,7 @@
       "source": "root/home/user/.hindsight/coding-agent.json.tmpl",
       "target": ".hindsight/coding-agent.json",
       "mode": "0600",
-      "sha256": "82874fad99ed3ffec39ec3c13f9cd687fa940d54e2669fd3add37ab0f1e1dfda"
+      "sha256": "12ca4f27ff9769624bcae98bc56ff4ce05b4973d4eb154087cd2f986748c9745"
     },
     {
       "source": "root/home/user/.hindsight/config.tmpl",
@@ -3371,19 +3371,19 @@
       "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
       "target": ".config/easyllama/deployment.json",
       "mode": "0600",
-      "sha256": "940e792d4a2e863d3d0389d6790eff9e7dee20f0be3bef544845877c79d33312"
+      "sha256": "2a6188f83b6ccd543374e77a21036760a8ba4fba59cdd3253ee3a2563b2c0c5e"
     },
     {
       "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
       "target": ".config/easyllama/proxy.yaml",
       "mode": "0600",
-      "sha256": "9cf2de1f1c68d6e4d5e9c937e094cf11c9e40de36e7df10fe05b0c3d11360f2f"
+      "sha256": "944991905b960b066ff649e675c50e6a770c85ac859eef66d0d8bda1fa1ee917"
     },
     {
       "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
       "target": ".config/easyllama/compose.yaml",
       "mode": "0600",
-      "sha256": "d96c7695189f5508d17a58d90636c0b6641d261e8de80323a927d7c8d3eef4da"
+      "sha256": "ada5e2dc0694203c483f5d80f9f387ca865a37aa62f678adfbb607184a742b0e"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
