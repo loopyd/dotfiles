@@ -1,18 +1,18 @@
 [Unit]
 Description=9router gateway (Docker Compose)
-After=tailscale.service easyllama.service
-Wants=tailscale.service easyllama.service
-PartOf=tailscale.service easyllama.service
+After=tailscale.service
+Wants=tailscale.service
+PartOf=tailscale.service
 
 [Service]
 Type=simple
 ExecStartPre=/usr/bin/test -s %h/.9router/db/data.sqlite
 ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/readiness.py wait router
 ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/router.py preflight
-ExecStart=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml up --no-build --pull never --abort-on-container-exit
-ExecStop=/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60
-ExecStopPost=-/usr/bin/docker compose --project-name 9router --file %h/.config/9router/compose.yaml stop --timeout 60
-SuccessExitStatus=130
+ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/router.py stage
+ExecStart=/usr/bin/docker start --attach 9router
+ExecStop=-/usr/bin/docker stop --time 60 9router
+SuccessExitStatus=130 137 143
 Restart=always
 RestartSec=15
 TimeoutStartSec=210

@@ -3323,13 +3323,13 @@
       "source": "root/home/user/.config/9router/compose.yaml.tmpl",
       "target": ".config/9router/compose.yaml",
       "mode": "0600",
-      "sha256": "b6ca87b1f9080afbff9085e814e48c489ed6f77ad4766c34589ed849881a3dab"
+      "sha256": "1b17c7afe08e1e6d49a7c803f3cde529e2391c10782f1a360363d07e0011acf5"
     },
     {
       "source": "root/home/user/.config/systemd/user/9router.service.tmpl",
       "target": ".config/systemd/user/9router.service",
       "mode": "0600",
-      "sha256": "ff578050a462d0c3bcf64fcc627661b5733c8a4a19bfc599ec8517c5d2284b1e"
+      "sha256": "172940825214f5d545cef228b7387e0ab8bbba5f9e8ba80af8264cc7fcb3d38f"
     },
     {
       "source": "root/home/user/.config/systemd/user/tailscale.service.tmpl",
@@ -3383,7 +3383,7 @@
       "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
       "target": ".config/easyllama/compose.yaml",
       "mode": "0600",
-      "sha256": "ada5e2dc0694203c483f5d80f9f387ca865a37aa62f678adfbb607184a742b0e"
+      "sha256": "76307f088670de5803ccbe56f7e7e5e691691902342dc239d40348b3a4cec474"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
@@ -3437,7 +3437,7 @@
       "source": "root/home/user/.config/systemd/user/easyllama.service.tmpl",
       "target": ".config/systemd/user/easyllama.service",
       "mode": "0600",
-      "sha256": "8605f85cc4eee0ee3979ab214f3500c7df4d56d4e083a5fb7377112e13656ff9"
+      "sha256": "b579ac0722481703f23f2016a4642efce4880c37882dda7457fb9b6815466710"
     },
     {
       "source": "root/home/user/.config/tailscale/owner.json.tmpl",

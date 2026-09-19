@@ -13,10 +13,7 @@ def probes(component):
         ['/usr/bin/docker', 'info', '--format', '{{.ServerVersion}}'],
     ]
     if component == 'router':
-        commands.extend([
-            ['/usr/bin/systemctl', '--user', 'is-active', '--quiet', 'easyllama.service'],
-            ['/usr/bin/python3', str(helpers / 'tailscale.py'), 'check'],
-        ])
+        commands.append(['/usr/bin/python3', str(helpers / 'tailscale.py'), 'check'])
     elif component == 'hindsight':
         commands.extend([
             ['/usr/bin/systemctl', '--user', 'is-active', '--quiet', 'hindsight-db.service'],

@@ -219,7 +219,7 @@ lifecycle_payload() {
                 "${HOME}/.local/share/man/man1/alacritty.1.gz" "${HOME}/.local/share/man/man5/alacritty.5.gz"
                 "${HOME}/.local/share/man/man5/alacritty-bindings.5.gz" "${HOME}/.local/share/man/man1/alacritty-msg.1.gz"
                 "${HOME}/.local/share/man/man7/alacritty-escapes.7.gz") ;;
-        router) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/router.py") ;;
+        router) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/router.py" "${HOME}/.local/lib/dotfiles/9router.Dockerfile") ;;
         easyllama) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/easyllama.py") ;;
         tailscale) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/tailscale.py") ;;
         hooks|tools) ;;

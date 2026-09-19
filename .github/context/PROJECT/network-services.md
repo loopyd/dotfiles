@@ -33,7 +33,11 @@ the tailnet VIP, not a second device. Phase 2 below records the earlier 9router 
   stack through a user supervisor; install can adopt matching running containers
   without restarting models. Update restarts the stack and active consumers.
 - `router.sh install|update|uninstall|check` manages user `9router.service`
-  and the pinned Docker image through `~/.config/9router/compose.yaml`.
+  and the pinned Docker image through `~/.config/9router/compose.yaml`. The unit
+  is independent of EasyLlama: starting it latches onto an already-running
+  `9router` container without recreating it, and an explicit restart stops and
+  restarts that container. A stopped or absent managed container is reconciled
+  from Compose before the latch attaches.
 - Root-owned system `tailscaled.service` is the actual native kernel daemon
   and owns host SSH and Serve. The user `tailscale.service` coordinator restores
   reviewed private configuration through that daemon; it must not launch another
@@ -66,7 +70,7 @@ policy to retry after 15 seconds when prerequisites remain unavailable. Shared
 | Wait | Required evidence |
 | --- | --- |
 | `docker` | System `docker.service` active and Docker daemon responsive; used by EasyLlama and PostgreSQL |
-| `router` | Docker ready, `easyllama.service` active and strict native `tailscale.py check` successful |
+| `router` | Docker ready and strict native `tailscale.py check` successful |
 | `hindsight` | Docker ready, database and 9router units active, PostgreSQL `pg_isready` and authenticated router model discovery successful |
 
 Probes use fixed subprocess commands with bounded execution and suppressed
@@ -87,11 +91,12 @@ budget, adding `Restart=on-failure` / `RestartSec=15`. Success remains inactive.
 These bounds limit individual attempts, not total recovery time or eventual
 success while prerequisites remain unavailable.
 
-`PartOf` preserves explicit stop/restart propagation: Tailscale or EasyLlama →
-9router, and database or 9router → Hindsight. An intentional stop leaves affected
-units stopped until explicitly started; automatic retry is for startup/runtime
-failure, not an instruction to undo an operator stop. Readiness probes only
-observe prerequisites and do not start or stop dependencies.
+`PartOf` preserves explicit stop/restart propagation: Tailscale → 9router, and
+database or 9router → Hindsight. 9router is decoupled from EasyLlama, so an
+EasyLlama restart no longer stops or restarts the gateway. An intentional stop
+leaves affected units stopped until explicitly started; automatic retry is for
+startup/runtime failure, not an instruction to undo an operator stop. Readiness
+probes only observe prerequisites and do not start or stop dependencies.
 
 **Recovery validation.** Mock probes pass immediate,
 delayed, timeout and exception cases. An isolated two-unit systemd rehearsal
@@ -1182,10 +1187,11 @@ Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
 
 ## Preserved Configuration
 
-- The reviewed Compose pin is 9router **0.5.75**, pinned by image digest, with **2 CPUs**
-  and **4 GiB `/dev/shm`**. The verified Docker backend binds only
-  `127.0.0.1:20128`; raw tailnet/LAN port 20128 is not the public API contract.
-  Loopback binding replaces the baseline's LAN-accessible host-network listener.
+- The Compose definition runs a locally built `9router:local` image (built from
+  the newest upstream release tag), with **2 CPUs** and **4 GiB `/dev/shm`**. The
+  verified Docker backend binds only `127.0.0.1:20128`; raw tailnet/LAN port
+  20128 is not the public API contract. Loopback binding replaces the baseline's
+  LAN-accessible host-network listener.
 - The existing `~/.9router` store remains mounted in place: SQLite, provider
   credentials, JWT secret, machine identity and certificates are preserved.
   `runtime.env` retains the existing 600-second swap-aware timeouts.
@@ -1207,27 +1213,31 @@ Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
 
 ## Router Maintenance
 
-Updates converge to the reviewed Compose pin, never automatically to `latest`.
-Version **0.5.75** uses image digest
-`sha256:7c893bc2c27ecea2ae337abd5eacfec9e5763091b3a3b7862fc0625b770bb156`.
+The deployment never depends on an upstream image tag: `scripts/router.py build`
+resolves the newest `decolua/9router` release tag, downloads that tag's source,
+and builds it with the vendored `scripts/9router.Dockerfile`, tagging
+`9router:<tag>` and `9router:local`. An already-matching `9router:local` is
+reused; `--force` rebuilds. `router.sh install`/`update` run the build before
+the unit starts, and the unit itself runs `--no-build --pull never`, so a
+missing image fails closed instead of pulling a floating tag.
 
-1. Verify the upstream release and image version, update the Compose template
-   digest, and recompute its source-file SHA-256 in `templates/manifest.json`.
-2. Retain the previous Compose file and a consistent SQLite backup outside Git.
-   Use SQLite's backup API, not a plain copy of a live database file.
-3. Materialize and install only the reviewed Compose change using the existing
-   renderer. Its CLI has no single-file selector; a full render changes other
-   captured files too. Preserve authentication, identity, mounts and limits.
-4. Preview `bash scripts/router.sh update --dry-run`, then run
-   `bash scripts/router.sh update`. This isolates the gateway update;
-   `bootstrap.sh update --only router` also selects Docker/NVIDIA, Tailscale and
-   EasyLlama updates.
-5. Run `bash scripts/router.sh check`; verify image/version, private HTTPS login,
+1. Review the upstream release and the vendored `scripts/9router.Dockerfile`;
+   re-copy the tag's `Dockerfile` if the build steps changed. Tracked templates
+   keep their recomputed SHA-256 in `templates/manifest.json`.
+2. Retain a consistent SQLite backup outside Git. Use SQLite's backup API, not a
+   plain copy of a live database file.
+3. Preview `bash scripts/router.sh update --dry-run`, then run
+   `bash scripts/router.sh update` (add `--tag vX.Y.Z` to pin a release or
+   `--force` to rebuild). `bootstrap.sh update --only router` also selects
+   Docker/NVIDIA, Tailscale and EasyLlama updates.
+4. Run `bash scripts/router.sh check`; verify image/version, private HTTPS login,
    anonymous API rejection, required Qwen discovery, chat/embedding requests and
    authenticated Hindsight health. Record actual results.
 
-The updater has no automatic rollback. Keep the old image and private backups;
-stop the gateway before any database recovery, never overwrite a live database.
+The resolved tag, image id, Dockerfile hash and timestamp are recorded in
+`~/.local/state/9router/build.json`. The updater has no automatic rollback. Keep
+the previous `9router:<tag>` image and private backups; stop the gateway before
+any database recovery, never overwrite a live database.
 
 ## Router Deployment And Recovery
 
@@ -1241,8 +1251,14 @@ stop the gateway before any database recovery, never overwrite a live database.
 3. Plan a brief maintenance cutover, record the native process/launcher and
    preserve a private database recovery point before stopping it. The installer
    refuses to activate while an unmanaged process owns port 20128.
-4. Start `9router.service`; run `router.sh check` and `tailscale.sh check`. Only
-   after success disable the old GUI login autostart to prevent double ownership.
+4. Start `9router.service`. Its `router.py stage` pre-check reconciles a stopped
+   or absent managed container (or verifies and adopts an existing unmanaged
+   `9router` container), then `docker start --attach` latches the foreground
+   process to the container and `ExecStop` stops it. Starting therefore never
+   recreates an already-running gateway; `systemctl --user restart 9router.service`
+   is what stops and restarts the container. Run `router.sh check` and
+   `tailscale.sh check`. Only after success disable the old GUI login autostart
+   to prevent double ownership.
 5. On failure stop and disable the user service and restore the previous native
    launcher/autostart. Never run both gateways against the database concurrently.
 

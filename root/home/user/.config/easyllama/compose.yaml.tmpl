@@ -171,7 +171,7 @@ services:
     - --host
     - 127.0.0.1
     - --port
-    - '9006'
+    - '9008'
     - --
     - /bin/sh
     - -lc
@@ -314,7 +314,7 @@ services:
       - curl
       - --fail
       - --silent
-      - http://127.0.0.1:9006/health
+      - http://127.0.0.1:9008/health
       interval: 30000000000ns
       timeout: 5000000000ns
       start_period: 20000000000ns
@@ -332,12 +332,12 @@ services:
     - --host
     - 127.0.0.1
     - --port
-    - '9007'
+    - '9010'
     - --
     - /bin/sh
     - -lc
     - exec /opt/venv/bin/easyllama server qwen --bin /app/bin/llama-server-qwen --host
-      127.0.0.1 --port 9002 --model /root/.cache/huggingface/hub/models--Qwen--Qwen3-Embedding-0.6B-GGUF/snapshots/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-f16.gguf --n-gpu-layers all
+      127.0.0.1 --port 9004 --model /root/.cache/huggingface/hub/models--Qwen--Qwen3-Embedding-0.6B-GGUF/snapshots/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-f16.gguf --n-gpu-layers all
       --device CUDA0 --fit off --threads 4 --threads-batch 4 --ctx-size 131072
       --batch-size 512 --ubatch-size 512 --parallel 4 --flash-attn on --cache-type-k
       f16 --cache-type-v f16 --no-mmap --no-warmup --embedding --pooling last
@@ -402,7 +402,7 @@ services:
     labels:
       easyllama.managed: 'true'
       easyllama.mode: qwen
-      easyllama.port: '9002'
+      easyllama.port: '9004'
       easyllama.stop-signal: SIGTERM
       easyllama.type: llamacpp
       maintainer: NVIDIA CORPORATION <cudatools@nvidia.com>
@@ -471,7 +471,7 @@ services:
       - curl
       - --fail
       - --silent
-      - http://127.0.0.1:9007/health
+      - http://127.0.0.1:9010/health
       interval: 30000000000ns
       timeout: 5000000000ns
       start_period: 20000000000ns
@@ -485,19 +485,19 @@ services:
     - --host
     - 127.0.0.1
     - --port
-    - '9008'
+    - '9011'
     - --
     - /bin/sh
     - -lc
     - exec /opt/venv/bin/easyllama server qwen --bin /app/bin/llama-server-qwen --host
-      127.0.0.1 --port 9004 --model /root/.cache/huggingface/hub/models--gpustack--bge-reranker-v2-m3-GGUF/snapshots/3093af03b1a635e67b084b1d8c03c5f5e020fd05/bge-reranker-v2-m3-Q8_0.gguf
+      127.0.0.1 --port 9006 --model /root/.cache/huggingface/hub/models--gpustack--bge-reranker-v2-m3-GGUF/snapshots/3093af03b1a635e67b084b1d8c03c5f5e020fd05/bge-reranker-v2-m3-Q8_0.gguf
       --n-gpu-layers all --device CUDA0 --fit off --threads 2 --threads-batch 2
       --ctx-size 16384 --batch-size 8192 --ubatch-size 8192 --parallel 2
       --embedding --pooling rank --reranking --no-warmup --no-webui
     labels:
       easyllama.managed: 'true'
       easyllama.mode: qwen
-      easyllama.port: '9004'
+      easyllama.port: '9006'
       easyllama.stop-signal: SIGTERM
       easyllama.type: llamacpp
     cpus: 24.0
@@ -505,7 +505,7 @@ services:
     memswap_limit: 101468602368
     shm_size: 67108864
     healthcheck:
-      test: [CMD, curl, --fail, --silent, 'http://127.0.0.1:9008/health']
+      test: [CMD, curl, --fail, --silent, 'http://127.0.0.1:9011/health']
       interval: 30s
       timeout: 5s
       start_period: 20s

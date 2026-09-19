@@ -584,16 +584,25 @@ they are not silently rebuilt or pulled from an assumed public registry.
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions
 as other components; bootstrap selects them with `--with-network` or
-`--only tailscale,router`. The Compose definition keeps 9router 0.5.75
-pinned by digest, **2 CPUs**, **4 GiB `/dev/shm`** and the existing `~/.9router`
+`--only tailscale,router`. The Compose definition runs a locally built image
+(`9router:local`), **2 CPUs**, **4 GiB `/dev/shm`** and the existing `~/.9router`
 data. Its verified backend is loopback-only `127.0.0.1:20128`; host Tailscale
 socket/binary mounts are removed and internal publication is set to `false`.
 
-Gateway updates apply the reviewed Compose pin, not floating `latest`. Update
-the template and manifest hash, render the reviewed Compose change, and retain
-a consistent private SQLite backup before `bash scripts/router.sh update`.
-Unlike that direct command, `bootstrap.sh update --only router` also selects
-Docker/NVIDIA, Tailscale and EasyLlama updates. See
+The router image is never pulled from a floating upstream tag: `scripts/router.py
+build` resolves the newest `decolua/9router` release tag, downloads that source,
+and builds it with the vendored `scripts/9router.Dockerfile`, tagging
+`9router:<tag>` and `9router:local`. Installs and updates always build for the
+newest tag (or `--tag TAG`); an already-matching image is reused unless `--force`
+is given. The resolved tag, image id, Dockerfile hash and timestamp are recorded
+in `~/.local/state/9router/build.json`. The user unit is independent of
+EasyLlama: starting it latches onto an already-running `9router` container
+without recreating it, a stopped or absent managed container is reconciled from
+Compose first, and `systemctl --user restart 9router.service` stops and restarts
+the container. Retain a consistent private SQLite backup
+before `bash scripts/router.sh update`. Unlike that direct command,
+`bootstrap.sh update --only router` also selects Docker/NVIDIA, Tailscale and
+EasyLlama updates. See
 [router maintenance](.github/context/PROJECT/network-services.md#router-maintenance).
 
 **Phase 2: COMPLETE — verified 2026-09-10.** Native Tailscale retains its stable

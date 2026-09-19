@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 import argparse
+import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import socket
 import sqlite3
 import subprocess
 import sys
-import time
+import tarfile
 import tempfile
+import time
 import uuid
 from urllib.request import Request, urlopen
 
 from network import decode_files, decode_tables, installed_helpers, restore_files, restore_tables
+
+REPOSITORY = 'decolua/9router'
+IMAGE = '9router'
+CONTAINER = '9router'
+SOURCE_LABEL = 'https://github.com/' + REPOSITORY
+TAG_PATTERN = re.compile(r'v?(\d+)\.(\d+)\.(\d+)$')
 
 
 def config():
@@ -115,7 +126,7 @@ def prepare():
         restore_files(data(), decode_files(json.loads(identity.read_text())))
     if (data() / 'db/data.sqlite').exists():
         private_settings()
-    installed_helpers(['router.py', 'network.py', 'readiness.py'])
+    installed_helpers(['router.py', 'network.py', 'readiness.py', '9router.Dockerfile'])
 
 
 def initialize():
@@ -175,10 +186,144 @@ def restore():
     print('Captured configuration and credentials restored transactionally; backup retained privately')
 
 
+def compose(*arguments):
+    return ['docker', 'compose', '--project-name', CONTAINER, '--file', str(config() / 'compose.yaml'), *arguments]
+
+
+def inspect_container():
+    result = subprocess.run(['docker', 'inspect', CONTAINER], capture_output=True, text=True)
+    if result.returncode:
+        return None
+    return json.loads(result.stdout)[0]
+
+
+def managed(container):
+    return (container['Config'].get('Labels') or {}).get('com.docker.compose.project') == CONTAINER
+
+
+def recognized(container):
+    labels = container['Config'].get('Labels') or {}
+    image = container['Config'].get('Image') or ''
+    return labels.get('org.opencontainers.image.source') == SOURCE_LABEL or image.startswith(IMAGE + ':') or REPOSITORY in image
+
+
+def stage():
+    container = inspect_container()
+    if container is None:
+        subprocess.run(compose('up', '--no-start', '--no-deps', '--no-build', '--pull', 'never'), check=True)
+        if inspect_container() is None:
+            raise ValueError('Compose did not stage the router container')
+        print('Staged a new router container for first start')
+        return
+    if managed(container):
+        if container['State'].get('Running'):
+            print('Latching onto the running managed router container')
+            return
+        subprocess.run(compose('up', '--no-start', '--no-deps', '--no-build', '--pull', 'never'), check=True)
+        print('Reconciled the stopped managed router container')
+        return
+    if not recognized(container):
+        raise ValueError('Existing container named 9router is not a recognized gateway image')
+    print('Latching onto the existing router container')
+
+
+def semver(name):
+    match = TAG_PATTERN.fullmatch(name.strip())
+    return tuple(int(part) for part in match.groups()) if match else None
+
+
+def github_json(url):
+    request = Request(url, headers={
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'dotfiles-9router-build',
+    })
+    with urlopen(request, timeout=30) as response:
+        return json.load(response)
+
+
+def latest_tag():
+    names = []
+    for page in range(1, 6):
+        payload = github_json('https://api.github.com/repos/' + REPOSITORY + '/tags?per_page=100&page=' + str(page))
+        if not isinstance(payload, list) or not payload:
+            break
+        names.extend(entry['name'] for entry in payload if isinstance(entry, dict) and 'name' in entry)
+        if len(payload) < 100:
+            break
+    releases = [(semver(name), name) for name in names]
+    releases = sorted((version, name) for version, name in releases if version is not None)
+    if not releases:
+        raise ValueError('No semantic release tags found for ' + REPOSITORY)
+    return releases[-1][1]
+
+
+def image_id(name):
+    result = subprocess.run(['docker', 'image', 'inspect', name, '--format', '{{.Id}}'], capture_output=True, text=True)
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def download_source(tag, destination):
+    archive = destination / ('source-' + tag + '.tar.gz')
+    request = Request('https://github.com/' + REPOSITORY + '/archive/refs/tags/' + tag + '.tar.gz', headers={
+        'User-Agent': 'dotfiles-9router-build',
+    })
+    with urlopen(request, timeout=300) as response, archive.open('wb') as stream:
+        shutil.copyfileobj(response, stream)
+    unpacked = destination / 'source'
+    unpacked.mkdir()
+    with tarfile.open(archive) as bundle:
+        try:
+            bundle.extractall(unpacked, filter='data')
+        except TypeError:  # Python < 3.12 has no extraction filter
+            bundle.extractall(unpacked)
+    roots = [entry for entry in unpacked.iterdir() if entry.is_dir()]
+    if len(roots) != 1:
+        raise ValueError('Unexpected source archive layout for ' + tag)
+    return roots[0]
+
+
+def build(force=False, tag=None):
+    if shutil.which('docker') is None:
+        raise ValueError('docker is required to build the router image')
+    tag = tag or latest_tag()
+    versioned = IMAGE + ':' + tag
+    local = IMAGE + ':local'
+    if not force and image_id(versioned) is not None and image_id(versioned) == image_id(local):
+        print('Router image ' + local + ' already matches ' + REPOSITORY + ' ' + tag)
+        return
+    dockerfile = Path(__file__).resolve().parent / '9router.Dockerfile'
+    if not dockerfile.is_file():
+        raise ValueError('Missing vendored Dockerfile: ' + str(dockerfile))
+    state = Path.home() / '.local/state/9router'
+    state.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with tempfile.TemporaryDirectory(prefix='build-' + tag + '-', dir=state) as temporary:
+        context = download_source(tag, Path(temporary))
+        subprocess.run([
+            'docker', 'build', '--progress=plain',
+            '--tag', versioned, '--tag', local,
+            '--label', 'org.opencontainers.image.version=' + tag,
+            '--label', 'org.opencontainers.image.source=https://github.com/' + REPOSITORY,
+            '--file', str(dockerfile), str(context),
+        ], check=True)
+    built = image_id(local)
+    record = {
+        'repository': REPOSITORY,
+        'tag': tag,
+        'image': local,
+        'image_id': built,
+        'dockerfile_sha256': hashlib.sha256(dockerfile.read_bytes()).hexdigest(),
+        'built_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
+    }
+    (state / 'build.json').write_text(json.dumps(record, indent=2) + '\n')
+    print('Built ' + local + ' from ' + REPOSITORY + ' ' + tag)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['prepare', 'initialize', 'restore', 'health', 'check', 'ready', 'wait', 'preflight'])
+    parser.add_argument('command', choices=['prepare', 'initialize', 'restore', 'build', 'stage', 'health', 'check', 'ready', 'wait', 'preflight'])
     parser.add_argument('--port', type=int, default=20128)
+    parser.add_argument('--tag', help='release tag to build; defaults to the newest')
+    parser.add_argument('--force', action='store_true', help='rebuild even when the image is current')
     args = parser.parse_args()
     if args.command == 'ready':
         if subprocess.run(['systemctl', '--user', 'is-active', '--quiet', '9router.service']).returncode != 0:
@@ -195,6 +340,10 @@ def main():
         raise ValueError('Gateway did not become healthy')
     elif args.command == 'check':
         check(args.port)
+    elif args.command == 'build':
+        build(force=args.force, tag=args.tag)
+    elif args.command == 'stage':
+        stage()
     elif args.command == 'health':
         health(args.port)
     else:
