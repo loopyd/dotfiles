@@ -12,6 +12,7 @@ routing:
           exclusive: true
           members:
           - qwen3-chat
+          - qwen3-fast
         search:
           swap: false
           exclusive: true
@@ -24,19 +25,30 @@ models:
     name: Qwen3.8 Chat 27B RVN Heretic Q4_K_M MTP
     description: Primary thinking/tool-use model; multilingual RVN Heretic Q4_K_M
       with embedded MTP served by llama.cpp
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9006/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9006/sleep
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/sleep
     proxy: http://127.0.0.1:9000
     checkEndpoint: /v1/models
     useModelName: qwen3-chat
+  qwen3-fast:
+    concurrencyLimit: 0
+    name: Qwen3.6 Fast 35B-A3B MoE NVFP4 Uncensored
+    description: Fast high-throughput MoE route; 35B total / 3B active NVFP4 (HauhauCS-Aggressive
+      abliterated) served by vLLM with FP8 KV and prefix caching, tuned for RTX 5090
+      concurrency
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9009/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9009/sleep
+    proxy: http://127.0.0.1:9002
+    checkEndpoint: /health
+    useModelName: qwen3-fast
   qwen3-embeddings:
     ttl: 0
     concurrencyLimit: 0
     name: Qwen3 Embeddings 0.6B FP16
     description: Dense embedding model for vector search, RAG, similarity
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9007/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9007/sleep
-    proxy: http://127.0.0.1:9002
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9010/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9010/sleep
+    proxy: http://127.0.0.1:9004
     checkEndpoint: /v1/models
     useModelName: qwen3-embeddings
   qwen3-reranker:
@@ -44,9 +56,9 @@ models:
     concurrencyLimit: 0
     name: BGE Reranker v2 M3 Q8_0
     description: Compact GPU cross-encoder co-resident with embeddings in Qwen mode
-    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/run
-    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9008/sleep
-    proxy: http://127.0.0.1:9004
+    cmd: curl --fail --silent --show-error --request POST http://127.0.0.1:9011/run
+    cmdStop: curl --fail --silent --show-error --request POST http://127.0.0.1:9011/sleep
+    proxy: http://127.0.0.1:9006
     checkEndpoint: /v1/models
     useModelName: qwen3-reranker
 apiKeys:

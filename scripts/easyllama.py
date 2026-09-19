@@ -59,7 +59,7 @@ def configuration():
     directory, deployment = deployment_configuration()
     command = ['docker', 'compose', '--project-name', 'easyllama', '--file', str(directory / 'compose.yaml')]
     services = json.loads(execute([*command, 'config', '--format', 'json']).stdout)['services']
-    if set(services) != {'proxy', 'chat', 'embeddings', 'reranker'} or set(deployment['images']) != set(services):
+    if set(services) != {'proxy', 'chat', 'fast', 'embeddings', 'reranker'} or set(deployment['images']) != set(services):
         raise ValueError('Unexpected EasyLlama service set')
     for role, service in services.items():
         if service['image'] != deployment['images'][role]['id'] or service.get('network_mode') != 'host' or service.get('ports'):
@@ -273,7 +273,7 @@ def health():
     key = json.loads((directory / 'config.json').read_text())['credentials']['api_key']
     with urlopen(Request('http://127.0.0.1:8080/v1/models', headers={'Authorization': 'Bearer ' + key}), timeout=15) as response:
         models = {entry['id'] for entry in json.load(response)['data']}
-    if not {'qwen3-chat', 'qwen3-embeddings', 'qwen3-reranker'}.issubset(models):
+    if not {'qwen3-chat', 'qwen3-fast', 'qwen3-embeddings', 'qwen3-reranker'}.issubset(models):
         raise ValueError('Captured Qwen models missing')
 
 
@@ -282,10 +282,10 @@ def check():
     _directory, _deployment, services, _command = configuration()
     images()
     observed = containers(services)
-    if len(observed) != 4 or any(not container['State']['Running'] for _role, container in observed):
+    if len(observed) != 5 or any(not container['State']['Running'] for _role, container in observed):
         raise ValueError('EasyLlama stack is not running')
     health()
-    print('Four pinned EasyLlama containers, captured limits/mounts and authenticated Qwen discovery verified')
+    print('Five pinned EasyLlama containers, captured limits/mounts and authenticated Qwen discovery verified')
 
 
 def wait():
@@ -368,7 +368,7 @@ def inspect_owned(record):
 
 def stop_owned(records):
     failed = False
-    for record in sorted(records, key=lambda entry: ['proxy', 'chat', 'embeddings', 'reranker'].index(entry['role'])):
+    for record in sorted(records, key=lambda entry: ['proxy', 'chat', 'fast', 'embeddings', 'reranker'].index(entry['role'])):
         try:
             if inspect_owned(record) is not None:
                 execute(['docker', 'stop', '--time', '60', record['id']])
@@ -472,7 +472,7 @@ def supervise():
     try:
         override = ownership().parent / ('compose-' + invocation + '.json')
         write_state(override, {'services': {role: {'labels': {'dotfiles.easyllama.transaction': invocation}} for role in services}})
-        for role in ['chat', 'embeddings', 'reranker', 'proxy']:
+        for role in ['chat', 'fast', 'embeddings', 'reranker', 'proxy']:
             if stopping.is_set():
                 return
             if role not in observed:
@@ -495,7 +495,7 @@ def supervise():
                 stopping.wait(2)
         else:
             raise ValueError('EasyLlama endpoint did not become healthy')
-        if len(state['records']) != 4:
+        if len(state['records']) != 5:
             raise ValueError('Could not establish ownership of the full stack')
         current = containers(services)
         same_owners(state, current)

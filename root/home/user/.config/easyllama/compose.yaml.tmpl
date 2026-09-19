@@ -1,6 +1,6 @@
 services:
   proxy:
-    image: sha256:76ab81b384bfd9ee19c25e315621aa8b0c1326956d5896853755544122915489
+    image: sha256:ae5397c48d704b38628fd6973cd319c62b370ac604182475ca983a6ba15b440e
     container_name: easyllama-server-swap
     network_mode: host
     restart: 'no'
@@ -140,6 +140,24 @@ services:
       read_only: true
       bind:
         create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/flashinfer-jit
+      target: /root/.cache/flashinfer
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/lmcache
+      target: /root/.cache/lmcache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/slot-cache
+      target: /root/.cache/slot-cache
+      read_only: false
+      bind:
+        create_host_path: false
     logging:
       driver: json-file
       options:
@@ -159,7 +177,7 @@ services:
       embeddings:
         condition: service_healthy
   chat:
-    image: sha256:6710bd6c1bd92175f51fcaeb4d01cc1bf6dd3a24cdce01d398b111125789c035
+    image: sha256:5e59a69930e02e2ad065fe744ef0329689899a225078035b855a3ad95df62c74
     container_name: easyllama-qwen-llamacpp-qwen3-chat
     network_mode: host
     restart: 'no'
@@ -181,7 +199,7 @@ services:
       --parallel 4 --threads 8 --threads-batch 8 --kv-unified --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min
       0 --spec-draft-type-k q8_0 --spec-draft-type-v q8_0 --flash-attn on --cache-type-k
       q8_0 --cache-type-v q8_0 --batch-size 4096 --ubatch-size 1024 --cache-prompt
-      --cache-ram 4096 --ctx-checkpoints 8 --load-mode mmap --no-warmup --no-webui
+      --cache-ram 4096 --slot-save-path /root/.cache/slot-cache --ctx-checkpoints 8 --load-mode mmap --no-warmup --no-webui
       --jinja --chat-template-file /chat_template/qwen3.8.jinja --reasoning auto --reasoning-preserve
       --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --repeat-penalty 1.0
     environment:
@@ -242,6 +260,7 @@ services:
       NVIDIA_PRODUCT_NAME: CUDA
       PYTHONUNBUFFERED: '1'
       GGML_CUDA_ENABLE_UNIFIED_MEMORY: '1'
+      EASYLLAMA_SLEEP_MODE: slot
     labels:
       easyllama.managed: 'true'
       easyllama.mode: qwen
@@ -294,6 +313,24 @@ services:
       read_only: false
       bind:
         create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/flashinfer-jit
+      target: /root/.cache/flashinfer
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/lmcache
+      target: /root/.cache/lmcache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/slot-cache
+      target: /root/.cache/slot-cache
+      read_only: false
+      bind:
+        create_host_path: false
     logging:
       driver: json-file
       options:
@@ -320,7 +357,7 @@ services:
       start_period: 20000000000ns
       retries: 3
   embeddings: &qwen_search_backend
-    image: sha256:6710bd6c1bd92175f51fcaeb4d01cc1bf6dd3a24cdce01d398b111125789c035
+    image: sha256:5e59a69930e02e2ad065fe744ef0329689899a225078035b855a3ad95df62c74
     container_name: easyllama-qwen-llamacpp-qwen3-embeddings
     network_mode: host
     restart: 'no'
@@ -451,6 +488,24 @@ services:
       read_only: false
       bind:
         create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/flashinfer-jit
+      target: /root/.cache/flashinfer
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/lmcache
+      target: /root/.cache/lmcache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/slot-cache
+      target: /root/.cache/slot-cache
+      read_only: false
+      bind:
+        create_host_path: false
     logging:
       driver: json-file
       options:
@@ -509,4 +564,173 @@ services:
       interval: 30s
       timeout: 5s
       start_period: 20s
+      retries: 3
+
+  fast:
+    image: sha256:36d1ead851647a303f3c710961599d4773c1a3f66753d72c1d5b2c943602f4f7
+    container_name: easyllama-qwen-vllm-qwen3-fast
+    network_mode: host
+    restart: 'no'
+    init: true
+    entrypoint: []
+    command:
+    - "/opt/venv/bin/easyllama"
+    - "lifecycle"
+    - "--host"
+    - "127.0.0.1"
+    - "--port"
+    - "9009"
+    - "--"
+    - "/bin/sh"
+    - "-lc"
+    - "exec /opt/venv/bin/vllm serve lyf/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-NVFP4 --host 127.0.0.1 --port 9002 --served-model-name qwen3-fast --max-model-len 32768 --max-num-seqs 32 --max-num-batched-tokens 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92 --enable-prefix-caching --enable-chunked-prefill --enable-sleep-mode --kv-transfer-config {\\\"kv_connector\\\":\\\"LMCacheConnectorV1\\\",\\\"kv_role\\\":\\\"kv_both\\\"} --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_xml --uvicorn-log-level info --log-error-stack"
+    environment:
+      EASYLLAMA_RUNTIME_MODE: "container"
+      EASYLLAMA_MODE: "qwen"
+      TZ: "America/Los_Angeles"
+      LANG: "en_US.UTF-8"
+      LC_ALL: "en_US.UTF-8"
+      EASYLLAMA_ROOT: "/app"
+      EASYLLAMA_MMPROJ_ARG: ""
+      HF_HOME: "/root/.cache/huggingface"
+      HF_HUB_CACHE: "/root/.cache/huggingface/hub"
+      HF_TOKEN: @@DOTFILES:SECRET_EASYLLAMA_CONFIG_EASYLLAMA_COMPOSE_YAML_HF_TOKEN_2@@
+      MAX_JOBS: "8"
+      EASYLLAMA_SLEEP_MODE: "http"
+      VLLM_SERVER_DEV_MODE: "1"
+      LMCACHE_LOCAL_DISK: "file:///root/.cache/lmcache"
+      LMCACHE_MAX_LOCAL_DISK_SIZE: "20"
+      LMCACHE_LOCAL_CPU: "True"
+      LMCACHE_MAX_LOCAL_CPU_SIZE: "16"
+      LMCACHE_CHUNK_SIZE: "256"
+      PATH: "/opt/venv/bin:/usr/local/bin:/app/bin:/opt/venv/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      NVARCH: "x86_64"
+      NVIDIA_REQUIRE_CUDA: "cuda>=13.0 brand=unknown,driver>=535,driver<536 brand=grid,driver>=535,driver<536 brand=tesla,driver>=535,driver<536 brand=nvidia,driver>=535,driver<536 brand=quadro,driver>=535,driver<536 brand=quadrortx,driver>=535,driver<536 brand=nvidiartx,driver>=535,driver<536 brand=vapps,driver>=535,driver<536 brand=vpc,driver>=535,driver<536 brand=vcs,driver>=535,driver<536 brand=vws,driver>=535,driver<536 brand=cloudgaming,driver>=535,driver<536 brand=unknown,driver>=550,driver<551 brand=grid,driver>=550,driver<551 brand=tesla,driver>=550,driver<551 brand=nvidia,driver>=550,driver<551 brand=quadro,driver>=550,driver<551 brand=quadrortx,driver>=550,driver<551 brand=nvidiartx,driver>=550,driver<551 brand=vapps,driver>=550,driver<551 brand=vpc,driver>=550,driver<551 brand=vcs,driver>=550,driver<551 brand=vws,driver>=550,driver<551 brand=cloudgaming,driver>=550,driver<551 brand=unknown,driver>=565,driver<566 brand=grid,driver>=565,driver<566 brand=tesla,driver>=565,driver<566 brand=nvidia,driver>=565,driver<566 brand=quadro,driver>=565,driver<566 brand=quadrortx,driver>=565,driver<566 brand=nvidiartx,driver>=565,driver<566 brand=vapps,driver>=565,driver<566 brand=vpc,driver>=565,driver<566 brand=vcs,driver>=565,driver<566 brand=vws,driver>=565,driver<566 brand=cloudgaming,driver>=565,driver<566 brand=unknown,driver>=570,driver<571 brand=grid,driver>=570,driver<571 brand=tesla,driver>=570,driver<571 brand=nvidia,driver>=570,driver<571 brand=quadro,driver>=570,driver<571 brand=quadrortx,driver>=570,driver<571 brand=nvidiartx,driver>=570,driver<571 brand=vapps,driver>=570,driver<571 brand=vpc,driver>=570,driver<571 brand=vcs,driver>=570,driver<571 brand=vws,driver>=570,driver<571 brand=cloudgaming,driver>=570,driver<571 brand=unknown,driver>=575,driver<576 brand=grid,driver>=575,driver<576 brand=tesla,driver>=575,driver<576 brand=nvidia,driver>=575,driver<576 brand=quadro,driver>=575,driver<576 brand=quadrortx,driver>=575,driver<576 brand=nvidiartx,driver>=575,driver<576 brand=vapps,driver>=575,driver<576 brand=vpc,driver>=575,driver<576 brand=vcs,driver>=575,driver<576 brand=vws,driver>=575,driver<576 brand=cloudgaming,driver>=575,driver<576"
+      NV_CUDA_CUDART_VERSION: "13.0.96-1"
+      CUDA_VERSION: "13.0.3"
+      LD_LIBRARY_PATH: "/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      NV_CUDA_LIB_VERSION: "13.0.3-1"
+      NV_NVTX_VERSION: "13.0.85-1"
+      NV_LIBNPP_VERSION: "13.0.1.2-1"
+      NV_LIBNPP_PACKAGE: "libnpp-13-0=13.0.1.2-1"
+      NV_LIBCUSPARSE_VERSION: "12.6.3.3-1"
+      NV_LIBCUBLAS_PACKAGE_NAME: "libcublas-13-0"
+      NV_LIBCUBLAS_VERSION: "13.1.1.3-1"
+      NV_LIBCUBLAS_PACKAGE: "libcublas-13-0=13.1.1.3-1"
+      NV_LIBNCCL_PACKAGE_NAME: "libnccl2"
+      NV_LIBNCCL_PACKAGE_VERSION: "2.28.3-1"
+      NCCL_VERSION: "2.28.3-1"
+      NV_LIBNCCL_PACKAGE: "libnccl2=2.28.3-1+cuda13.0"
+      NVIDIA_PRODUCT_NAME: "CUDA"
+      PYTHONUNBUFFERED: "1"
+      GGML_CUDA_ENABLE_UNIFIED_MEMORY: "1"
+    labels:
+      easyllama.managed: "true"
+      easyllama.mode: "qwen"
+      easyllama.port: "9002"
+      easyllama.stop-signal: "SIGTERM"
+      easyllama.type: "vllm"
+      maintainer: "NVIDIA CORPORATION <cudatools@nvidia.com>"
+      org.opencontainers.image.version: "24.04"
+    cpus: 24.0
+    mem_limit: 67108864000
+    memswap_limit: 84288733184
+    shm_size: 34359738368
+    pids_limit: 4096
+    security_opt:
+    - no-new-privileges
+    - label=disable
+    volumes:
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/root
+      target: /root/.cache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/slot-cache
+      target: /root/.cache/slot-cache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/python
+      target: /root/.cache/pip
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: /etc/localtime
+      target: /etc/localtime
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: /etc/timezone
+      target: /etc/timezone
+      read_only: true
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/mmproj
+      target: /mmproj
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/flashinfer-jit
+      target: /root/.cache/flashinfer
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/lmcache
+      target: /root/.cache/lmcache
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/pkg
+      target: /var/cache/apt
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/cache/models
+      target: /root/.cache/huggingface/hub
+      read_only: false
+      bind:
+        create_host_path: false
+    - type: bind
+      source: @@DOTFILES:EASYLLAMA_ROOT@@/chat_template
+      target: /chat_template
+      read_only: true
+      bind:
+        create_host_path: false
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+            - gpu
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - --fail
+      - --silent
+      - http://127.0.0.1:9009/health
+      interval: 30000000000ns
+      timeout: 5000000000ns
+      start_period: 20000000000ns
       retries: 3

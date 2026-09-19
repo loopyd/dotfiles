@@ -3371,19 +3371,19 @@
       "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
       "target": ".config/easyllama/deployment.json",
       "mode": "0600",
-      "sha256": "2a6188f83b6ccd543374e77a21036760a8ba4fba59cdd3253ee3a2563b2c0c5e"
+      "sha256": "36444b9b41fcd18ee10c45ed923bfd266b6f8aa0c1b5af32426244f97d9583ea"
     },
     {
       "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
       "target": ".config/easyllama/proxy.yaml",
       "mode": "0600",
-      "sha256": "944991905b960b066ff649e675c50e6a770c85ac859eef66d0d8bda1fa1ee917"
+      "sha256": "467f53b82103a9e716a0a9016b133945eb9ed147455a15dd62d71bf72346ea87"
     },
     {
       "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
       "target": ".config/easyllama/compose.yaml",
       "mode": "0600",
-      "sha256": "76307f088670de5803ccbe56f7e7e5e691691902342dc239d40348b3a4cec474"
+      "sha256": "d7c468a36f9ff795b9f08ab78cc0fbec3b2d057f688ae6969bab106974cdbdff"
     },
     {
       "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
