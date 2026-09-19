@@ -1,549 +1,142 @@
 #!/usr/bin/env python3
+"""Latch or stop the native EasyLlama stack for the systemd unit.
+
+The stack's own ``run.sh`` owns creation/removal, while this helper makes the
+user unit a first-class owner of an *already-running* stack:
+
+* ``latch``   adopts a running orchestrator container without recreating it, or
+              starts the stack through ``run.sh start``; it then holds the
+              foreground on the orchestrator so the unit stays active while the
+              stack runs (and exits non-zero if the stack dies on its own).
+* ``stop``    delegates to ``run.sh stop`` (idempotent).
+* ``status``  reports the orchestrator container state.
+
+``run.sh start|stop|restart`` remains usable directly; the latch is compatible
+with containers it started.
+"""
+
+from __future__ import annotations
+
 import argparse
-import contextlib
-import fcntl
-import hashlib
 import json
 import os
-from pathlib import Path
-import re
 import signal
-import stat
 import subprocess
 import sys
 import threading
-import tempfile
 import time
-import uuid
-from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
+from pathlib import Path
+from urllib.request import urlopen
 
-sys.dont_write_bytecode = True
-
-from network import installed_helpers
+ORCHESTRATOR = 'easyllama-server-swap'
+PROXY_HEALTH = 'http://127.0.0.1:8080/health'
 
 
-def execute(arguments):
-    return subprocess.run(arguments, check=True, capture_output=True, text=True)
+def root() -> Path:
+    """Return the EasyLlama checkout that owns ``run.sh``."""
+    value = os.environ.get('EASYLLAMA_ROOT', '').strip()
+    if not value:
+        raise SystemExit('EASYLLAMA_ROOT must point at the EasyLlama checkout')
+    path = Path(value).resolve()
+    if not (path / 'run.sh').is_file():
+        raise SystemExit(f'run.sh not found under {path}')
+    return path
 
 
-def deployment_configuration():
-    directory = Path.home() / '.config/easyllama'
-    deployment = json.loads((directory / 'deployment.json').read_text())
-    if deployment['version'] != '0.6.3' or deployment['revision'] != '62d239d2448af253d7d66a9440d6b0a0a8810388':
-        raise ValueError('Unexpected EasyLlama release pin')
-    return directory, deployment
+def run_script(*arguments: str) -> subprocess.CompletedProcess[str]:
+    """Run the stack's own lifecycle script from its checkout."""
+    return subprocess.run([str(root() / 'run.sh'), *arguments], cwd=root(), text=True)
 
 
-def render_environment(environment, directory):
-    credentials = {}
-    with contextlib.suppress(OSError, ValueError, KeyError, TypeError):
-        credentials = json.loads((directory / 'config.json').read_text()).get('credentials', {})
-    rendered = {}
-    for key, value in environment.items():
-        value = value.replace('$$', '$')
-        for match in re.findall(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}', value):
-            resolved = os.environ.get(match) or credentials.get(match) or credentials.get(match.lower()) or None
-            if not resolved and value.strip() == '${' + match + '}':
-                break
-            if not resolved:
-                raise ValueError('Cannot resolve ${' + match + '} in the captured environment')
-            value = value.replace('${' + match + '}', resolved)
-        if value.strip().startswith('${'):
-            continue
-        rendered[key] = value
-    return rendered
+def inspect(name: str = ORCHESTRATOR) -> dict | None:
+    """Return the orchestrator container metadata, or ``None`` when absent."""
+    result = subprocess.run(['docker', 'inspect', name], capture_output=True, text=True)
+    if result.returncode:
+        return None
+    return json.loads(result.stdout)[0]
 
 
-def configuration():
-    directory, deployment = deployment_configuration()
-    command = ['docker', 'compose', '--project-name', 'easyllama', '--file', str(directory / 'compose.yaml')]
-    services = json.loads(execute([*command, 'config', '--format', 'json']).stdout)['services']
-    if set(services) != {'proxy', 'chat', 'fast', 'embeddings', 'reranker'} or set(deployment['images']) != set(services):
-        raise ValueError('Unexpected EasyLlama service set')
-    for role, service in services.items():
-        if service['image'] != deployment['images'][role]['id'] or service.get('network_mode') != 'host' or service.get('ports'):
-            raise ValueError('EasyLlama image or network differs')
-        service['environment'] = render_environment(service.get('environment') or {}, directory)
-        service['command'] = [value.replace('$$', '$') for value in service['command']]
-    return directory, deployment, services, command
+def running(name: str = ORCHESTRATOR) -> bool:
+    """Return whether the orchestrator container is running."""
+    container = inspect(name)
+    return bool(container and container['State'].get('Running'))
 
 
-class ModelRedirectHandler(HTTPRedirectHandler):
-    def redirect_request(self, request, response, code, message, headers, new_url):
-        if urlsplit(new_url).scheme != 'https':
-            raise ValueError('Model download redirects must preserve HTTPS')
-        return super().redirect_request(request, response, code, message, headers, new_url)
-
-
-def model_configuration(name='model.json'):
-    directory, deployment = deployment_configuration()
-    pin = json.loads((directory / name).read_text())
-    recipes = {'model.json': ('Qwen/Qwen3-Embedding-0.6B-GGUF', 'Qwen3-Embedding-0.6B-f16.gguf'), 'reranker.json': ('gpustack/bge-reranker-v2-m3-GGUF', 'bge-reranker-v2-m3-Q8_0.gguf')}
-    if pin.get('format') != 1 or (pin.get('repository'), pin.get('file')) != recipes[name]:
-        raise ValueError('Unexpected model recipe')
-    if not re.fullmatch(r'[0-9a-f]{40}', pin['revision']) or not re.fullmatch(r'[0-9a-f]{64}', pin['sha256']) or type(pin['size']) is not int or pin['size'] <= 0:
-        raise ValueError('Embedding model requires a full revision, size and SHA-256 pin')
-    root = Path(deployment['root'])
-    if not root.is_absolute() or root.resolve() != root or not root.is_dir():
-        raise ValueError('Create the configured EasyLlama data root first')
-    repo_cache = root / 'cache/models' / ('models--' + pin['repository'].replace('/', '--'))
-    target = repo_cache / 'snapshots' / pin['revision'] / pin['file']
-    if target.is_symlink():
-        real = target.resolve()
-        if real.is_symlink() or not real.is_file() or not real.is_relative_to((root / 'cache/models').resolve()):
-            raise ValueError('Embedding model cache must not traverse symlinks')
-        target = real
-    elif target.resolve() != target:
-        raise ValueError('Embedding model cache must not traverse symlinks')
-    return pin, target
-
-
-def verify_model(target, pin):
-    if not target.is_file():
-        raise ValueError('Pinned embedding model is missing or is not a regular file')
-    descriptor = os.open(target, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-    with os.fdopen(descriptor, 'rb') as source:
-        status = os.fstat(source.fileno())
-        if not stat.S_ISREG(status.st_mode) or status.st_size != pin['size'] or hashlib.file_digest(source, 'sha256').hexdigest() != pin['sha256']:
-            raise ValueError('Cached embedding model differs from its size or SHA-256 pin; refusing replacement')
-
-
-def model(check_only=False, dry_run=False):
-    if dry_run:
-        print('DRY-RUN: verify pinned embedding and reranker weights or download exact revisions when absent; no writes or downloads')
-        return
-    for name in ['model.json', 'reranker.json']:
-        restore_model(name, check_only)
-
-
-def restore_model(name, check_only):
-    pin, target = model_configuration(name)
-    if check_only or target.exists():
-        verify_model(target, pin)
-        print('Pinned model verified:', pin['file'])
-        return
-    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    descriptor = os.open(target.parent / '.dotfiles-model.lock', os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
-    try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX)
-        if target.exists() or target.is_symlink():
-            verify_model(target, pin)
-            return
-        download_model(target, pin)
-    finally:
-        os.close(descriptor)
-    print('Pinned model downloaded and verified:', pin['file'])
-
-
-def download_model(target, pin):
-    url = 'https://huggingface.co/' + pin['repository'] + '/resolve/' + pin['revision'] + '/' + pin['file']
-    request = Request(url, headers={'Accept-Encoding': 'identity', 'User-Agent': 'dotfiles-easyllama'})
-    descriptor, temporary = tempfile.mkstemp(prefix='.' + pin['file'] + '.', suffix='.part', dir=target.parent)
-    try:
-        with os.fdopen(descriptor, 'wb') as output:
-            with build_opener(ModelRedirectHandler()).open(request, timeout=60) as response:
-                length = response.headers.get('Content-Length')
-                if response.status != 200 or length is not None and int(length) != pin['size']:
-                    raise ValueError('Unexpected model download response or size')
-                digest = hashlib.sha256()
-                size = 0
-                while chunk := response.read(8 * 1024 * 1024):
-                    size += len(chunk)
-                    if size > pin['size']:
-                        raise ValueError('Model download exceeds its pinned size')
-                    digest.update(chunk)
-                    output.write(chunk)
-                if size != pin['size'] or digest.hexdigest() != pin['sha256']:
-                    raise ValueError('Downloaded model differs from its size or SHA-256 pin')
-            output.flush()
-            os.fsync(output.fileno())
-        if target.exists() or target.is_symlink():
-            verify_model(target, pin)
-            return
-        if target.parent.resolve() != target.parent:
-            raise ValueError('Model cache directory changed during download')
-        os.replace(temporary, target)
-        sync_directory(target.parent)
-    finally:
-        Path(temporary).unlink(missing_ok=True)
-
-
-def images(directory=None):
-    _config, deployment, _services, _command = configuration()
-    for pin in {value['id']: value for value in deployment['images'].values()}.values():
-        result = subprocess.run(['docker', 'image', 'inspect', pin['id'], '--format', '{{.Id}}'], capture_output=True, text=True)
-        if result.returncode and directory is not None:
-            archive = directory / pin['archive']
-            if archive.resolve().parent != directory.resolve() or not archive.is_file() or archive.is_symlink():
-                raise ValueError('Missing or unsafe local image archive')
-            execute(['docker', 'load', '--input', str(archive)])
-            result = subprocess.run(['docker', 'image', 'inspect', pin['id'], '--format', '{{.Id}}'], capture_output=True, text=True)
-        if result.returncode or result.stdout.strip() != pin['id']:
-            raise ValueError('Pinned local image unavailable; restore its private archive first')
-
-
-def archive(directory):
-    images()
-    _config, deployment, _services, _command = configuration()
-    if any((parent / '.git').exists() for parent in [directory, *directory.parents]):
-        raise ValueError('Keep image archives outside Git')
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    for pin in {value['id']: value for value in deployment['images'].values()}.values():
-        target = directory / pin['archive']
-        descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        try:
-            with os.fdopen(descriptor, 'wb') as output:
-                subprocess.run(['docker', 'save', pin['id']], stdout=output, stderr=subprocess.PIPE, check=True)
-        except BaseException:
-            target.unlink(missing_ok=True)
-            raise
-    print('Pinned image archives saved privately; no models or container environment exported')
-
-
-def prepare():
-    directory, deployment, services, _command = configuration()
-    root = Path(deployment['root'])
-    if not root.is_absolute() or root.resolve() != root or not root.is_dir():
-        raise ValueError('Create the configured EasyLlama data root first')
-    copies = {'proxy.yaml': '.runtime/qwen.proxy.effective.yaml'}
-    copies.update({'chat_template/' + name: 'chat_template/' + name for name in ['qwen3.5.jinja', 'qwen3.6.jinja', 'qwen3.8.jinja']})
-    for source, relative in copies.items():
-        target = root / relative
-        contents = (directory / source).read_bytes()
-        if source.startswith('chat_template/'):
-            pin = deployment['chat_templates'][Path(source).name]
-            if not pin['final_newline'] and contents.endswith(b'\n'):
-                contents = contents[:-1]
-            if hashlib.sha256(contents).hexdigest() != pin['sha256']:
-                raise ValueError('Captured chat template differs from its pin')
-        if target.resolve() != target or target.exists() and target.read_bytes() != contents:
-            raise ValueError('Existing runtime configuration differs; refusing replacement')
-        if not target.exists():
-            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(descriptor, 'wb') as output:
-                output.write(contents)
-    for service in services.values():
-        for mount in service['volumes']:
-            source = Path(mount['source'])
-            if source.is_relative_to(root) and not source.exists():
-                source.mkdir(parents=True, mode=0o700)
-            if not source.exists():
-                raise ValueError('A captured bind mount is unavailable')
-    installed_helpers(['easyllama.py', 'network.py', 'readiness.py'])
-
-
-def containers(services):
-    result = []
-    for role, service in services.items():
-        inspected = subprocess.run(['docker', 'container', 'inspect', service['container_name']], capture_output=True, text=True)
-        if inspected.returncode:
-            names = execute(['docker', 'container', 'ls', '--all', '--format', '{{.Names}}']).stdout.splitlines()
-            if service['container_name'] in names:
-                raise ValueError('Existing container cannot be inspected')
-            continue
-        container = json.loads(inspected.stdout)[0]
-        expected = execute(['docker', 'image', 'inspect', service['image'], '--format', '{{.Id}}']).stdout.strip()
-        config, host = container['Config'], container['HostConfig']
-        if container['Image'] != expected or config.get('Labels', {}).get('easyllama.managed') != 'true':
-            raise ValueError('Refusing an unrelated or differently pinned container')
-        if (config.get('Entrypoint') or []) != (service.get('entrypoint') or []) or config['Cmd'] != service['command']:
-            raise ValueError('Existing container command differs')
-        if dict(entry.split('=', 1) for entry in config['Env']) != service['environment']:
-            raise ValueError('Existing container environment differs')
-        limits = [('NanoCpus', int(float(service['cpus']) * 1e9)), ('Memory', int(service['mem_limit'])), ('MemorySwap', int(service['memswap_limit'])), ('ShmSize', int(service['shm_size'])), ('PidsLimit', int(service['pids_limit'])), ('NetworkMode', 'host')]
-        if any(host[key] != value for key, value in limits):
-            raise ValueError('Existing container limits differ')
-        devices = host.get('DeviceRequests') or []
-        if service.get('runtime') == 'nvidia' and (host['Runtime'] != 'nvidia' or len(devices) != 1 or devices[0]['Count'] != -1 or devices[0].get('DeviceIDs') or devices[0].get('Driver') not in {'', 'nvidia'} or devices[0]['Capabilities'] != [['gpu']]):
-            raise ValueError('Existing GPU runtime or device request differs')
-        if host.get('Privileged') or host.get('SecurityOpt') != service.get('security_opt'):
-            raise ValueError('Existing container security differs')
-        actual = {(mount['Source'], mount['Destination'], not mount['RW']) for mount in container['Mounts']}
-        expected_mounts = {(mount['source'], mount['target'], mount.get('read_only', False)) for mount in service['volumes']}
-        if actual != expected_mounts:
-            raise ValueError('Existing container mounts differ')
-        result.append((role, container))
-    return result
-
-
-def health():
-    directory, _deployment, _services, _command = configuration()
-    key = json.loads((directory / 'config.json').read_text())['credentials']['api_key']
-    with urlopen(Request('http://127.0.0.1:8080/v1/models', headers={'Authorization': 'Bearer ' + key}), timeout=15) as response:
-        models = {entry['id'] for entry in json.load(response)['data']}
-    if not {'qwen3-chat', 'qwen3-fast', 'qwen3-embeddings', 'qwen3-reranker'}.issubset(models):
-        raise ValueError('Captured Qwen models missing')
-
-
-def check():
-    model(check_only=True)
-    _directory, _deployment, services, _command = configuration()
-    images()
-    observed = containers(services)
-    if len(observed) != 5 or any(not container['State']['Running'] for _role, container in observed):
-        raise ValueError('EasyLlama stack is not running')
-    health()
-    print('Five pinned EasyLlama containers, captured limits/mounts and authenticated Qwen discovery verified')
-
-
-def wait():
-    deadline = time.monotonic() + 180
+def healthy(timeout: float = 1800.0) -> bool:
+    """Wait until the published proxy answers its health endpoint."""
+    deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            if not ownership().exists():
-                raise ValueError('Adoption has not committed')
-            state = json.loads(ownership().read_text())
-            if state['phase'] != 'committed' or state['invocation'] != os.environ.get('INVOCATION_ID'):
-                raise ValueError('Readiness belongs to a different invocation')
-            _directory, _deployment, services, _command = configuration()
-            same_owners(state, containers(services))
-            check()
-            return
+            with urlopen(PROXY_HEALTH, timeout=5) as response:
+                if response.status == 200:
+                    return True
         except Exception:
-            time.sleep(2)
-    raise ValueError('EasyLlama startup readiness timed out')
+            pass
+        time.sleep(2)
+    return False
 
 
-def ownership():
-    return Path.home() / '.local/state/easyllama/ownership.json'
+def ensure() -> None:
+    """Adopt a running stack, or start it, and wait for the proxy."""
+    if running():
+        print('latching onto the running EasyLlama stack', flush=True)
+        return
+    print('starting the EasyLlama stack via run.sh', flush=True)
+    if run_script('start').returncode:
+        raise SystemExit('run.sh start failed')
+    if not healthy():
+        raise SystemExit('EasyLlama proxy did not become healthy')
 
 
-def sync_directory(path):
-    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def write_state(destination, document):
-    descriptor, temporary = tempfile.mkstemp(prefix='.state-', dir=destination.parent)
-    try:
-        with os.fdopen(descriptor, 'w') as output:
-            json.dump(document, output)
-            output.flush()
-            os.fsync(output.fileno())
-        os.replace(temporary, destination)
-        sync_directory(destination.parent)
-    finally:
-        Path(temporary).unlink(missing_ok=True)
-
-
-@contextlib.contextmanager
-def locked():
-    path = ownership()
-    missing = []
-    parent = path.parent
-    while not parent.exists():
-        missing.append(parent)
-        parent = parent.parent
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if path.parent.resolve() != path.parent:
-        raise ValueError('Unexpected ownership directory')
-    for directory in reversed(missing):
-        sync_directory(directory.parent)
-        sync_directory(directory)
-    descriptor = os.open(path.with_suffix('.lock'), os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
-    try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        yield
-    finally:
-        os.close(descriptor)
-
-
-def inspect_owned(record):
-    result = subprocess.run(['docker', 'inspect', record['id']], capture_output=True, text=True)
-    if result.returncode:
-        identifiers = execute(['docker', 'container', 'ls', '--all', '--no-trunc', '--format', '{{.ID}}']).stdout.splitlines()
-        if record['id'] in identifiers:
-            raise ValueError('Owned container cannot be inspected')
-        return None
-    container = json.loads(result.stdout)[0]
-    if container['Id'] != record['id'] or container['Image'] != record['image'] or container['Config'].get('Labels', {}).get('easyllama.managed') != 'true':
-        raise ValueError('Owned container identity differs')
-    return container
-
-
-def stop_owned(records):
-    failed = False
-    for record in sorted(records, key=lambda entry: ['proxy', 'chat', 'fast', 'embeddings', 'reranker'].index(entry['role'])):
-        try:
-            if inspect_owned(record) is not None:
-                execute(['docker', 'stop', '--time', '60', record['id']])
-        except Exception:
-            failed = True
-    if failed:
-        raise ValueError('One or more owned containers could not be stopped')
-
-
-def rollback(records, original):
-    failed = False
-    for record in records:
-        try:
-            container = inspect_owned(record)
-            previous = original.get(record['role'])
-            if container is None:
-                if previous is not None:
-                    raise ValueError('Original container disappeared during adoption')
-                continue
-            if previous is None or not previous['running']:
-                stop_owned([record])
-            if previous is not None:
-                policy = previous['restart']
-                value = policy['Name']
-                if value == 'on-failure' and policy.get('MaximumRetryCount'):
-                    value += ':' + str(policy['MaximumRetryCount'])
-                execute(['docker', 'update', '--restart=' + value, record['id']])
-                if previous['running'] and not container['State']['Running']:
-                    execute(['docker', 'start', record['id']])
-        except Exception:
-            failed = True
-    if failed:
-        raise ValueError('Adoption rollback needs attention; journal retained')
-
-
-def discover_created(state):
-    known = {record['id'] for record in state['records']}
-    identifiers = execute(['docker', 'container', 'ls', '--all', '--no-trunc', '--filter', 'label=dotfiles.easyllama.transaction=' + state['invocation'], '--format', '{{.ID}}']).stdout.splitlines()
-    for identifier in identifiers:
-        if identifier in known:
-            continue
-        container = json.loads(execute(['docker', 'inspect', identifier]).stdout)[0]
-        role = container['Config'].get('Labels', {}).get('com.docker.compose.service')
-        plan = state['planned'].get(role)
-        if plan is None or container['Image'] != plan['image'] or container['Name'].lstrip('/') != plan['name']:
-            raise ValueError('Unexpected transaction container; journal retained')
-        state['records'].append({'role': role, 'id': identifier, 'image': container['Image']})
-    write_state(ownership(), state)
-
-
-def cleanup(state):
-    if state['phase'] == 'adopting':
-        discover_created(state)
-        rollback(state['records'], state['original'])
-    elif state['phase'] == 'committed':
-        stop_owned(state['records'])
-    else:
-        raise ValueError('Unknown ownership phase')
-    if json.loads(ownership().read_text())['invocation'] != state['invocation']:
-        raise ValueError('Ownership changed during cleanup')
-    ownership().unlink()
-    (ownership().parent / ('compose-' + state['invocation'] + '.json')).unlink(missing_ok=True)
-    sync_directory(ownership().parent)
-
-
-def stop():
-    with locked():
-        if ownership().exists():
-            state = json.loads(ownership().read_text())
-            invocation = os.environ.get('INVOCATION_ID')
-            if invocation and invocation != state['invocation']:
-                raise ValueError('Cleanup invocation differs; journal retained')
-            cleanup(state)
-
-
-def same_owners(state, observed):
-    expected = {record['role']: record['id'] for record in state['records']}
-    if {role: container['Id'] for role, container in observed} != expected:
-        raise ValueError('Owned container was replaced')
-
-
-def supervise():
-    if ownership().exists():
-        cleanup(json.loads(ownership().read_text()))
-    _directory, _deployment, services, command = configuration()
-    images()
-    observed = dict(containers(services))
-    invocation = os.environ.get('INVOCATION_ID') or uuid.uuid4().hex
-    if not re.fullmatch(r'[a-fA-F0-9]{32}', invocation):
-        raise ValueError('Unexpected service invocation')
-    state = {
-        'invocation': invocation, 'phase': 'adopting',
-        'records': [{'role': role, 'id': container['Id'], 'image': container['Image']} for role, container in observed.items()],
-        'original': {role: {'running': container['State']['Running'], 'restart': container['HostConfig']['RestartPolicy']} for role, container in observed.items()},
-        'planned': {role: {'name': service['container_name'], 'image': service['image']} for role, service in services.items() if role not in observed},
-    }
-    write_state(ownership(), state)
+def latch() -> int:
+    """Hold the foreground on the orchestrator until the unit is stopped."""
+    ensure()
     stopping = threading.Event()
-    signal.signal(signal.SIGTERM, lambda _signal, _frame: stopping.set())
-    signal.signal(signal.SIGINT, lambda _signal, _frame: stopping.set())
-    try:
-        override = ownership().parent / ('compose-' + invocation + '.json')
-        write_state(override, {'services': {role: {'labels': {'dotfiles.easyllama.transaction': invocation}} for role in services}})
-        for role in ['chat', 'fast', 'embeddings', 'reranker', 'proxy']:
-            if stopping.is_set():
-                return
-            if role not in observed:
-                execute([*command, '--file', str(override), 'up', '--no-start', '--no-deps', '--no-build', '--pull', 'never', role])
-                discover_created(state)
-            record = next(entry for entry in state['records'] if entry['role'] == role)
-            container = inspect_owned(record)
-            if container is None:
-                raise ValueError('Verified container disappeared')
-            execute(['docker', 'update', '--restart=no', record['id']])
-            if not container['State']['Running']:
-                execute(['docker', 'start', record['id']])
-        for attempt in range(60):
-            if stopping.is_set():
-                return
-            try:
-                health()
-                break
-            except Exception:
-                stopping.wait(2)
-        else:
-            raise ValueError('EasyLlama endpoint did not become healthy')
-        if len(state['records']) != 5:
-            raise ValueError('Could not establish ownership of the full stack')
-        current = containers(services)
-        same_owners(state, current)
-        if any(not container['State']['Running'] for _role, container in current):
-            raise ValueError('An EasyLlama owner stopped before adoption committed')
-        committed = dict(state, phase='committed')
-        write_state(ownership(), committed)
-        state = committed
-        while not stopping.wait(10):
-            current = containers(services)
-            same_owners(state, current)
-            if any(not container['State']['Running'] for _role, container in current):
-                raise ValueError('An EasyLlama container stopped')
-    finally:
-        cleanup(state)
+
+    def handler(_signum: int, _frame: object) -> None:
+        stopping.set()
+
+    signal.signal(signal.SIGTERM, handler)
+    signal.signal(signal.SIGINT, handler)
+
+    def stopper() -> None:
+        if stopping.wait():
+            run_script('stop')
+
+    threading.Thread(target=stopper, daemon=True).start()
+    subprocess.run(['docker', 'start', '--attach', ORCHESTRATOR])
+    if stopping.is_set():
+        return 0
+    raise SystemExit('EasyLlama orchestrator stopped unexpectedly')
 
 
-def run():
-    with locked():
-        supervise()
+def stop() -> int:
+    """Stop the stack through ``run.sh`` when it is present."""
+    if inspect() is None:
+        return 0
+    return run_script('stop').returncode
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Pinned EasyLlama Docker lifecycle; never builds floating source or removes model data')
-    parser.add_argument('command', choices=['prepare', 'images', 'archive', 'run', 'stop', 'check', 'health', 'wait', 'model'])
-    parser.add_argument('--directory', type=Path)
-    parser.add_argument('--dry-run', action='store_true')
-    parser.add_argument('--check', action='store_true', help='Verify cached model weights without downloading or writing')
+def main() -> int:
+    """Dispatch the systemd-facing commands."""
+    parser = argparse.ArgumentParser(description='Latch or stop the native EasyLlama stack for systemd')
+    parser.add_argument('command', choices=['latch', 'stop', 'status'])
     args = parser.parse_args()
-    if (args.dry_run or args.check) and args.command != 'model':
-        parser.error('--dry-run and --check require model')
-    if args.command == 'model':
-        if args.directory is not None:
-            parser.error('model uses the configured EasyLlama root')
-        model(check_only=args.check, dry_run=args.dry_run)
-    elif args.command == 'archive':
-        if args.directory is None:
-            parser.error('archive requires --directory outside Git')
-        archive(args.directory.resolve())
-    elif args.command == 'images':
-        images(args.directory)
-    else:
-        {'prepare': prepare, 'run': run, 'stop': stop, 'check': check, 'health': health, 'wait': wait}[args.command]()
+    if args.command == 'latch':
+        return latch()
+    if args.command == 'stop':
+        return stop()
+    container = inspect()
+    state = container['State'] if container else {}
+    print(json.dumps({'orchestrator': ORCHESTRATOR, 'present': container is not None, 'running': bool(state.get('Running'))}))
+    return 0
 
 
 if __name__ == '__main__':
     try:
-        main()
-    except Exception:
-        print('EasyLlama operation failed; check private rendering, exact local images, Docker/GPU availability and captured mounts. Details withheld.', file=sys.stderr)
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception as error:
+        print(f'EasyLlama latch failed: {type(error).__name__}: {error}', file=sys.stderr)
         raise SystemExit(1)

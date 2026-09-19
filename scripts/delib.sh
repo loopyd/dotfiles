@@ -248,7 +248,7 @@ lifecycle_check() {
         hindsight) python3 "${SCRIPT_DIR}/hindsight.py" preflight; python3 "${SCRIPT_DIR}/hindsight.py" health ;;
         tools) python3 "${SCRIPT_DIR}/packages.py" check ;;
         router) python3 "${SCRIPT_DIR}/router.py" check ;;
-        easyllama) python3 "${SCRIPT_DIR}/easyllama.py" check ;;
+        easyllama) python3 "${SCRIPT_DIR}/easyllama.py" status ;;
         tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;
         mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
         hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;

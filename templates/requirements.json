@@ -8,7 +8,7 @@
   "mise_installer": "2026.5.0 (verified fresh-install binary; existing installations preserved)",
   "user_packages": "templates/packages.json is versionless; scripts/tools.sh restores it after private rendering. Configured runtime defaults remain in the mise/rustup templates.",
   "9router": "0.5.69",
-  "easyllama": "0.6.0 / 94166edbd5e74a9e89741d889483b12bdb82907c; exact local image IDs in rendered deployment.json; scripts/easyllama.sh lifecycle; images require private archive transfer on fresh hosts",
+  "easyllama": "native checkout: config.json + config/config.qwen.yml at EASYLLAMA_ROOT own the stack; scripts/easyllama.sh installs the systemd latch and the checkout run.sh keeps start/stop/restart",
   "hindsight_cli": "0.9.2",
   "hindsight_coding_agents": "0.5.3",
   "hindsight_build_receipts": "Active receipt: ~/.local/state/dotfiles/hindsight-build.json. Successful recipe/image transitions preserve the previous receipt verbatim in private ~/.local/state/dotfiles/hindsight-build-history/<receipt-sha256>.json before replacing it. A changed pin builds the new recipe; arbitrary existing tags require explicit adoption. Failed builds retain the active receipt.",

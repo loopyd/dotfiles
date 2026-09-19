@@ -3362,82 +3362,10 @@
       "sha256": "f1348da2c31f6fc6a921180a827be3ef15021a4cce23e36383205d7ffc001f3e"
     },
     {
-      "source": "root/home/user/.config/easyllama/config.json.tmpl",
-      "target": ".config/easyllama/config.json",
-      "mode": "0600",
-      "sha256": "d8ab466087ab5e3af16c982faa482fc0e397a2d70af4ca57ddd91e9b0c21418c"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
-      "target": ".config/easyllama/deployment.json",
-      "mode": "0600",
-      "sha256": "36444b9b41fcd18ee10c45ed923bfd266b6f8aa0c1b5af32426244f97d9583ea"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/proxy.yaml.tmpl",
-      "target": ".config/easyllama/proxy.yaml",
-      "mode": "0600",
-      "sha256": "467f53b82103a9e716a0a9016b133945eb9ed147455a15dd62d71bf72346ea87"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/compose.yaml.tmpl",
-      "target": ".config/easyllama/compose.yaml",
-      "mode": "0600",
-      "sha256": "d7c468a36f9ff795b9f08ab78cc0fbec3b2d057f688ae6969bab106974cdbdff"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/config/config.llamacpp.yml.tmpl",
-      "target": ".config/easyllama/config/config.llamacpp.yml",
-      "mode": "0600",
-      "sha256": "2ab51da1a8b8017a41996b5d5a69e32dc33710539d962e0233bc535451470f3d"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/config/config.turboquant.yml.tmpl",
-      "target": ".config/easyllama/config/config.turboquant.yml",
-      "mode": "0600",
-      "sha256": "12f97e4a787c9f7ad44d641cc45cfca6c80f7c996678b7f5b577d65e1f2513f0"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/config/config.qwen.yml.tmpl",
-      "target": ".config/easyllama/config/config.qwen.yml",
-      "mode": "0600",
-      "sha256": "143121249220f81c33ba0bed883ad15110a6a9cbad689ec614af78d0d758fbec"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/config/config.spiritbuun.yml.tmpl",
-      "target": ".config/easyllama/config/config.spiritbuun.yml",
-      "mode": "0600",
-      "sha256": "e1d04b0c955a2b233fc8e628dc613e565c2460b5f4bc29c0084f814ddbe2c669"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/config/config.lucebox.yml.tmpl",
-      "target": ".config/easyllama/config/config.lucebox.yml",
-      "mode": "0600",
-      "sha256": "9a59a15f4950e459ad221333ea5c080b56cd4b8a8d15125ccedd98a09d0995dd"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/chat_template/qwen3.8.jinja.tmpl",
-      "target": ".config/easyllama/chat_template/qwen3.8.jinja",
-      "mode": "0600",
-      "sha256": "e6cd775ad62be0d2c7c84bb85842ba6a7c4c00a825e23bbe762d22c710c515bf"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/chat_template/qwen3.5.jinja.tmpl",
-      "target": ".config/easyllama/chat_template/qwen3.5.jinja",
-      "mode": "0600",
-      "sha256": "d66254b992662046b8f340b98a3b7d88e20d40b93db4dfb659525e531855cd93"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/chat_template/qwen3.6.jinja.tmpl",
-      "target": ".config/easyllama/chat_template/qwen3.6.jinja",
-      "mode": "0600",
-      "sha256": "a548109fe66ec7022bba4b22f1e4430c1d16abb39d467883b20b526ef7c535fd"
-    },
-    {
       "source": "root/home/user/.config/systemd/user/easyllama.service.tmpl",
       "target": ".config/systemd/user/easyllama.service",
       "mode": "0600",
-      "sha256": "b579ac0722481703f23f2016a4642efce4880c37882dda7457fb9b6815466710"
+      "sha256": "9107d06eff79540957898745c6cabbdf71bc2322a5d300ec94441c9d7b7a7a96"
     },
     {
       "source": "root/home/user/.config/tailscale/owner.json.tmpl",
@@ -3552,18 +3480,6 @@
       "target": ".config/hindsight/build.json",
       "mode": "0600",
       "sha256": "17764218355788a354e0badc7533cfba6437833ca890c644ba70d6ae591bc724"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/model.json",
-      "target": ".config/easyllama/model.json",
-      "mode": "0600",
-      "sha256": "92e8a316e1a3b07b28f2d36bba17d30e930c83870e660097966803baeb77d054"
-    },
-    {
-      "source": "root/home/user/.config/easyllama/reranker.json",
-      "target": ".config/easyllama/reranker.json",
-      "mode": "0600",
-      "sha256": "b7dffc84c69876ba7f6d5fbf014ccbb68470a95324127d10a99b8d3b2cf83f7a"
     },
     {
       "source": "root/home/user/.local/lib/dotfiles/hindsight-hook.mjs.tmpl",

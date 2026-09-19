@@ -1,17 +1,18 @@
 [Unit]
-Description=EasyLlama pinned Qwen Docker stack
+Description=EasyLlama native Qwen stack (private network + LMCache)
 Before=hindsight.service
 
 [Service]
 Type=simple
+Environment=EASYLLAMA_ROOT=@@DOTFILES:EASYLLAMA_ROOT@@
 ExecStartPre=/usr/bin/python3 %h/.local/lib/dotfiles/readiness.py wait docker
-ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py run
-ExecStartPost=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py wait
-ExecStopPost=-/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py stop
+ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py latch
+ExecStop=-/usr/bin/python3 %h/.local/lib/dotfiles/easyllama.py stop
+SuccessExitStatus=130 137 143
 Restart=on-failure
 RestartSec=15
-TimeoutStartSec=420
-TimeoutStopSec=200
+TimeoutStartSec=2100
+TimeoutStopSec=300
 UMask=0077
 
 [Install]
