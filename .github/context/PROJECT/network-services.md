@@ -420,12 +420,18 @@ The same pinned Qwen inference image is reused; no native image rebuild.
 The corresponding EasyLlama source/package release is `v0.6.3`; this does not
 relabel the older captured image build or change its deployment revision pin.
 
-The new loopback backend uses port 9004 and lifecycle port 9005, two native
+The new loopback backend uses port 9004 (lifecycle port 9010 as of
+2026-09-20), two native
 slots, full CUDA placement, 16,384 aggregate context tokens, 8,192 batch/microbatch,
 two CPU threads, 2 CPUs, 8 GiB RAM/no additional swap and 4 GiB `/dev/shm`.
 GPU chat and search groups are mutually exclusive; search has `swap: false`
-and contains embeddings plus reranking, both `ttl: 0`. They stay resident
-together during search but unload for large chat. `concurrencyLimit: 0` allows
+and contains embeddings plus reranking. **Superseded 2026-09-20:** the
+per-model `ttl: 0` overrides recorded here were removed — they stopped
+llama-swap from ever swapping the auxiliary models in (no start attempt, no
+health check, requests hung until the client gave up), so both now inherit
+`globalTTL: 1800` and the proxy owns their start/health-check/evict lifecycle.
+The two search models still co-reside with each other and unload for large
+chat; their lifecycle listeners are now 9010 and 9011. `concurrencyLimit: 0` allows
 native queueing instead of rejecting bursts at the proxy. Do not bypass the
 proxy with independently awakened GPU backends.
 
