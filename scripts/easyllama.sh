@@ -30,11 +30,11 @@ main() {
 import sys
 sys.path.insert(0, sys.argv[1])
 from network import installed_helpers
-installed_helpers(['easyllama.py', 'readiness.py'])
+installed_helpers(['easyllama.py', 'easyllama-warm.py', 'readiness.py'])
 PY
     LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/easyllama.py")
     systemctl --user daemon-reload
-    systemctl --user enable easyllama.service
+    systemctl --user enable easyllama.service easyllama-warm.service
     lifecycle_receipt record
     if [[ "${START_SERVICES}" == true ]]; then
         if [[ "${LIFECYCLE_ACTION}" == update ]]; then
@@ -42,6 +42,7 @@ PY
         else
             systemctl --user start easyllama.service
         fi
+        systemctl --user restart easyllama-warm.service
     fi
 }
 

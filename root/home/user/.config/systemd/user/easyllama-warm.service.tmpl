@@ -1,0 +1,14 @@
+[Unit]
+Description=Keep the EasyLlama search backends awake
+After=easyllama.service
+PartOf=easyllama.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/lib/dotfiles/easyllama-warm.py
+Restart=always
+RestartSec=15
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
