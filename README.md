@@ -567,16 +567,18 @@ Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v
 
 ### Network services
 
-`scripts/easyllama.sh install|update|uninstall|check` restores the captured Qwen
-Docker stack with its **0.6.0 source revision and immutable local image IDs**.
+`scripts/easyllama.sh install|update|uninstall|check` latches the native Qwen
+Docker stack at `EASYLLAMA_ROOT` with its **0.6.3 source revision and immutable
+local image IDs**.
 Use `--with-easyllama` or `--only easyllama` in bootstrap; Hindsight and 9router
 select it automatically for install/update. The user supervisor adopts matching
 running containers without model reload, starts them at login and stops them on
 unit shutdown. Ordered startup, bounded readiness waits and explicit stop/restart
 propagation cover the local stack; see [boot recovery](.github/context/PROJECT/network-services.md#boot-recovery).
 
-Captured configuration, mode profiles and chat templates live under
-`~/.config/easyllama`; `EASYLLAMA_ROOT` preserves the existing model/cache root.
+Configuration, mode profiles and chat templates live in the native checkout at
+`EASYLLAMA_ROOT` (`config.json` plus `config/config.qwen.yml`), which preserves
+the existing model/cache root.
 Credentials remain private renderer values. Locally built images require the
 explicit archive/load workflow documented in
 [network service operations](.github/context/PROJECT/network-services.md#easyllama-snapshot);

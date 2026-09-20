@@ -131,30 +131,43 @@ data are preserved.
 
 ## EasyLlama Snapshot
 
-- Source release: **0.6.0**, revision
-  `94166edbd5e74a9e89741d889483b12bdb82907c` from
-  [EasyLlama](https://github.com/loopyd/easyllama/tree/94166edbd5e74a9e89741d889483b12bdb82907c).
-  Exact local image IDs, not mutable tags or floating upstream branches, determine
-  the deployed binaries. The image inventory is `deployment.json`.
-- `~/.config/easyllama` contains the original JSON configuration, all five mode
-  profiles, three chat templates, the effective Qwen proxy configuration and
-  Compose deployment. Only the captured **Qwen** stack is activated; the JSON's
-  old default `llamacpp` mode is archival, not the service selector.
+- Source release: **0.6.3**, revision
+  `7129074417b1fed33b30da99c98276c6320c24da` from
+  [EasyLlama](https://github.com/loopyd/easyllama/tree/7129074417b1fed33b30da99c98276c6320c24da).
+  The stack is built from the checkout's Dockerfiles into local images (vLLM,
+  LMCache, llama.cpp); exact local image IDs, not mutable tags or floating
+  upstream branches, determine the deployed binaries.
+- The stack is a **native checkout**, not a captured `~/.config/easyllama`
+  snapshot: `config.json` and `config/config.qwen.yml` under `EASYLLAMA_ROOT`
+  own the JSON configuration, the mode profiles, the chat templates, the
+  effective Qwen proxy configuration and the Compose deployment. Only the
+  **Qwen** stack is activated; the JSON's old default `llamacpp` mode is
+  archival, not the service selector.
+- The Qwen stack runs **five containers**: the `server-swap` orchestrator/proxy
+  (loopback 8080), the vLLM chat backend, that model's LMCache server, the
+  llama.cpp embeddings backend and the llama.cpp reranker. The chat backend
+  serves a **131072-token (128K) context** with MTP speculative decoding
+  (`num_speculative_tokens=2`), fp8 KV, a pinned `--kv-cache-memory-bytes` that
+  keeps GPU headroom for long-context temporaries, and LMCache as its only
+  CPU/disk KV tier (L1 host RAM plus the L2 disk tier under `cache/lmcache`).
+  The flashinfer JIT, llama.cpp slot and LMCache host caches are tracked
+  (`cache/flashinfer-jit`, `cache/slot-cache`, `cache/lmcache`) so kernel
+  compilation, resumed sessions and KV prefixes survive restarts and sleep/wake.
 - `EASYLLAMA_ROOT` is a private-renderer path value pointing to the existing
   `/mnt/LIBRARY/llamacpp` data root. Change it for a replacement machine, create
   the directory, then render. Existing caches/models are reused, never copied to
   Git, cleaned, replaced or silently relocated. Referenced weights must be
   restored privately or downloaded by the existing backend as needed.
-- The captured baseline has proxy 2 CPUs/8 GiB memory and
-  backend 24 CPUs/62.5 GiB memory, with 64 MiB shared memory per container.
-  These are EasyLlama's existing GPU-workload limits, not Hindsight/9router's
-  separate 2-CPU/4-GiB-shared-memory limits. NVIDIA GPU access and host networking
-  remain unchanged; the proxy listens on loopback port 8080. The later
-  [CPU embedding trial](#hindsight-cpu-embedding-trial) changes the live embedding
-  allocation; the five affected templates and manifest now capture the accepted settings.
+- The run limits are the checkout's own: the proxy gets 2 CPUs/8 GiB, the vLLM
+  chat backend 24 CPUs/62.5 GiB with a 32 GiB `/dev/shm`, its LMCache server
+  8 CPUs/31.25 GiB, and the llama.cpp embeddings and reranker 24 CPUs/62.5 GiB
+  each. These are EasyLlama's existing GPU-workload limits, not
+  Hindsight/9router's separate 2-CPU/4-GiB-shared-memory limits. NVIDIA GPU
+  access and host networking remain unchanged; the proxy listens on loopback
+  port 8080.
 - The supervisor verifies exact image IDs, commands, environment, mounts and
   limits before adopting containers. It replaces Docker restart policy with
-  systemd ownership, stops only the verified three containers on shutdown, and
+  systemd ownership, stops only the verified five containers on shutdown, and
   restarts on container failure. No upstream EasyLlama source is edited and no
   native Python/Torch environment is installed.
 - A private adoption journal records immutable IDs and original running/restart
@@ -184,10 +197,12 @@ model weights and the Hindsight database need separate backups. Uninstall stops
 the service and removes its receipt-owned helper, preserving containers, images,
 configuration and data. Do not concurrently use upstream `run.sh start/stop`.
 
-Profiles are captured evidence; changing them alone does not regenerate the
-effective Docker command/proxy snapshot. Stop the stack and regenerate/review
-those artifacts before deploying profile changes. Routine snapshot refresh keeps
-the data-root placeholder and chat templates portable.
+The checkout is the single source of truth: `config.json` plus
+`config/config.qwen.yml` are compiled into the effective Docker commands, the
+proxy configuration and the Compose deployment when the stack starts. Editing a
+profile or mode therefore requires recreating the affected containers
+(`run.sh restart`), not a separate snapshot refresh; the data root and chat
+templates stay portable.
 
 Historical source report, 2026-09-10 (before this Tailscale migration): the EasyLlama user unit adopted all three existing
 containers with unchanged IDs/start timestamps. EasyLlama, 9router, PostgreSQL and
