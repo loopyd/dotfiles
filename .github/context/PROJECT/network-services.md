@@ -211,6 +211,39 @@ and anonymous API/dashboard data access remains rejected. Image archives were no
 exported automatically; the explicit archive command remains the transfer step
 for a fresh host without these locally built images.
 
+## Postgres Concurrency And Pi Model Window
+
+**2026-09-19.** Database-side tuning plus a harness-side window correction.
+
+- The VectorChord database ran on stock Postgres limits (`max_connections=100`,
+  `shared_buffers=128MB`, no idle-in-transaction timeout) inside a 2-CPU/2-GiB
+  container while the Hindsight API pooled up to 24 connections per process and
+  uses 2-4 per recall/think. The compose command now sets
+  `max_connections=200`, `shared_buffers=512MB`, `effective_cache_size=2GB`,
+  `work_mem=4MB`, `maintenance_work_mem=128MB`,
+  `idle_in_transaction_session_timeout=60s` and `log_min_duration_statement=5000`;
+  the container limit rose to 4 GiB and `pids_limit` to 512. A stuck transaction
+  can no longer pin a connection indefinitely.
+- The `hindsight-db` unit's `ExecStartPost` probe raced the container start and
+  logged `timeout[...]: container ... is not running` on every boot. It now
+  suppresses that transient error and allows 180s.
+- Hindsight was still calling the retired `qwen3-fast` endpoint (HTTP 404 on
+  every retain/extract/consolidate call, ~160s per failed retain, ~23k pending
+  tasks). Re-rendering restored `qwen3-chat` on the local EasyLlama proxy, and
+  worker concurrency was raised for the 128K/MTP backend: worker slots 5 -> 10,
+  LLM concurrency 2 -> 8, retain LLM concurrency 1 -> 4, retain 3 -> 6, recall
+  4 -> 8, consolidation/reflect 1 -> 2, DB pool max 24 -> 40.
+- `~/.pi/agent/models.json` and `~/.pi/agent/settings.json` are now captured
+  templates (589 rendered files). The local `qwen3-chat` context window drops
+  from 262144 to its real **131072**, and `branchSummary.reserveTokens` drops
+  from 64000 to 32768 to fit that window; `compaction.reserveTokens` stays
+  32768, equal to the model's `maxTokens`. The two API keys render from
+  `SECRET_EASYLLAMA_CONFIG_JSON_API_KEY` and
+  `SECRET_CONFIG_9ROUTER_RESTORE_JSON_CREDENTIAL_4`.
+- `hindsight-db.service` and `hindsight.service` were `disabled` despite the
+  documented state; both are enabled again, so the database and API now start at
+  login.
+
 ## Hindsight CPU Embedding Trial
 
 Historical 8B evidence; these constraints applied to that trial, not every future

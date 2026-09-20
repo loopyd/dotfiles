@@ -1,0 +1,105 @@
+{
+  "providers": {
+    "llama-cpp-local": {
+      "baseUrl": "http://127.0.0.1:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "@@DOTFILES:SECRET_EASYLLAMA_CONFIG_JSON_API_KEY@@",
+      "compat": {
+        "supportsDeveloperRole": true,
+        "supportsReasoningEffort": true
+      },
+      "models": [
+	{
+	  "id": "glm53-chat",
+	  "name": "GLM 5.3 Chat",
+	  "reasoning": true,
+	  "input": [
+	    "text"
+	  ],
+          "contextWindow": 262144,
+	  "maxTokens": 32768,
+	  "cost": {
+	    "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+	  }
+	},
+        {
+          "id": "qwen3-chat",
+          "name": "Qwen3.8 RVN Heretic Q4_K_M MTP local",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 131072,
+          "maxTokens": 32768,
+          "thinkingLevelMap": {
+            "minimal": "low",
+            "high": "xhigh",
+            "xhigh": "xhigh",
+            "max": "xhigh"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
+    "ninerouter": {
+      "baseUrl": "https://ninerouter.tailc28ab1.ts.net/v1",
+      "api": "openai-completions",
+      "apiKey": "@@DOTFILES:SECRET_CONFIG_9ROUTER_RESTORE_JSON_CREDENTIAL_4@@",
+      "compat": {
+        "supportsDeveloperRole": true,
+        "supportsReasoningEffort": true
+      },
+      "models": [
+        {
+          "id": "qwen-combo",
+          "name": "Qwen Combo",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 262144,
+          "maxTokens": 32767,
+          "thinkingLevelMap": {
+            "xhigh": "high",
+            "max": null
+          },
+          "compat": {
+            "thinkingTokenBudgetField": "thinking_token_budget"
+          }
+        },
+        {
+          "id": "gpt-combo",
+          "name": "GPT Combo (Kimi K3 coding, 256K context)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 256000,
+          "maxTokens": 65536,
+          "compat": {
+            "supportsDeveloperRole": true,
+            "supportsReasoningEffort": true
+          }
+        },
+        {
+          "id": "ds-combo",
+          "name": "DeepSeek Combo",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 384000
+        }
+      ]
+    }
+  }
+}

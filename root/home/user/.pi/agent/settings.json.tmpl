@@ -1,0 +1,99 @@
+{
+  "lastChangelogVersion": "0.85.1",
+  "defaultProvider": "ninerouter",
+  "defaultModel": "qwen-combo",
+  "defaultThinkingLevel": "xhigh",
+  "thinkingBudgets": {
+    "minimal": 512,
+    "low": 1024,
+    "medium": 1024,
+    "high": 512,
+    "xhigh": 512
+  },
+  "httpIdleTimeoutMs": 300000,
+  "steeringMode": "all",
+  "hideThinkingBlock": true,
+  "enableInstallTelemetry": false,
+  "treeFilterMode": "all",
+  "transport": "sse",
+  "followUpMode": "one-at-a-time",
+  "quietStartup": true,
+  "theme": "smoky-inferno",
+  "terminal": {
+    "clearOnShrink": false,
+    "showTerminalProgress": true
+  },
+  "doubleEscapeAction": "tree",
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 32768,
+    "keepRecentTokens": 24000
+  },
+  "branchSummary": {
+    "reserveTokens": 32768,
+    "skipPrompt": false
+  },
+  "packages": [
+    "npm:context-mode",
+    "npm:@plannotator/pi-extension",
+    "npm:pi-mcp-adapter",
+    "npm:pi-subagents",
+    "npm:pi-intercom",
+    "npm:pi-web-access",
+    "npm:pi-lsp",
+    "npm:@sting8k/pi-vcc@0.4.0",
+    "npm:pi-semantic-edit",
+    "npm:pi-goal-x"
+  ],
+  "agentScope": "both",
+  "confirmProjectAgents": true,
+  "subagents": {
+    "agentOverrides": {
+      "scout": {
+        "model": "ninerouter/qwen-combo",
+        "thinking": "xhigh"
+      },
+      "planner": {
+        "model": "ninerouter/gpt-combo",
+        "thinking": "high"
+      },
+      "worker": {
+        "model": "ninerouter/gpt-combo",
+        "thinking": "medium"
+      },
+      "reviewer": {
+        "model": "ninerouter/gpt-combo",
+        "thinking": "high"
+      },
+      "context-builder": {
+        "model": "ninerouter/gpt-combo",
+        "thinking": "high"
+      },
+      "researcher": {
+        "model": "ninerouter/qwen-combo",
+        "thinking": "xhigh"
+      },
+      "delegate": {
+        "model": "ninerouter/qwen-combo",
+        "thinking": "xhigh"
+      },
+      "oracle": {
+        "model": "ninerouter/gpt-combo",
+        "thinking": "low"
+      },
+      "classifier": {
+        "model": "ninerouter/qwen-combo",
+        "thinking": "xhigh"
+      }
+    }
+  },
+  "showHardwareCursor": true,
+  "tuiMode": "regular",
+  "collapseChangelog": true,
+  "markdown": {
+    "mermaid": "streaming"
+  },
+  "extensions": [
+    "/home/koija/.hindsight/coding-agents/dist/pi.js"
+  ]
+}

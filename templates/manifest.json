@@ -2843,7 +2843,7 @@
       "source": "root/home/user/.config/hindsight/compose.yaml.tmpl",
       "target": ".config/hindsight/compose.yaml",
       "mode": "0600",
-      "sha256": "b7ebd9d29993c4b9602b6cba2f86954f0e592982a72bc2be070e6cec2494ffeb"
+      "sha256": "d7e715738d35bf84ab53d78c2200b975c99d4f7c21c7af7e7fb185943509e99b"
     },
     {
       "source": "root/home/user/.config/hindsight/credentials.json.tmpl",
@@ -2867,7 +2867,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "7c1946da07c20ee22581b241082459452234add5415eee54149c740028b3230d"
+      "sha256": "ac7639d304c1dab740dd44be0dd5f6c6292ea203875828e91f558fa8b6068cbb"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -3137,7 +3137,7 @@
       "source": "root/home/user/.config/systemd/user/hindsight-db.service.tmpl",
       "target": ".config/systemd/user/hindsight-db.service",
       "mode": "0600",
-      "sha256": "486f6fcee9db315514a885126f80933ca83cb1ff8915514bdfc1dad134fec84e"
+      "sha256": "a6859a57191d2e0e43aa6d254cbff45e72551f3dd3f67ef00955d7de445e3ef4"
     },
     {
       "source": "root/home/user/.config/systemd/user/hindsight.service.tmpl",
@@ -3522,6 +3522,18 @@
       "target": ".local/lib/dotfiles/sudo-askpass",
       "mode": "0700",
       "sha256": "c911e09eec95e2127d97b4f67ad37cd2e6fbd9183e21ccc9a88da0aacdbf018a"
+    },
+    {
+      "source": "root/home/user/.pi/agent/models.json.tmpl",
+      "target": ".pi/agent/models.json",
+      "mode": "0600",
+      "sha256": "1e952608830f704d555de9a134ca3b768c956558087a5269eaaaf6f1128b386c"
+    },
+    {
+      "source": "root/home/user/.pi/agent/settings.json.tmpl",
+      "target": ".pi/agent/settings.json",
+      "mode": "0600",
+      "sha256": "43006542b8b2a4ddf5ec6e99cc2e36de432b757532c4304991298d7181f48668"
     }
   ],
   "symlinks": [
