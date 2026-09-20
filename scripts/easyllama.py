@@ -88,6 +88,16 @@ def ensure() -> None:
         raise SystemExit('EasyLlama proxy did not become healthy')
 
 
+def unit_stopping() -> bool:
+    """Return whether systemd is stopping (or has stopped) this unit."""
+    result = subprocess.run(
+        ['systemctl', '--user', 'show', 'easyllama.service', '--property', 'ActiveState', '--value'],
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() in {'deactivating', 'inactive', 'failed'}
+
+
 def latch() -> int:
     """Hold the foreground on the orchestrator until the unit is stopped."""
     ensure()
@@ -105,7 +115,11 @@ def latch() -> int:
 
     threading.Thread(target=stopper, daemon=True).start()
     subprocess.run(['docker', 'start', '--attach', ORCHESTRATOR])
-    if stopping.is_set():
+    # The orchestrator exits either because the unit is being stopped or because
+    # it died on its own. Confirm a stop before failing: the signal handler and
+    # the unit's deactivation can both land a moment after the attach returns,
+    # and a stop must leave the unit inactive rather than failed.
+    if stopping.wait(timeout=2) or unit_stopping():
         return 0
     raise SystemExit('EasyLlama orchestrator stopped unexpectedly')
 

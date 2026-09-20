@@ -26,8 +26,16 @@ main() {
     [[ "${EUID}" -ne 0 ]] || { err 'Run as the logged-in destination user'; return 1; }
     require_commands docker python3 systemctl
     docker info >/dev/null
+    python3 - "${SCRIPT_DIR}" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+from network import installed_helpers
+installed_helpers(['easyllama.py', 'readiness.py'])
+PY
+    LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/easyllama.py")
     systemctl --user daemon-reload
     systemctl --user enable easyllama.service
+    lifecycle_receipt record
     if [[ "${START_SERVICES}" == true ]]; then
         if [[ "${LIFECYCLE_ACTION}" == update ]]; then
             systemctl --user restart easyllama.service
