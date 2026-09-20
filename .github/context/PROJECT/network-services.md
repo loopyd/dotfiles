@@ -455,19 +455,21 @@ crash-looping (fixed by the util 0.75 change in easyllama). Repairs: raise the L
 reasoning effort to `low`, disable automatic consolidation and raise the
 mental-model refresh floor to 3600s (both drive reflect, which cannot work
 here), and keep the load parallel (`WORKER_MAX_SLOTS=10`, `LLM_MAX_CONCURRENT=4`,
-retain 4 / embeddings 2). Result: a 10-minute window now runs essentially
-error-free (0-1 LLM errors, 0-2 proxy 5xx, 0-1 retry attempts) and the
-crash-loop 500s are gone. Residual, still unmet: the drain is not measurable —
-`pending` stays flat at 23,502 because worker slots are repeatedly consumed by
-`retain` operations up to **9 days old** while new work keeps arriving from
-ongoing commits; at most 1 completion landed in a 10-minute window. Reflect
-still fails with `ReflectToolCallError: Reflect requires a tool-calling model,
-but openai-responses/qwen3-chat produced no usable tool call`. Eight
-retry-exhausted `processing` rows were cleared to `failed` (the system's own
-`retry_count >= 3` rule) to release slots. Deciding the fate of the 23,502
-operation backlog — purge, reset, or accept a slow drain — is a destructive
-call for the user. A structural alternative is allowing chat and embeddings to
-co-reside, which the confirmed goal deliberately dropped as infeasible at 128K.
+retain 4 / embeddings 2). Result: the crash-loop 500s are gone and a 30-minute window runs clean — health
+ready, 0-2 LLM errors and 0-2 proxy 5xx per 6-minute sample, 0 gate/OOM errors,
+0 embedding/rerank errors, 2 retry attempts (not a storm), 0 arrivals. Measured
+drain: runnable `pending` 17,738 -> 17,737 (delta -1) with 1 operation completed.
+The backlog is 17,721 `retain` operations, plus 5,759 `batch_retain` rows whose
+payload is null (permanently unclaimable) and 22 `refresh_mental_model` rows that
+cannot succeed. 14,208 of the retains are 7-14 days old and the worker claims
+oldest-first, so ~10 slots are held by 9-day-old operations that sit in
+`retain_extract_facts` for 30+ minutes without completing; at ~1 completion per
+30 minutes the backlog cannot clear. `HINDSIGHT_API_RETAIN_CHUNK_BATCH_SIZE` and
+`HINDSIGHT_API_EMBEDDINGS_OPENAI_BATCH_SIZE` were raised 4 -> 32 (documented
+defaults are 100) to cut chat<->search swap cycles, and concurrency was set to 2
+after 4 let overlapping chat starts OOM the pinned KV cache. No config-level
+stale-operation reaper exists. Clearing the ancient cohort, or relaxing the
+mutual exclusion so chat and embeddings co-reside, is a user decision.
 
 Installed and upstream 9router have no rerank route; authenticated requests to
 `/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
