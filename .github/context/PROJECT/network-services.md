@@ -435,6 +435,17 @@ chat; their lifecycle listeners are now 9010 and 9011. `concurrencyLimit: 0` all
 native queueing instead of rejecting bursts at the proxy. Do not bypass the
 proxy with independently awakened GPU backends.
 
+**Start-wait bound (2026-09-20):** the qwen profile sets
+`healthCheckTimeout: 300` (`config/config.qwen.yml`, tracked in easyllama) so a
+start that cannot become healthy fails observably instead of hanging for the
+1800s default. 300s is ~11x the measured warm-cache chat cold start (27.4s to
+HTTP 200 from the asleep state). The global default stays 1800s for profiles
+whose first start legitimately takes longer, and the value must be raised if
+the flashinfer JIT cache is wiped. `sendLoadingState` deliberately stays
+`false` per the v0.3.2 decision to keep llama-swap loading/switching messages
+out of client reasoning and context; it was **not** enabled by commit
+`e24483b` despite that commit's message claiming otherwise.
+
 Installed and upstream 9router have no rerank route; authenticated requests to
 `/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
 direct EasyLlama routing for reranking only. Hindsight uses `RERANKER_PROVIDER=cohere`,
