@@ -450,7 +450,8 @@ out of client reasoning and context; it was **not** enabled by commit
 8 concurrent LLM requests and 10 worker slots against a single swapped model. The
 worker wedged: all 3 slots sat on `llm.openai-responses.reflect_tool_call`
 retries while `/v1/responses` returned 500, because the chat engine was
-crash-looping (fixed by the util 0.75 change in easyllama). Repairs: raise the LLM deadline to 900s, bound reflect synthesis with
+crash-looping (see the `--gpu-memory-utilization` note in easyllama's CHANGELOG:
+0.85 is retained after 0.79 and 0.75 were measured and rejected). Repairs: raise the LLM deadline to 900s, bound reflect synthesis with
 `HINDSIGHT_API_REFLECT_MAX_COMPLETION_TOKENS=4096`, drop consolidation/reflect
 reasoning effort to `low`, disable automatic consolidation and raise the
 mental-model refresh floor to 3600s (both drive reflect, which cannot work
