@@ -3534,12 +3534,6 @@
       "target": ".pi/agent/settings.json",
       "mode": "0600",
       "sha256": "43006542b8b2a4ddf5ec6e99cc2e36de432b757532c4304991298d7181f48668"
-    },
-    {
-      "source": "root/home/user/.config/systemd/user/easyllama-warm.service.tmpl",
-      "target": ".config/systemd/user/easyllama-warm.service",
-      "mode": "0600",
-      "sha256": "0c4e8242003a704d76e98f774a9b5aa4ea5aae3333ce7e34abe77c1079b601d3"
     }
   ],
   "symlinks": [
