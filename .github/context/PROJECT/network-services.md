@@ -446,6 +446,23 @@ the flashinfer JIT cache is wiped. `sendLoadingState` deliberately stays
 out of client reasoning and context; it was **not** enabled by commit
 `e24483b` despite that commit's message claiming otherwise.
 
+**Hindsight drain repair (2026-09-20):** the app ran `HINDSIGHT_API_LLM_TIMEOUT=300`,
+8 concurrent LLM requests and 10 worker slots against a single swapped model. The
+worker wedged: all 3 slots sat on `llm.openai-responses.reflect_tool_call`
+retries while `/v1/responses` returned 500, because the chat engine was
+crash-looping (fixed by the util 0.75 change in easyllama). Repairs: serialise
+the load (`WORKER_MAX_SLOTS=3`, `LLM_MAX_CONCURRENT=1`, retain/embeddings
+concurrency 1), raise the LLM deadline to 900s, bound reflect synthesis with
+`HINDSIGHT_API_REFLECT_MAX_COMPLETION_TOKENS=4096`, and drop
+consolidation/reflect reasoning effort to `low`. Result: the crash-loop 500s
+disappeared and the retry rate fell to ~1 attempt per 10 minutes. Residual, still
+unmet: the drain is not measurable over a >=10-minute window — the backlog is
+23,501 pending operations and each occupies a worker slot for longer than the
+window (0 completions observed), and reflect still fails with
+`ReflectToolCallError: Reflect requires a tool-calling model, but
+openai-responses/qwen3-chat produced no usable tool call`. Three `processing`
+rows wedged for up to 9 days were cleared to `failed` to release the slots.
+
 Installed and upstream 9router have no rerank route; authenticated requests to
 `/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
 direct EasyLlama routing for reranking only. Hindsight uses `RERANKER_PROVIDER=cohere`,
