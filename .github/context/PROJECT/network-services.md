@@ -472,6 +472,24 @@ after 4 let overlapping chat starts OOM the pinned KV cache. No config-level
 stale-operation reaper exists. Clearing the ancient cohort, or relaxing the
 mutual exclusion so chat and embeddings co-reside, is a user decision.
 
+**Criterion conflict, measured (2026-09-21):** with the exclusive groups working
+exactly as designed, Hindsight's retain pipeline cannot run cleanly. A retain
+needs the chat *and* embeddings, but only one group can be resident, so while the
+chat is saturated (GPU 100%, ~105 tokens/s, 2 running requests) the embeddings
+requests cannot be scheduled and hang to their client deadline - measured at
+exactly `10m0.00s` for `/v1/embeddings` and `15m0.00s` for `/v1/responses` - and
+the reverse happens when the search group holds the card. Across many 30-40
+minute windows the queue measured 0-1 completions against 0-1 arrivals, i.e. no
+measurable decline: small retain batches (4) produced a completion but also 5
+embedding/rerank timeouts, while large batches (32) produced 0 completions and 0
+errors. Retiring the backlog cannot fix it either - a
+`result_metadata->>'document_id'` join that appears to show 20,849 orphaned
+operations is unreliable (`git:`/`conversation:` ids are not rows in
+`documents`, and 304 recent operations fail the same join), so no automatic
+purge is safe. Making chat and embeddings co-reside would resolve it but
+contradicts the confirmed "one resident group at a time" requirement; that
+trade-off, or accepting the starvation, is the user's decision.
+
 Installed and upstream 9router have no rerank route; authenticated requests to
 `/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
 direct EasyLlama routing for reranking only. Hindsight uses `RERANKER_PROVIDER=cohere`,
