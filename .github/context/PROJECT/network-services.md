@@ -493,7 +493,10 @@ more with `HINDSIGHT_API_LLM_MAX_CONCURRENT=1`: across a further 40-minute windo
 the chat was called successfully (1-3 per 8 minutes) while `/v1/embeddings`
 succeeded **zero** times, so this is not a concurrency-tuning problem - embeddings
 were never served in any measured window while Hindsight was running, whatever
-the batch size (4 or 32), concurrency (1/2/4/8) or slot count (3/6/10/20).
+the batch size (4 or 32), concurrency (1/2/4/8) or slot count (3/6/10/20). The
+search group's `swap` flag was also tested both ways (`false` and `true`) with
+the same `embeddings_200=0` result; it is left at `false` to keep the two search
+models co-resident with each other.
 
 Installed and upstream 9router have no rerank route; authenticated requests to
 `/v1/rerank` and `/v1/reranking` returned 404. The user explicitly approved
