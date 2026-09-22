@@ -297,6 +297,23 @@ buildable, but it is no longer what the service runs.
   with `completed` still advancing and zero embedding/rerank errors. The 587 failed
   operations were retried through the API (427 accepted, 160 rejected as
   non-retryable) and the failed count has stayed at 0 since.
+- **Corrected capacity measurement (2026-09-22, after the pipeline was unblocked).** With
+  the fixes above the retain path is healthy: extraction calls succeed, `completed` resumes
+  advancing (4,094 -> 4,099), and JSON-parse, empty-reply and APIConnection errors all went to
+  **0** once the extraction scope stopped spending its output allowance on thinking. The
+  ceiling is arithmetic, not tuning. Measured: ~1.2 successful extractions/minute at ~1,890
+  output tokens each ~= **38 tok/s of the card's ~66**, i.e. the single 5090 can produce about
+  63k output tokens per 30 minutes. `retain` pending is **21,111 claimable operations with
+  payloads** (only 277 batch shells are null-payload), and each operation costs
+  payload_chars x ~1.26 output tokens. Because tokens-per-operation is fixed by the payload,
+  changing `RETAIN_CHUNK_SIZE`/`RETAIN_BATCH_TOKENS` only changes how many calls an operation
+  makes, not how many operations complete per minute. Claiming is a global FIFO on
+  `created_at` (poller.py:387) and the head of the queue is the 2026-09-11 migration imports
+  at 24-64 KB each, so every completion is gated behind those. Net effect: completions ~2-4
+  per 30 minutes against arrivals of ~15 per 30 minutes from normal coding-session ingestion,
+  so `pending` cannot decline and the remaining backlog is ~110 days of GPU time. Draining it
+  needs a policy decision (prune/quarantine the oversized historical imports, accept a
+  slower-than-arrival drain, reduce extraction verbosity, or add extraction throughput).
 - **Deliberately left alone.** `HINDSIGHT_API_ENABLE_AUTO_CONSOLIDATION` stays
   `false` and the ~62,657 pending-consolidation backlog is untouched: consolidation
   and mental-model refresh both drive reflect, and reflect is the one scope still

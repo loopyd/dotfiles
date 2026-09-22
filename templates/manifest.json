@@ -2867,7 +2867,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "0c56382384bfd0f637091dd406251f1348d9066fbdc2bd2b10b454d0329e82db"
+      "sha256": "fb48f9d34e78f3ea0273a97ef206ec592ab9296251083753362d7acb0c20e09b"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
