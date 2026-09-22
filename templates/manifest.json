@@ -3527,7 +3527,7 @@
       "source": "root/home/user/.pi/agent/models.json.tmpl",
       "target": ".pi/agent/models.json",
       "mode": "0600",
-      "sha256": "1e952608830f704d555de9a134ca3b768c956558087a5269eaaaf6f1128b386c"
+      "sha256": "515bc3a809904441eaaae80f0a75fc56664c8d2577dfbb99b7fef83ec7e46901"
     },
     {
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
