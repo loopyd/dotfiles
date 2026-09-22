@@ -138,11 +138,17 @@ data are preserved.
   LMCache, llama.cpp); exact local image IDs, not mutable tags or floating
   upstream branches, determine the deployed binaries.
 - The stack is a **native checkout**, not a captured `~/.config/easyllama`
-  snapshot: `config.json` and `config/config.qwen.yml` under `EASYLLAMA_ROOT`
+  snapshot: `config.json` and `config/config.<mode>.yml` under `EASYLLAMA_ROOT`
   own the JSON configuration, the mode profiles, the chat templates, the
-  effective Qwen proxy configuration and the Compose deployment. Only the
-  **Qwen** stack is activated; the JSON's old default `llamacpp` mode is
-  archival, not the service selector.
+  effective proxy configuration and the Compose deployment. The activated stack
+  is selected by `config.json`'s `runtime.mode`, **not** by which profile file
+  exists or by the systemd unit: the live value is `bonsai`, and the older
+  `qwen` stack described below remains available but is no longer what the
+  service selects. When `runtime.mode` still named `qwen` while the `bonsai`
+  stack was started by hand, the unit's latch recreated the whole Qwen stack
+  beside it and both held the GPU at once, so repoint `runtime.mode` before
+  restarting the unit. The JSON's old default `llamacpp` mode is archival, not
+  the service selector.
 - The Qwen stack runs **five containers**: the `server-swap` orchestrator/proxy
   (loopback 8080), the vLLM chat backend, that model's LMCache server, the
   llama.cpp embeddings backend and the llama.cpp reranker. The chat backend
@@ -210,6 +216,72 @@ Hindsight user units are active and enabled; authenticated Hindsight health pass
 and anonymous API/dashboard data access remains rejected. Image archives were not
 exported automatically; the explicit archive command remains the transfer step
 for a fresh host without these locally built images.
+
+## Bonsai Mode: GPU Co-Residency And The Hindsight Drain (2026-09-22)
+
+**Decision: the activated stack is `bonsai`, three models co-resident on one GPU,**
+selected by `config.json`'s `runtime.mode`. The Qwen stack is intact and still
+buildable, but it is no longer what the service runs.
+
+- **Why a new mode instead of tuning Qwen.** A Hindsight retain needs the chat
+  model *and* the embedder in the same window. The Qwen profile puts chat and the
+  search models in mutually exclusive llama-swap groups, and that was measured to
+  be unsatisfiable: over a 40-minute window `/v1/embeddings` succeeded zero times
+  while chat succeeded, and retain completions stayed at 0-1 per 30 minutes
+  against a backlog of ~28k. That is a structural conflict, not a knob.
+- **What changed the physics.** Ternary Bonsai 2 27B (`prism-ml/Ternary-Bonsai-2-27B-gguf`,
+  `PQ2_0`, ~7.2 GB at 1.72 bits/weight, derived from Qwen3.8-27B) plus its largely
+  linear-attention KV fits next to the 0.6B embedder and the compact reranker on
+  the 32 GiB card *at the model's full context*. So the profile declares one
+  non-swapping group (`swap: false`, `exclusive: false`) holding `bonsai-chat`,
+  `qwen3-embeddings` and `qwen3-reranker`; llama-swap stays the only lifecycle
+  owner and no member can evict another.
+- **Runtime.** `PrismML-Eng/llama.cpp` pinned to tag `prism-b10709-9a9394a`,
+  compiled by the new `bonsai-builder` stage and shipped as
+  `/app/bin/llama-server-bonsai` by `runtime-llamacpp-bonsai`. The fork is
+  mandatory: a stock llama.cpp build rejects the ternary `PQ2_0` tensor type, and
+  a plain `Q2_0` file loads silently and produces garbage.
+- **Chat command.** `-c 262144` (the model's full window, `n_slots = 2`,
+  `kv_unified = true`), q8_0 KV, `-fa on`, `--jinja` with
+  `--chat-template-file /chat_template/qwen3.8.jinja`, `--reasoning-preserve`
+  and `--reasoning-format deepseek`. Measured steady state with all three
+  resident: **22,712-23,190 MiB of 32,607 MiB used (~9.1-9.5 GiB free)**.
+- **Reasoning is a caller decision, not a profile constant.** The EasyLlama
+  profile deliberately pins neither a level nor a thinking budget. The level is
+  set per scope on the Hindsight side with
+  `HINDSIGHT_API_{RETAIN,REFLECT,CONSOLIDATION}_LLM_EXTRA_BODY`, which the
+  Responses provider merges into the request body: retain `low` (bulk
+  extraction), reflect `high` (synthesis), consolidation `medium`. Hindsight's
+  own `*_LLM_REASONING_EFFORT` variables do **not** reach this model, because its
+  provider only emits `reasoning.effort` for model names containing `gpt-5`,
+  `o1` or `o3`; the `extra_body` route is what actually works.
+- **The retain failure and its real cause (measured, not inferred).** Retains were
+  failing with `JSON parse error from Responses reply (... scope=retain_extract_facts
+  ...): Expecting value: line 1 column 1 (char 0)` - 512 errors and zero successes
+  in one 12-hour window. Replaying Hindsight's own recorded 17 KB retain payload
+  showed the reply contained `reasoning` items only and an **empty** message:
+  at a 4096-token output allowance the model spent the entire allowance thinking
+  (16,351 reasoning characters, 0 content characters). The fork does not report
+  `incomplete_details.reason = max_output_tokens`, so the provider never saw a
+  truncation and handed the empty string to `json.loads`.
+- **The trap that makes this silent.** Thinking and the answer share one output
+  allowance, and truncation is invisible to the caller. `bonsai-chat` therefore
+  needs an allowance sized for *thinking plus* a MAXIMUM-VERBOSITY five-dimension
+  extraction. `HINDSIGHT_API_RETAIN_MAX_COMPLETION_TOKENS` and
+  `HINDSIGHT_API_REFLECT_MAX_COMPLETION_TOKENS` are both **32768** (they were 4096
+  and 2048). The reflect value matters for the same reason: at 2048 the synthesis
+  spent everything thinking and returned no text, surfacing as
+  `ReflectNoAnswerError: Reflect's final synthesis returned no text after 5 iteration(s)`.
+- **Operational trap: `runtime.mode` is the selector.** Starting the `bonsai`
+  stack by hand while `runtime.mode` still named `qwen` made the unit's latch
+  recreate the entire Qwen stack beside it, so both profiles held the GPU and
+  every bonsai measurement was taken against a contended card. Repoint
+  `runtime.mode` first, then restart the unit. Stop the unit (or let it own the
+  containers) before running `run.sh start/stop`, or the two managers race and
+  the proxy container can be removed mid-start (`docker.errors.NotFound`).
+- **Measurement window (>=30 minutes).** Baseline at window start: pending
+  28,620, completed 4,087, failed 582; 4 lifetime retain successes. Measured:
+  *(filled in below after the window closed)*
 
 ## Postgres Concurrency And Pi Model Window
 
