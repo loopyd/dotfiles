@@ -1,8 +1,16 @@
 # syntax=docker/dockerfile:1.7
-# Vendored from decolua/9router @ v0.5.81 (Dockerfile).
+# Vendored from decolua/9router @ v0.5.85 (Dockerfile).
 # Owned by this repository so the deployment never depends on upstream image
 # tags being present or reproducible; scripts/router.py builds it from the
 # newest release tag resolved at install/update time. Review on version bumps.
+# Reviewed against v0.5.85: every COPY stage (public, .next/static, standalone,
+# custom-server.js, open-sse, src/mitm, node-forge, next, sql.js,
+# node-machine-id), the su-exec entrypoint and the runtime ENV set are unchanged
+# from v0.5.81. Upstream-only differences that are intentionally not adopted:
+# its ALPINE_MIRROR/NPM_REGISTRY build args and npm cache mount (this file pins
+# the regional mirrors that this host's builds require), its APP_VERSION label
+# (router.py applies the resolved tag as org.opencontainers.image.version), and
+# its drop of the full `apk upgrade` (this file keeps it for base-CVE drift).
 ARG NODE_IMAGE=node:22-alpine
 FROM ${NODE_IMAGE} AS base
 WORKDIR /app
