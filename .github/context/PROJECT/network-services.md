@@ -1172,6 +1172,54 @@ context handling changes only through earlier compaction and smaller batches.
 Private backups: `~/.local/share/hindsight/backups/timeout-tuning-*`; no raw data
 included here. The following table is **historical, not active**.
 
+### Hindsight LLM Concurrency Restored to 3 for the Bonsai Profile (2026-09-22)
+
+**Applied and measured.** Global and retain LLM concurrency returned **8 → 3**
+(`HINDSIGHT_API_LLM_MAX_CONCURRENT`, `HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT`), the value the
+[2026-09-11 concurrency trial](#hindsight-llm-concurrency-trial-2026-09-11) recorded; the live
+value had drifted to 8 when the bonsai co-residency profile was deployed. The EasyLlama bonsai
+chat model dropped from **12 → 6 slots** (`--parallel`), matching Hindsight's six worker slots and
+three concurrent LLM calls.
+
+Symptom that prompted it: six operations stuck in `processing` for up to 11 days (one frozen at
+`5/6` since 2026-09-17, a consolidation at `0/69390` after 2 days), with `slots=6/6` always fully
+claimed, `pending` pinned at 22,754, and `[STUCK?]` warnings every minute. DB diagnostics were
+negative: zero blocked locks, zero long-running queries, pool `in_use=0`.
+
+Root cause: with 8 (in practice 9-13) requests in flight against one RTX 5090, llama-server logged
+per-slot prefill of **62-176 tok/s**; each operation slowed until it exceeded its wall-clock timeout,
+so slots never freed. This is contention, not a timeout or storage defect.
+
+| Measurement | Before (9 busy slots) | After (3 busy slots) |
+| --- | --- | --- |
+| Per-stream prefill | 62-176 tok/s | **1.9-2.5K tok/s** (median 2557) |
+| Per-stream decode | 24-36 tok/s | **~57 tok/s** |
+| Successful prefill/decode evidence | `[STUCK?]` each minute | **0** timeouts and **0** `[STUCK?]` over 20-25 min windows |
+| GPU utilization | 90-100% | ~88% |
+
+Decode is memory-bandwidth-bound: single-stream ceiling is ~132 tok/s and aggregate saturates at
+roughly **180-210 tok/s** once three or more streams are active, so concurrency only trades
+per-stream latency for aggregate — ~20% more aggregate for ~10% worse latency going from 3 to 4.
+Because the failure mode was timeouts, **3 was kept**. The earlier sub-linear batching figure of
+59 tok/s aggregate at four streams was a contaminated measurement (taken while Hindsight already had
+~9 requests in flight) and is not reusable.
+
+Also cancelled **1,047** permanently stuck operations: 910 `batch_retain` parents with NULL
+`task_payload` (which `retry` refuses and no worker can claim), 134 `refresh_mental_model` and 3
+`consolidation`. These regenerate on their own, so the purge is hygiene, not a fix.
+
+Two apply-time facts worth keeping: 1) `docker restart` does **not** re-read `env_file` — env changes
+need `docker compose ... up -d --force-recreate --no-deps app`; 2) the `hindsight` container is
+supervised and restarts itself despite `restart: "no"`, so a quiet GPU cannot be obtained with
+`docker stop` alone.
+
+Not adopted, with evidence: **`--cache-type-v f16`** was pursued as a decode win and rejected — the
+apparent 2.9x gain compared an idle-unloaded f16 run against a heavily-loaded q8_0 run, and with the
+concurrency cap in place stock `q8_0` K/V already measures the documented 126-134 tok/s. Raising
+**`HINDSIGHT_API_REFLECT_WALL_TIMEOUT`** was also rejected: reflect was timing out from concurrency
+starvation, not from 2000s being too small, and raising it would only let a stuck reflect hold a
+slot for 2h instead of 33min.
+
 ### Applied Hindsight Settings
 
 These settings describe the earlier 8B trial checkpoint; API CPUs do not describe
