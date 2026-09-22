@@ -1475,6 +1475,78 @@ The resolved tag, image id, Dockerfile hash and timestamp are recorded in
 the previous `9router:<tag>` image and private backups; stop the gateway before
 any database recovery, never overwrite a live database.
 
+### Router image update to v0.5.85 (2026-09-22)
+
+Upstream `Dockerfile` at `v0.5.85` was reviewed against the vendored
+`scripts/9router.Dockerfile`: every `COPY` stage (`public`, `.next/static`,
+`standalone`, `custom-server.js`, `open-sse`, `src/mitm`, `node-forge`, `next`,
+`sql.js`, `node-machine-id`), the `su-exec` entrypoint and the runtime `ENV` set
+are unchanged from `v0.5.81`, so the vendored file was kept and only its review
+header was refreshed. Upstream-only differences not adopted: arg-ised
+`ALPINE_MIRROR`/`NPM_REGISTRY` and the npm cache mount (this file pins the
+regional mirrors this host's builds require), the `APP_VERSION` label
+(`router.py` already applies the resolved tag as
+`org.opencontainers.image.version`), and the dropped full `apk upgrade`.
+
+Recovery point: `~/.local/state/9router/upgrades/0.5.81-to-0.5.85-20260922T211059Z/`
+(`data.sqlite` via SQLite's backup API — `integrity_check` ok, 12 tables — plus
+`compose.yaml` and `image.txt`). `bash scripts/router.sh update --dry-run` was
+previewed; the build ran first as `update --no-start` so the running gateway kept
+serving, then `bash scripts/router.sh update` short-circuited the now-matching
+image and restarted the unit. `v0.5.85` was resolved automatically by
+`latest_tag()`; no `--tag` was needed. `build.json` now records tag `v0.5.85`,
+image id `sha256:78cbdff7ac69…`, Dockerfile hash
+`06f33457abc0bfe564753e49ed9ea798d268b966821adaed9c3aa11f0eff511c`.
+
+Actual results: `9router:v0.5.85` and `9router:local` are both
+`sha256:78cbdff7ac69…` and the recreated container runs on that id (the
+`v0.5.81` image is retained for rollback). `bash scripts/router.sh check` passed
+(unit, image, storage, private backend and 2-CPU/4-GiB limits); authenticated
+discovery returns **72** models including `qwen-combo` and
+`qwen3-chat/qwen3-embeddings`; anonymous `/v1/models` is **401** and the
+dashboard redirects to login (**307**); embeddings succeed (**1024** dimensions)
+and a `ds-combo` chat completion returns 200; `bash scripts/hindsight.sh check`
+passed ('Authenticated API is ready; anonymous API and dashboard data requests
+are rejected'). A minimal self-test container booted from the new image on port
+20129 reported `/api/health` 200 and upstream `package.json` version **0.5.85**.
+
+One failure is unrelated to the image: `qwen-combo` chat answers **503** because
+the co-resident bonsai mode runs llama-swap with
+`bonsai.proxy.effective.yaml`, whose routers are only `bonsai-chat`,
+`qwen3-embeddings` and `qwen3-reranker` — no `qwen3-chat` router exists, so the
+gateway faithfully proxies the upstream `no router for requested model` 404. The
+combo needs `qwen3-chat` present in the active llama-swap profile, or its entry
+re-pointed at `bonsai-chat`, before Qwen chat over 9router works again.
+
+### Codex provider custom models: GPT 6.0 Sol and Luna (2026-09-22)
+
+The `codex` provider (alias `cx`) exposes the GPT 6.0 family. `gpt-6-astra` ships
+in the app's own registry (`/app/open-sse/providers/registry/codex.js`, with
+capabilities `contextWindow: 272000`, `maxOutput: 128000`), while `gpt-6-sol` and
+`gpt-6-luna` are absent from v0.5.85. They are therefore registered as provider
+custom models in the router's `kv` table — scope `customModels`, key
+`cx|<model>|llm`, value `{providerAlias, id, type, name, caps:{vision,reasoning}}`
+— the same mechanism the pre-existing astra entry uses, and the same row shape the
+dashboard writes through `POST /api/models/custom`. Both answer 200 through
+`https://ninerouter.tailc28ab1.ts.net/v1` with `served=gpt-6-sol` and
+`served=gpt-6-luna`, and authenticated discovery is now **74** models.
+
+Consumers must use the alias-qualified form. A bare `gpt-6-sol` — exactly like a
+bare `gpt-6-astra` — is read as provider `openai` and fails with 404
+`model_not_found` (`No active credentials for provider: openai`); the working
+reference is `cx/gpt-6-sol`. `gpt-combo` still tracks `["cx/gpt-6-astra"]`
+(unchanged, verified serving astra), and pi's `gpt-combo` entry in
+`.pi/agent/models.json` now advertises astra's real limits
+(`contextWindow: 272000`, `maxTokens: 128000`) instead of the stale
+"Kimi K3 coding, 256K context" / `256000` / `65536` values.
+
+Custom models live in `kv`, which is **not** part of the six-table private export
+(`settings`, `providerNodes`, `providerConnections`, `combos`, `apiKeys`,
+`proxyPools` — the set `network.decode_tables` validates). A restore from
+`~/.config/9router/restore.json` leaves `kv` untouched, so these entries survive
+it; a from-scratch database initialization rebuilds only those six tables and
+requires `cx/gpt-6-astra`, `cx/gpt-6-sol` and `cx/gpt-6-luna` to be re-added.
+
 ## Router Deployment And Recovery
 
 1. Render configuration and run both commands with `--dry-run` first.
