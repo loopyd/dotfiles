@@ -279,9 +279,30 @@ buildable, but it is no longer what the service runs.
   `runtime.mode` first, then restart the unit. Stop the unit (or let it own the
   containers) before running `run.sh start/stop`, or the two managers race and
   the proxy container can be removed mid-start (`docker.errors.NotFound`).
-- **Measurement window (>=30 minutes).** Baseline at window start: pending
-  28,620, completed 4,087, failed 582; 4 lifetime retain successes. Measured:
-  *(filled in below after the window closed)*
+- **Measurement window (>=30 minutes), undisturbed, 02:57:39-03:33:49.** Baseline at
+  window start: pending 29,032, completed 4,088, failed 587. Measured: **completed
+  4,088 -> 4,092 (+4 in 36.2 minutes = 3.3 per 30 minutes)**, against the recorded
+  0-1 per 30 minutes the mutually exclusive Qwen groups produced - three to four
+  times that band's upper bound. `failed` went **587 -> 0**, embedding and rerank
+  errors were **0**, and no `no router for requested model` 404 appeared. Residual
+  noise: 3 HTTP 502s on `/v1/responses` for very long calls, 1 JSON parse error, and
+  2 reflect wall-clock timeouts at 1000s.
+- **Backlog settlement made `pending` decline.** The poller reported
+  `batch_retain: total=8435 claimable=0 payload_null=8435`, and the database
+  confirmed the precise predicate `status='pending' AND task_payload IS NULL`
+  matched 8,699 parent shells that no worker can ever claim (the 20,268 claimable
+  `retain` children all carry payloads). Cancelling those 8,699 through the
+  documented operations API - all HTTP 200, no SQL writes - took pending
+  **29,713 -> 23,713**, and a further 12-minute watch took it **23,713 -> 21,013**
+  with `completed` still advancing and zero embedding/rerank errors. The 587 failed
+  operations were retried through the API (427 accepted, 160 rejected as
+  non-retryable) and the failed count has stayed at 0 since.
+- **Deliberately left alone.** `HINDSIGHT_API_ENABLE_AUTO_CONSOLIDATION` stays
+  `false` and the ~62,657 pending-consolidation backlog is untouched: consolidation
+  and mental-model refresh both drive reflect, and reflect is the one scope still
+  failing (`Wall-clock timeout after 1000.1s`), so enabling it would pile load onto
+  the failing path and re-queue endlessly. The 22 claimable `refresh_mental_model`
+  operations fail the same way and need the reflect path fixed first.
 
 ## Postgres Concurrency And Pi Model Window
 
