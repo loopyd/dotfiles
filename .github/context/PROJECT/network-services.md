@@ -314,6 +314,15 @@ buildable, but it is no longer what the service runs.
   so `pending` cannot decline and the remaining backlog is ~110 days of GPU time. Draining it
   needs a policy decision (prune/quarantine the oversized historical imports, accept a
   slower-than-arrival drain, reduce extraction verbosity, or add extraction throughput).
+- **llama-swap admission cap, found and fixed (2026-09-22).** The proxy was rejecting
+  concurrent inference with `429 {"code":"concurrency_limit"}` once more than two requests were
+  in flight, even though the profile used the `0` sentinel the repo documents as disabling
+  early admission rejection. Direct calls to the backend bypassing the proxy accepted six of
+  six against its twelve slots, so the cap was the proxy's. Setting an explicit
+  `concurrencyLimit: 16` on all three models made eight concurrent requests return 200 with
+  zero 429s, and retain extraction rose from ~1.2 to ~2.4 calls/minute. It did not change the
+  operation-completion arithmetic, which is set by payload size and FIFO claiming.
+
 - **Deliberately left alone.** `HINDSIGHT_API_ENABLE_AUTO_CONSOLIDATION` stays
   `false` and the ~62,657 pending-consolidation backlog is untouched: consolidation
   and mental-model refresh both drive reflect, and reflect is the one scope still
