@@ -40,9 +40,16 @@ function replaceOnce(source, before, after) {
   return source.replace(before, after);
 }
 
+// For a target upstream is free to remove. v0.7.0 dropped HOOK_REFLECT_CAP_MS and
+// bounds the hook reflect from config alone, so a missing target means the patch is
+// obsolete rather than the adapter being stale.
+function replaceIfPresent(source, before, after) {
+  return source.includes(before) ? source.replace(before, after) : source;
+}
+
 function adapt(source, mode) {
   if (mode === 'hook') {
-    return replaceOnce(source,
+    return replaceIfPresent(source,
       'const timeoutMs = Math.min(cfg.reflectTimeoutMs, HOOK_REFLECT_CAP_MS);',
       'const timeoutMs = Math.min(cfg.reflectTimeoutMs, 180000);');
   }

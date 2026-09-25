@@ -3485,7 +3485,7 @@
       "source": "root/home/user/.local/lib/dotfiles/hindsight-hook.mjs.tmpl",
       "target": ".local/lib/dotfiles/hindsight-hook.mjs",
       "mode": "0644",
-      "sha256": "336b712a0ac6c38c9e713f4f72541143ec217a769ce37cddba348867f9d08360"
+      "sha256": "965989f81a71f251f6fb3d96474c3cebb664c2fa1a846496d521ad12a34601df"
     },
     {
       "source": "templates/nas-backup.json.tmpl",
