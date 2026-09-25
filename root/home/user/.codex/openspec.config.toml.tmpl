@@ -1,0 +1,22 @@
+# OpenSpec work profile for Codex: select with `codex -p openspec`.
+# OpenSpec installs its skills globally in ~/.codex/skills and is invoked as
+# $openspec-<workflow> (for example $openspec-propose).
+#
+# OpenSpec runs on ninerouter's ds-combo at high reasoning, matching the Pi
+# launcher (openspec-pi). The base config targets OpenAI directly, so this
+# profile pins its own ninerouter provider for ds-combo.
+model = "ds-combo"
+model_reasoning_effort = "high"
+model_provider = "ninerouter"
+# Codex has no built-in catalog entry for ds-combo; supply its ninerouter window
+# so it does not fall back to degraded default model metadata.
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+
+[model_providers.ninerouter]
+name = "ninerouter"
+base_url = "https://ninerouter.tailc28ab1.ts.net/v1"
+wire_api = "responses"
+experimental_bearer_token = "@@DOTFILES:SECRET_CONFIG_9ROUTER_RESTORE_JSON_CREDENTIAL_4@@"
+request_max_retries = 4
+stream_max_retries = 5

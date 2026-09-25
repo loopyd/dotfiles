@@ -256,6 +256,11 @@ def capture(args):
             candidates.extend(parent / name for name in sorted(files))
     for source in sorted(set(candidates)):
         relative = source.relative_to(home)
+        if (str(relative).startswith('.agents/skills/openspec-')
+                or str(relative).startswith('.codex/skills/openspec-')
+                or str(relative).startswith('.pi/agent/prompts/opsx-')):
+            exclusions['OpenSpec-generated agent integration (managed by scripts/openspec.py)'] += 1
+            continue
         if (str(relative) == '.config/tailscale/endpoints.json'
                 or (str(relative).startswith('.config/systemd/user/')
                     and relative.name in {'tailscale@.service', 'tailscale@ninerouter.service', 'tailscale@hindsight.service'})):
@@ -293,7 +298,7 @@ def capture(args):
         if str(relative).startswith('.local/bin/') and not text.startswith('#!'):
             exclusions['installed executable'] += 1
             continue
-        if str(relative).startswith('.local/bin/') and source.name not in {'9router-local', 'env', 'env.fish', 'archon', 'nas-backup'}:
+        if str(relative).startswith('.local/bin/') and source.name not in {'9router-local', 'env', 'env.fish', 'archon', 'nas-backup', 'openspec-pi', 'openspec-codex', 'openspec-init'}:
             exclusions['installed console entrypoint'] += 1
             continue
         if private_material(text, documentation=source.suffix == '.md'):

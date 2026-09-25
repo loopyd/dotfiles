@@ -222,6 +222,7 @@ lifecycle_payload() {
         router) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/router.py" "${HOME}/.local/lib/dotfiles/9router.Dockerfile") ;;
         easyllama) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/easyllama.py") ;;
         tailscale) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/tailscale.py") ;;
+        openspec) LIFECYCLE_PATHS=("${HOME}/.local/lib/dotfiles/openspec.py" "${HOME}/.local/lib/dotfiles/openspec-config.yaml") ;;
         hooks|tools) ;;
         *) err "Unknown component: ${LIFECYCLE_COMPONENT}"; return 1 ;;
     esac
@@ -250,6 +251,7 @@ lifecycle_check() {
         router) python3 "${SCRIPT_DIR}/router.py" check ;;
         easyllama) python3 "${SCRIPT_DIR}/easyllama.py" status ;;
         tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;
+        openspec) python3 "${SCRIPT_DIR}/openspec.py" check ;;
         mise) MISE_OFFLINE=true MISE_SELF_UPDATE_AVAILABLE=false "${HOME}/.local/bin/mise" --version ;;
         hooks) [[ "$(git -C "${SCRIPT_DIR}/.." config --local core.hooksPath)" == .githooks ]] && [[ -x "${SCRIPT_DIR}/../.githooks/pre-commit" ]] ;;
         neovim) /usr/local/bin/nvim --version ;;
@@ -268,6 +270,7 @@ lifecycle_uninstall() {
             systemctl --user disable --now 9router.service
             "${COMPOSE[@]}" down ;;
         tailscale) systemctl --user disable --now tailscale.service ;;
+        openspec) python3 "${SCRIPT_DIR}/openspec.py" remove ;;
         hindsight)
             systemctl --user disable --now hindsight.service
             systemctl --user disable --now hindsight-db.service

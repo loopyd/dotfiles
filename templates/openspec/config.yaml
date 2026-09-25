@@ -1,0 +1,25 @@
+schema: spec-driven
+
+# Project context shown to the AI when it creates artifacts. Keep it short and
+# factual: what the project is, its stack, and the conventions a proposal or
+# design must respect. `openspec init` never overwrites an existing config.
+context: |
+  Follow this repository's existing conventions, and verify changes with the
+  commands the repository already uses for tests and linting.
+  OpenSpec runs on the shared global integration: Pi prompts are /opsx-*, and
+  Codex skills are $openspec-*. Propose and implement with the pinned
+  ninerouter/ds-combo model at high reasoning (`openspec-pi` / `openspec-codex`).
+
+# Per-artifact rules (optional)
+# rules:
+#   proposal:
+#     - Keep proposals under 500 words
+#     - Always include a "Non-goals" section
+#   tasks:
+#     - Break tasks into verifiable chunks
+
+# Per-operation guidance (optional)
+# operations:
+#   apply:
+#     guidance:
+#       - Report the exact commands used to verify the change

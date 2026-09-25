@@ -1,0 +1,5 @@
+#!/bin/sh
+# Scaffold an OpenSpec project using the dotfiles project template.
+# Delegates to scripts/openspec.py, installed at ~/.local/lib/dotfiles/.
+set -eu
+exec python3 "$HOME/.local/lib/dotfiles/openspec.py" scaffold "$@"

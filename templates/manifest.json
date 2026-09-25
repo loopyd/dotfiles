@@ -977,7 +977,7 @@
       "source": "root/home/user/.bashrc.tmpl",
       "target": ".bashrc",
       "mode": "0600",
-      "sha256": "18a82a4dafbba8d7a4245ddd9263547c4074c6aa6487422b787a14c6bb86c749"
+      "sha256": "7efacf8ed5ceec1c6eea23d1c08b172db6b2e9c1a11abc7dd65cf7a3dd160eaf"
     },
     {
       "source": "root/home/user/.cargo/env.tmpl",
@@ -995,7 +995,7 @@
       "source": "root/home/user/.codex/config.toml.tmpl",
       "target": ".codex/config.toml",
       "mode": "0600",
-      "sha256": "b0880f0f27cfb35ded2352cfa8491218486253fa6d2195935ade2add5dc44651"
+      "sha256": "7a36c55817d63ec62a3e513327af35c6357b2b44415e994545fff4d6c35b604f"
     },
     {
       "source": "root/home/user/.codex/hooks.json.tmpl",
@@ -3122,12 +3122,6 @@
       "sha256": "151b347eed08e8e164896840e9815e54cc35b7f30c577398c23afc68d726742d"
     },
     {
-      "source": "root/home/user/.config/systemd/user/headroom-default.service.tmpl",
-      "target": ".config/systemd/user/headroom-default.service",
-      "mode": "0600",
-      "sha256": "6f208fd952f6a46d5090068cbe008a7fbe2d75f1e0b67be7104106661f92711d"
-    },
-    {
       "source": "root/home/user/.config/systemd/user/herdr.service.tmpl",
       "target": ".config/systemd/user/herdr.service",
       "mode": "0600",
@@ -3305,7 +3299,7 @@
       "source": "root/home/user/.profile.tmpl",
       "target": ".profile",
       "mode": "0600",
-      "sha256": "7693f77a02fe22e96f3866a521d45c9be308407fae6af3e1334b64049f1a5e26"
+      "sha256": "95b4f200f3be043ef6fa5f7aabb0cc47e4993de9b88a94f356455ebe7d3fb22b"
     },
     {
       "source": "root/home/user/.rustup/settings.toml.tmpl",
@@ -3317,7 +3311,7 @@
       "source": "root/home/user/.zshrc.tmpl",
       "target": ".zshrc",
       "mode": "0600",
-      "sha256": "02675eb8ea7ce704a2dea8e6e8adc57fffe88d8eabba0d59bfed543b9b52f8d5"
+      "sha256": "d6e5ddbe1a2c1571bb7aef594d6e46d1ed2e4d5ed508f513fe06b909e556a5e4"
     },
     {
       "source": "root/home/user/.config/9router/compose.yaml.tmpl",
@@ -3534,13 +3528,39 @@
       "target": ".pi/agent/settings.json",
       "mode": "0600",
       "sha256": "43006542b8b2a4ddf5ec6e99cc2e36de432b757532c4304991298d7181f48668"
+    },
+    {
+      "source": "root/home/user/.config/openspec/config.json.tmpl",
+      "target": ".config/openspec/config.json",
+      "mode": "0600",
+      "sha256": "2001b33f46441167f5680f13017337a1540257c0275f255eb056d004052617e3"
+    },
+    {
+      "source": "root/home/user/.codex/openspec.config.toml.tmpl",
+      "target": ".codex/openspec.config.toml",
+      "mode": "0600",
+      "sha256": "0ed1b9a3e55e955d7cbbbb65dbf61cc691acf2ca88a58e7ea6bcb326c4ae3b3a"
+    },
+    {
+      "source": "templates/commands/openspec-pi.tmpl",
+      "target": ".local/bin/openspec-pi",
+      "mode": "0700",
+      "sha256": "569b66886d1b2be97f29b5633b813b614c7d855b6cebf6cf846a924c367b6482"
+    },
+    {
+      "source": "templates/commands/openspec-codex.tmpl",
+      "target": ".local/bin/openspec-codex",
+      "mode": "0700",
+      "sha256": "c52852b6a8dd38fb9446ed15656ebe6972b47f1b84c88560f881ccd10b5c4353"
+    },
+    {
+      "source": "templates/commands/openspec-init.tmpl",
+      "target": ".local/bin/openspec-init",
+      "mode": "0700",
+      "sha256": "610b43db5c1060315ca9df3955964239ff53ee9f56ff3d43fae43d5bd15cfbf2"
     }
   ],
   "symlinks": [
-    {
-      "target": ".config/systemd/user/default.target.wants/headroom-default.service",
-      "link": "../headroom-default.service"
-    },
     {
       "target": ".config/systemd/user/default.target.wants/herdr.service",
       "link": "../herdr.service"

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Launch Pi for OpenSpec work on the pinned ninerouter/ds-combo model at high
+# reasoning. OpenSpec has no model setting of its own, and Pi cannot scope a
+# model to a prompt, so the model comes from this invocation.
+set -eu
+exec pi --model ninerouter/ds-combo:high "$@"

@@ -16,6 +16,7 @@ WITH_8BITDO=false
 WITH_DOTFILES=false
 WITH_HINDSIGHT=false
 WITH_EASYLLAMA=false
+WITH_OPENSPEC=false
 WITH_USER_TOOLS=false
 WITH_TERMINALS=false
 WITH_DESKTOP=false
@@ -37,6 +38,7 @@ Usage: ./bootstrap.sh <install|update|uninstall|check> [options]
   --with-8bitdo        Include controller support
   --with-dotfiles      Render configuration before user software
   --with-user-tools    Include mise-managed runtimes and user packages
+  --with-openspec      Include the global OpenSpec Pi and Codex agent integration
   --with-hindsight     Include Hindsight (Docker prerequisite)
   --with-easyllama     Include the pinned local Qwen Docker stack
   --with-terminals     Include Alacritty and herdr
@@ -47,7 +49,8 @@ Usage: ./bootstrap.sh <install|update|uninstall|check> [options]
   --dotfiles-values <path>  Private renderer values outside the repository
 
 Names: core, gh, docker, nvidia, hooks, neovim, 8bitdo, dotfiles, desktop,
-mise, tools, alacritty, herdr, tailscale, easyllama, router, hindsight, backup.
+mise, tools, alacritty, herdr, tailscale, easyllama, router, hindsight, backup,
+openspec.
 Install/update follow dependency order; uninstall verifies receipts first
 and reverses that order. Check never installs prerequisites.
 EOF
@@ -79,6 +82,7 @@ parse_args() {
             --with-hindsight) WITH_HINDSIGHT=true; shift ;;
             --with-easyllama) WITH_EASYLLAMA=true; shift ;;
             --with-user-tools) WITH_USER_TOOLS=true; shift ;;
+            --with-openspec) WITH_OPENSPEC=true; shift ;;
             --with-terminals) WITH_TERMINALS=true; shift ;;
             --with-desktop) WITH_DESKTOP=true; shift ;;
             --with-network) WITH_NETWORK=true; shift ;;
@@ -106,6 +110,7 @@ select_components() {
         [[ "${WITH_8BITDO}" != true ]] || requested+=(8bitdo)
         [[ "${WITH_DOTFILES}" != true ]] || requested+=(dotfiles)
         [[ "${WITH_USER_TOOLS}" != true ]] || requested+=(tools)
+        [[ "${WITH_OPENSPEC}" != true ]] || requested+=(openspec)
         [[ "${WITH_HINDSIGHT}" != true ]] || requested+=(hindsight)
         [[ "${WITH_EASYLLAMA}" != true ]] || requested+=(easyllama)
         [[ "${WITH_TERMINALS}" != true ]] || requested+=(alacritty herdr)
@@ -115,12 +120,13 @@ select_components() {
     fi
     for component in "${requested[@]}"; do
         case "${component}" in
-            core|gh|docker|nvidia|hooks|neovim|8bitdo|dotfiles|desktop|mise|tools|alacritty|herdr|tailscale|easyllama|router|hindsight|backup) selected["${component}"]=true ;;
+            core|gh|docker|nvidia|hooks|neovim|8bitdo|dotfiles|desktop|mise|tools|alacritty|herdr|tailscale|easyllama|router|hindsight|backup|openspec) selected["${component}"]=true ;;
             *) err "Unknown component: ${component}"; return 2 ;;
         esac
     done
     if [[ "${ACTION}" == install || "${ACTION}" == update ]]; then
         if [[ -n "${selected[hindsight]:-}" ]]; then selected[router]=true; fi
+        if [[ -n "${selected[openspec]:-}" ]]; then selected[dotfiles]=true; selected[tools]=true; fi
         if [[ -n "${selected[backup]:-}" ]]; then selected[dotfiles]=true; fi
         if [[ -n "${selected[router]:-}" ]]; then selected[easyllama]=true; fi
         if [[ -n "${selected[easyllama]:-}" ]]; then selected[docker]=true; selected[nvidia]=true; fi
@@ -130,7 +136,7 @@ select_components() {
     if [[ "${ACTION}" == uninstall && -n "${selected[desktop]:-}" && -z "${DESKTOP_BACKUP}" ]]; then
         err 'Desktop removal requires --desktop-backup'; return 2
     fi
-    for component in core gh docker nvidia hooks neovim 8bitdo dotfiles desktop mise tools alacritty herdr tailscale easyllama router hindsight backup; do
+    for component in core gh docker nvidia hooks neovim 8bitdo dotfiles desktop mise tools openspec alacritty herdr tailscale easyllama router hindsight backup; do
         [[ -z "${selected[${component}]:-}" ]] || COMPONENTS+=("${component}")
     done
 }

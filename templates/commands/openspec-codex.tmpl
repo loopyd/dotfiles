@@ -1,0 +1,6 @@
+#!/bin/sh
+# Launch Codex for OpenSpec work using the openspec profile
+# (~/.codex/openspec.config.toml: ds-combo at high reasoning effort).
+# OpenSpec skills are invoked as $openspec-<workflow>.
+set -eu
+exec codex -p openspec "$@"

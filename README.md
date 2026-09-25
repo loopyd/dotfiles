@@ -402,6 +402,49 @@ utilities (`delib`, `lifecycle`, `guard`, `snapshot`, `packages`, `terminal`,
 - `scripts/docker.sh` configures official Docker apt repo and installs Docker Engine packages.
 - `scripts/nvidia.sh` installs and configures NVIDIA Container Toolkit for Docker.
 - `scripts/8bitdo.sh` provides optional controller setup.
+- `scripts/openspec.sh` installs the global OpenSpec agent integration for Pi and Codex (details below).
+
+### OpenSpec installation
+
+OpenSpec is a spec-driven planning layer that Pi and Codex drive with slash
+commands. The `@fission-ai/openspec` CLI is restored by `./scripts/tools.sh`
+from `templates/packages.json`; this component regenerates its agent files from
+that CLI and installs them into the destination user's global agent directories.
+Run as the destination user after rendering private dotfiles:
+
+```bash
+./scripts/openspec.sh install --dry-run
+./scripts/openspec.sh install
+./scripts/openspec.sh check
+```
+
+`~/.config/openspec/config.json` renders the `custom` profile with every
+workflow enabled, `delivery: both` and telemetry disabled. From it the helper
+installs 12 Pi Agent Skills and 12 prompts under `~/.pi/agent/`, and 12 Codex
+Agent Skills under `~/.codex/skills/` (verified against Codex's own prompt
+input). Generated files are owned by `scripts/openspec.py`; `scripts/snapshot.py`
+excludes them from capture and `uninstall` removes only paths recorded in
+`~/.local/state/dotfiles/openspec.json`.
+
+Invoke it as `/opsx-propose`, `/opsx-apply`, `/opsx-archive` and the other
+`/opsx-*` commands in Pi, or `$openspec-propose`, `$openspec-apply-change` and
+the other `$openspec-*` skills in Codex.
+
+OpenSpec has no model setting of its own, so the OpenSpec model policy is
+configured on each agent. Both pin `ninerouter/ds-combo` at high reasoning:
+
+- Pi: `openspec-pi` launches `pi --model ninerouter/ds-combo:high` (Pi cannot
+  scope a model to a prompt, so the launcher carries it).
+- Codex: `~/.codex/openspec.config.toml` is an `openspec` profile that sets
+  `model = "ds-combo"`, `model_reasoning_effort = "high"` and a `ninerouter`
+  model provider; `openspec-codex` launches `codex -p openspec`. Codex has no
+  built-in catalog entry for `ds-combo`, so it prints a `Model metadata for
+  ds-combo not found` warning and uses fallback metadata; the profile supplies
+  the context window and auto-compact limit explicitly to keep that harmless.
+
+Start a project from the dotfiles template with `openspec-init [PATH]` (default:
+current directory), which runs `openspec init --tools pi,codex` and applies
+`templates/openspec/config.yaml`.
 
 ### Hindsight installation and activation
 
