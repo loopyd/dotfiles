@@ -3,7 +3,10 @@
   "apiUrl": "http://127.0.0.1:8888",
   "bankId": "shared",
   "dynamicBankId": false,
-  "harness": "codex",
+  "harnesses": {
+    "pi": {},
+    "codex": {}
+  },
   "retainTags": [
     "project:{gitProject}"
   ],
@@ -13,16 +16,16 @@
   },
   "retainSessions": true,
   "autoSeed": true,
-  "gitIngest": "full",
+  "gitIngest": "message",
   "seedLimit": 300,
   "maxParallelRetains": 1,
-  "autoReflect": true,
+  "autoInject": "pages",
   "reflectToolTimeoutMs": 660000,
   "reflectBudget": "low",
   "codebaseSurvey": false,
   "autoUpdate": true,
   "apiToken": "@@DOTFILES:SECRET_HINDSIGHT_API_KEY@@",
-  "reflectTimeoutMs": 180000,
+  "reflectTimeoutMs": 200000,
   "pageTriggerType": "cron",
   "pageTriggerCron": "H */6 * * *"
 }
