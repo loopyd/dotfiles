@@ -1471,8 +1471,8 @@ Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
 
 ## Preserved Configuration
 
-- The Compose definition runs a locally built `9router:local` image (built from
-  the newest upstream release tag), with **2 CPUs** and **4 GiB `/dev/shm`**. The
+- The Compose definition runs a locally built `9router:local` image (source pinned
+  in `scripts/router-build.json`), with **2 CPUs** and **4 GiB `/dev/shm`**. The
   verified Docker backend binds only `127.0.0.1:20128`; raw tailnet/LAN port
   20128 is not the public API contract. Loopback binding replaces the baseline's
   LAN-accessible host-network listener.
@@ -1498,30 +1498,52 @@ Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
 ## Router Maintenance
 
 The deployment never depends on an upstream image tag: `scripts/router.py build`
-resolves the newest `decolua/9router` release tag, downloads that tag's source,
-and builds it with the vendored `scripts/9router.Dockerfile`, tagging
-`9router:<tag>` and `9router:local`. An already-matching `9router:local` is
-reused; `--force` rebuilds. `router.sh install`/`update` run the build before
+downloads the immutable revision in `scripts/router-build.json`, verifies its
+archive SHA-256, and builds with `scripts/9router.Dockerfile`, tagging
+`9router:<tag>` and `9router:local`. The pin selects unmerged PR #4396 atop
+v0.5.91, not a moving branch. Reuse requires matching image IDs and receipt
+source/recipe fields; `--force` rebuilds. `router.sh install`/`update` run the build before
 the unit starts, and the unit itself runs `--no-build --pull never`, so a
 missing image fails closed instead of pulling a floating tag.
 
-1. Review the upstream release and the vendored `scripts/9router.Dockerfile`;
-   re-copy the tag's `Dockerfile` if the build steps changed. Tracked templates
+1. Review the upstream revision and `scripts/9router.Dockerfile`; update the
+   revision, archive SHA-256 and descriptive tag in `scripts/router-build.json`
+   together. Reconcile the Dockerfile if upstream build steps changed. Tracked templates
    keep their recomputed SHA-256 in `templates/manifest.json`.
 2. Retain a consistent SQLite backup outside Git. Use SQLite's backup API, not a
    plain copy of a live database file.
 3. Preview `bash scripts/router.sh update --dry-run`, then run
-   `bash scripts/router.sh update` (add `--tag vX.Y.Z` to pin a release or
+   `bash scripts/router.sh update` (add `--tag vX.Y.Z` to override the pin for this run or
    `--force` to rebuild). `bootstrap.sh update --only router` also selects
    Docker/NVIDIA, Tailscale and EasyLlama updates.
 4. Run `bash scripts/router.sh check`; verify image/version, private HTTPS login,
    anonymous API rejection, required Qwen discovery, chat/embedding requests and
    authenticated Hindsight health. Record actual results.
 
-The resolved tag, image id, Dockerfile hash and timestamp are recorded in
-`~/.local/state/9router/build.json`. The updater has no automatic rollback. Keep
+The tag, image ID, Dockerfile hash and timestamp, plus revision and archive
+digest for pinned builds, are recorded in `~/.local/state/9router/build.json`. The updater has no automatic rollback. Keep
 the previous `9router:<tag>` image and private backups; stop the gateway before
 any database recovery, never overwrite a live database.
+
+### Router PR #4396 deployment (2026-09-27)
+
+Deployed `v0.5.91-pr4396-140f5404e914`, pinned to upstream commit
+`140f5404e9141521f0aafdf6f1d0114c6024bf09` (one commit atop v0.5.91).
+PR #4396 preserves function-tool strict semantics across Responses routes;
+its source revision and verified archive digest are tracked in
+`scripts/router-build.json`. The local deployed image ID is recorded in
+`templates/requirements.json`; base images and build dependencies still float.
+
+The managed cutover passed Docker health and `router.py check`, repeated after
+20 seconds. This establishes service health, not live optional-argument behavior:
+a post-cutover inference probe remains unperformed. An upstream test run using
+unrelated cached dependencies is not acceptance evidence; its temporary links
+and copied dependency were removed.
+
+Rollback image: `9router:rollback-pre-pr4396` (unmodified v0.5.91). Private recovery
+and evidence: `~/.local/state/9router/pr4396/`, including a SQLite backup with
+`integrity_check` passing, previous build receipt and cutover result. No database
+restore or networking/provider configuration change was part of this cutover.
 
 ### Router image update to v0.5.85 (2026-09-22)
 

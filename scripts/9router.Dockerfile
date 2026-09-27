@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.7
-# Vendored from decolua/9router @ v0.5.85 (Dockerfile).
+# Vendored from decolua/9router @ v0.5.91 (Dockerfile).
 # Owned by this repository so the deployment never depends on upstream image
-# tags being present or reproducible; scripts/router.py builds it from the
-# newest release tag resolved at install/update time. Review on version bumps.
-# Reviewed against v0.5.85: every COPY stage (public, .next/static, standalone,
+# tags being present or reproducible; scripts/router.py builds the digest-checked
+# revision in router-build.json (or an explicit --tag override). Review on bumps.
+# Reviewed against v0.5.91 (upstream Dockerfile unchanged since v0.5.85):
+# every COPY stage (public, .next/static, standalone,
 # custom-server.js, open-sse, src/mitm, node-forge, next, sql.js,
 # node-machine-id), the su-exec entrypoint and the runtime ENV set are unchanged
 # from v0.5.81. Upstream-only differences that are intentionally not adopted:

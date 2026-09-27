@@ -1,0 +1,7 @@
+{
+  "tag": "v0.5.91-pr4396-140f5404e914",
+  "revision": "140f5404e9141521f0aafdf6f1d0114c6024bf09",
+  "archive_sha256": "a556c5b7a942e525917eb483954e587fc1fe9927aec41cfc6c8906558f55574e",
+  "upstream_base": "v0.5.91",
+  "pull_request": "https://github.com/decolua/9router/pull/4396"
+}

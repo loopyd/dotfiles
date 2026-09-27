@@ -635,12 +635,13 @@ data. Its verified backend is loopback-only `127.0.0.1:20128`; host Tailscale
 socket/binary mounts are removed and internal publication is set to `false`.
 
 The router image is never pulled from a floating upstream tag: `scripts/router.py
-build` resolves the newest `decolua/9router` release tag, downloads that source,
-and builds it with the vendored `scripts/9router.Dockerfile`, tagging
-`9router:<tag>` and `9router:local`. Installs and updates always build for the
-newest tag (or `--tag TAG`); an already-matching image is reused unless `--force`
-is given. The resolved tag, image id, Dockerfile hash and timestamp are recorded
-in `~/.local/state/9router/build.json`. The user unit is independent of
+build` uses the immutable revision and archive SHA-256 in
+`scripts/router-build.json`, currently PR #4396 atop v0.5.91, and builds with
+`scripts/9router.Dockerfile`, tagging `9router:<tag>` and `9router:local`.
+Install/update preserves this pin; `--tag TAG` explicitly overrides it with an
+upstream release, and `--force` rebuilds. Reuse requires a matching image and
+build receipt. The tag, revision, archive digest, image ID, Dockerfile hash and
+timestamp are recorded in `~/.local/state/9router/build.json`. The user unit is independent of
 EasyLlama: starting it latches onto an already-running `9router` container
 without recreating it, a stopped or absent managed container is reconciled from
 Compose first, and `systemctl --user restart 9router.service` stops and restarts

@@ -11,7 +11,7 @@ COMPOSE=(docker compose --project-name 9router --file "${HOME}/.config/9router/c
 
 usage() {
     printf '%s\n' 'Usage: router.sh <install|update|uninstall|check> [--no-start] [--no-build] [--tag TAG] [--force]' \
-        'Builds the 9router image from the newest upstream release tag (or --tag) before starting.' \
+        'Builds the reviewed router-build.json revision (or explicit --tag release) before starting.' \
         'Data and credentials survive uninstall.'
 }
 
