@@ -11,31 +11,49 @@
       "source": "root/home/user/.agents/skills/9router/SKILL.md.tmpl",
       "target": ".agents/skills/9router/SKILL.md",
       "mode": "0600",
-      "sha256": "91f539b99bf47b423130dc84b655347a535c3a9500695f20d4f355898a7659d3"
+      "sha256": "78921d7feb6ea4ec3bd3b93e36330e6379f2d7f1aadacc0cfba2ec21f4c0e2d5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/9router/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/9router/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2de10dec46132564e686a9312666c5d60eff665d73b15a32f28c18508d130590"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-coding-agent/SKILL.md.tmpl",
       "target": ".agents/skills/hindsight-coding-agent/SKILL.md",
       "mode": "0600",
-      "sha256": "82e56a86f7bb3af34d0f5bfcafd94564ae35af29c718c0931c95c1571652729e"
+      "sha256": "3ac84e6a51f71fc602be1d16c4c9c852c042324de90f5f74632f4faa47149db8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/hindsight-coding-agent/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/hindsight-coding-agent/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2517857aae2f2cf25212297f2d93aff4601b07f4be3d5fe1d4c7789edef7f1af"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/SKILL.md.tmpl",
       "target": ".agents/skills/hindsight-docs/SKILL.md",
       "mode": "0600",
-      "sha256": "207f954b6e475ad88b3d5adc17e9316c20ab581e0f056d92f826b2df8a79e865"
+      "sha256": "f58da81b7da1eae0fe71cc8885ef4e8723238b5bae25f524bb49610235532cfd"
+    },
+    {
+      "source": "root/home/user/.agents/skills/hindsight-docs/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/hindsight-docs/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "f26654afad574492f214e691ff676f8433d41fe80271048ed22cc0b743657850"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/best-practices.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/best-practices.md",
       "mode": "0600",
-      "sha256": "53c27524b1a28e90a658da0ac5e53da852715b012eb2fa29b3c0d4d5ca7f6185"
+      "sha256": "0640f08d248e8a32b8598dbcef79e82eda2d0fae3db513f624150513f79f9c42"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/changelog/index.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/changelog/index.md",
       "mode": "0600",
-      "sha256": "82026166c93df679e44ef05300bcba549fbac7ae04c0cac45365b0b1d8e8dadb"
+      "sha256": "23a92be19983fa0fc4bc9be74acaf0bcd02f0e733fbe7f99cd21d9a25c02168b"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/changelog/integrations/ag2.md.tmpl",
@@ -335,7 +353,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/bank-templates.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/api/bank-templates.md",
       "mode": "0600",
-      "sha256": "941020bdb3c26c4d5ed5ae9e2709bd70abe93e27dd1706ce96af3ea8d41a6ce9"
+      "sha256": "0cb252616dfe2f6d35b94c077f7283e3b4cf0753208de37d9cd0b21943955b43"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/documents.md.tmpl",
@@ -365,13 +383,13 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/memory-banks.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/api/memory-banks.md",
       "mode": "0600",
-      "sha256": "934feafc572ccc3d5f4060c9bcfc2eb56a355d290bd63d123cd858ebe35d6d87"
+      "sha256": "92bc3f1a70b7c67158acb3a2eaec0ac10029814fce53634377f2dfda639974d2"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/mental-models.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/api/mental-models.md",
       "mode": "0600",
-      "sha256": "eb0d950c237f4247a8aefbcd1e160e6080ebeb3a6c985888f8765af3fbd00dba"
+      "sha256": "136cde6b93f17ed80c883c21ac5ad334d3c595d6838b8d4b84d3ad7f5cb728ba"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/operations.md.tmpl",
@@ -389,7 +407,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/recall.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/api/recall.md",
       "mode": "0600",
-      "sha256": "759bf1d810736a07f41bc507391bf6185442f7dcfe9f68899782d3c03555db6d"
+      "sha256": "0f11e35760d89f6c1e0598b1b697bcad2022c28c59384144d5667d929d825941"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/api/reflect.md.tmpl",
@@ -413,7 +431,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/configuration.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/configuration.md",
       "mode": "0600",
-      "sha256": "22c17fb5750ac55db178378d8fc323bc332d0e10d086b4c9cc61a74b764edc57"
+      "sha256": "ed5205af8a9c14409e96404c1af347a010252ff41c1e877d2e3940bd626ab518"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/development.md.tmpl",
@@ -431,7 +449,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/index.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/index.md",
       "mode": "0600",
-      "sha256": "7372ebd9125b8e36eaca732dfaefec22ca9565e32f9a10aff0e10ef517076717"
+      "sha256": "e0dc6c4675ea6bf480954f13aac07cba1f6612489a7c29ef72b9a461d4d59179"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/installation.md.tmpl",
@@ -449,7 +467,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/mcp-server.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/mcp-server.md",
       "mode": "0600",
-      "sha256": "f8615e45ef134995b135855739ecfa4aeefe1a6ca28bac6abd7cadeed5844024"
+      "sha256": "ccfc3f970a343d2e0d3fa8d3309f17a3e71bc1f6195827debb26a6658b4ccb0d"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/memory-defense/index.md.tmpl",
@@ -485,7 +503,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/observations.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/observations.md",
       "mode": "0600",
-      "sha256": "fa024bbc0e9eb442b6417e56d8e86b40d15f1d27d2901569237a0ef7c0aa7f4a"
+      "sha256": "7b634957907143f023dec35a996774778ede8cd858a879091a612b934956f232"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/oracle.md.tmpl",
@@ -515,7 +533,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/retain.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/developer/retain.md",
       "mode": "0600",
-      "sha256": "4cb027b98d40d35ff6025a116456ea28599d86972f2e41e146f0a191d44ee145"
+      "sha256": "b008330f147ad015b1559ba91abc96604441043056f8b7480ff2bb1ebc5c4402"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/developer/retrieval.md.tmpl",
@@ -539,19 +557,19 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/faq.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/faq.md",
       "mode": "0600",
-      "sha256": "370764f8e914e6973b2294d0b137f2cb65b00d579df1ee52e0d73c1539783798"
+      "sha256": "f0a362c38e845ce1065a805c47f537b62b13448db7717a9aa43acfd756088780"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/openapi.json.tmpl",
       "target": ".agents/skills/hindsight-docs/references/openapi.json",
       "mode": "0600",
-      "sha256": "b9cdb3a0fafc469dba008e16bcff76f59e6d9682d26a14bf296085a07ae73e5a"
+      "sha256": "1d83d10ed3957ff657d79dcb24415517ba899b9585fb727d15dedab6bdb859cd"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/cli.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/sdks/cli.md",
       "mode": "0600",
-      "sha256": "6f5375660f805b62ec0b8d7ea9471b144225d2114c0de8582c423529ac9517b4"
+      "sha256": "00ce446b9c777ac90c28a0d73a85273a227cc2c8db97e9af66602713c0ca31ae"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/embed.md.tmpl",
@@ -779,7 +797,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/integrations/hermes.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/sdks/integrations/hermes.md",
       "mode": "0600",
-      "sha256": "1d83db325a5c08217f49d73008526653fba071852cfa9cefb3ee5a5d7dec70d2"
+      "sha256": "8d99434f70fbbdc406b56ab605cf678838fc83ee028e456b56f97c771635b7fd"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/integrations/langgraph.md.tmpl",
@@ -851,7 +869,7 @@
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/integrations/opencode.md.tmpl",
       "target": ".agents/skills/hindsight-docs/references/sdks/integrations/opencode.md",
       "mode": "0600",
-      "sha256": "6638b345a9055dd4263fdd9c395e0a9fb658768f3e79771459affede53126417"
+      "sha256": "85bf8b7048288508d4fcb4dccf77d48617595e776eedaf63636f21d92da74385"
     },
     {
       "source": "root/home/user/.agents/skills/hindsight-docs/references/sdks/integrations/openhands.md.tmpl",
@@ -989,7 +1007,7 @@
       "source": "root/home/user/.codex/AGENTS.md.tmpl",
       "target": ".codex/AGENTS.md",
       "mode": "0600",
-      "sha256": "a194c7913b836a47da0bae87978d1075d5b1eac1e2b8da5a5f4edf45589faafe"
+      "sha256": "30864a0983dd6901f159cb9f6ca362c903b4c6a34d88d353623a88abe7bed3b8"
     },
     {
       "source": "root/home/user/.codex/config.toml.tmpl",
@@ -3371,7 +3389,13 @@
       "source": "root/home/user/.agents/skills/tailscale/SKILL.md.tmpl",
       "target": ".agents/skills/tailscale/SKILL.md",
       "mode": "0600",
-      "sha256": "36c5469651a22f656778647a691c97ac44c9a117f07fe3a1752332c318bd030a"
+      "sha256": "7264809d74d6ca93a71ada132e0834dd2f36dbb56b7a452dd9731eb09dd84865"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/tailscale/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "4048389ab62e5a64306978fab8842b39ea86ca0fd65272277c5a07a0aaa71f9b"
     },
     {
       "source": "root/home/user/.agents/skills/tailscale/references/access-control.md.tmpl",
@@ -3527,7 +3551,7 @@
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
       "target": ".pi/agent/settings.json",
       "mode": "0600",
-      "sha256": "43006542b8b2a4ddf5ec6e99cc2e36de432b757532c4304991298d7181f48668"
+      "sha256": "abd7f4c0cd652e8a203290a241644e5beaa9f51f404c7c134674ddb973ce10aa"
     },
     {
       "source": "root/home/user/.config/openspec/config.json.tmpl",
@@ -3558,6 +3582,930 @@
       "target": ".local/bin/openspec-init",
       "mode": "0700",
       "sha256": "610b43db5c1060315ca9df3955964239ff53ee9f56ff3d43fae43d5bd15cfbf2"
+    },
+    {
+      "source": "root/home/user/.agents/skills/attack-the-premise/SKILL.md.tmpl",
+      "target": ".agents/skills/attack-the-premise/SKILL.md",
+      "mode": "0600",
+      "sha256": "231ab7523304c1ff2e4e4b5dddbf6a4f25e163e04a94ce5467b66d4475d8a1d9"
+    },
+    {
+      "source": "root/home/user/.agents/skills/attack-the-premise/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/attack-the-premise/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2e7864bdd8c7aa3b7a75387e2dcb4872cb71875d9e2889458f9e3fbc82d8ab42"
+    },
+    {
+      "source": "root/home/user/.agents/skills/build-the-lever/SKILL.md.tmpl",
+      "target": ".agents/skills/build-the-lever/SKILL.md",
+      "mode": "0600",
+      "sha256": "4c0a24ff4c0a65d1302c62c920a21a39aae8e07a155238d94f34f8cb7b7be773"
+    },
+    {
+      "source": "root/home/user/.agents/skills/build-the-lever/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/build-the-lever/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "7b068474a40492654409fbbfc6a469e78d859ab609c24205811903f4e06f5db5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/encode-lessons-in-structure/SKILL.md.tmpl",
+      "target": ".agents/skills/encode-lessons-in-structure/SKILL.md",
+      "mode": "0600",
+      "sha256": "e53ec84729b7992f4d180ab2ef49599ace9dad37365a463d51ca3651b8377db4"
+    },
+    {
+      "source": "root/home/user/.agents/skills/encode-lessons-in-structure/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/encode-lessons-in-structure/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "858ed277584a083c12a9a6a8c70062c47aeb1e73d10d78a5fd4703bf3d11fbe2"
+    },
+    {
+      "source": "root/home/user/.agents/skills/experience-first/SKILL.md.tmpl",
+      "target": ".agents/skills/experience-first/SKILL.md",
+      "mode": "0600",
+      "sha256": "983088ae6d793b7cbf3a952167cd255cff36daa326b2c87b646f8774e902704d"
+    },
+    {
+      "source": "root/home/user/.agents/skills/experience-first/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/experience-first/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "e64e01893a33607ebca9958414ffe84d955f7ebff9116050dcae78372baecc5c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/explain/SKILL.md.tmpl",
+      "target": ".agents/skills/explain/SKILL.md",
+      "mode": "0600",
+      "sha256": "d85374eda5eaab8d878cb6c17032479cfaa204cf084da5243d54b731cf65f657"
+    },
+    {
+      "source": "root/home/user/.agents/skills/explain/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/explain/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "6e09f3a827fe996357b26b2ae397c66ab1dd57944272f8b74c42b0a173ab1876"
+    },
+    {
+      "source": "root/home/user/.agents/skills/fix-root-causes/SKILL.md.tmpl",
+      "target": ".agents/skills/fix-root-causes/SKILL.md",
+      "mode": "0600",
+      "sha256": "e3f450f5edfadcdaed8fb5f265a0f3707a9372a1c3260f118bad7001617dc23f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/fix-root-causes/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/fix-root-causes/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "1901b470498de76d20f17a00546b3a98812c2e722cb36306d98856a2edfcae59"
+    },
+    {
+      "source": "root/home/user/.agents/skills/foundational-thinking/SKILL.md.tmpl",
+      "target": ".agents/skills/foundational-thinking/SKILL.md",
+      "mode": "0600",
+      "sha256": "564e73a380a209c69465fdfab0df6b8885bee087d40d1051a130e86439d4b1a0"
+    },
+    {
+      "source": "root/home/user/.agents/skills/foundational-thinking/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/foundational-thinking/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "3e71d8ebdec5dd35178e4e18902a96a0269edba818a8d4f22d82087f9a6db3af"
+    },
+    {
+      "source": "root/home/user/.agents/skills/how/SKILL.md.tmpl",
+      "target": ".agents/skills/how/SKILL.md",
+      "mode": "0600",
+      "sha256": "ffca1b2692fbdc2742cf145e5f9ec6bb30db4cce020060e29b9aec3cab1c9de6"
+    },
+    {
+      "source": "root/home/user/.agents/skills/how/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/how/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "49604b7104956529b889d64cabf8231c11748f5baef4e485084b9ee332874218"
+    },
+    {
+      "source": "root/home/user/.agents/skills/how/references/explainer-prompt.md.tmpl",
+      "target": ".agents/skills/how/references/explainer-prompt.md",
+      "mode": "0600",
+      "sha256": "aed7c05ebfb31c04448daa5debef92b930179548a16e441625c9c3c03ce4873b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/how/references/explorer-prompt.md.tmpl",
+      "target": ".agents/skills/how/references/explorer-prompt.md",
+      "mode": "0600",
+      "sha256": "6f9f16057caf6bf7a3bcd5321630cd4bf55f43ed2f0bc3b6901ec1ba71fe947f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/laziness-protocol/SKILL.md.tmpl",
+      "target": ".agents/skills/laziness-protocol/SKILL.md",
+      "mode": "0600",
+      "sha256": "cee9eb48885d58ac6fe10fa414a0b7fb87e9c43963508beb52a80f190d4eb36b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/laziness-protocol/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/laziness-protocol/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "e2d57f3a830c75a9f911e25a55cf258196d0ba494b2c82d92331c7d6b08bf198"
+    },
+    {
+      "source": "root/home/user/.agents/skills/make-operations-idempotent/SKILL.md.tmpl",
+      "target": ".agents/skills/make-operations-idempotent/SKILL.md",
+      "mode": "0600",
+      "sha256": "194491d7b4c76ebede6310552dafaa6cd458adc42f5c81dbff560db7b8c67faf"
+    },
+    {
+      "source": "root/home/user/.agents/skills/make-operations-idempotent/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/make-operations-idempotent/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "69aa470d6c04158da9e3306c25d3f8af3eca4515a32d76dad19ee031a6eb8b3f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/migrate-callers-then-delete-legacy-apis/SKILL.md.tmpl",
+      "target": ".agents/skills/migrate-callers-then-delete-legacy-apis/SKILL.md",
+      "mode": "0600",
+      "sha256": "02c7f7b0f5ac726b7d8064232b64eef9068f4c8582ca6663a592e77992d300b4"
+    },
+    {
+      "source": "root/home/user/.agents/skills/migrate-callers-then-delete-legacy-apis/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/migrate-callers-then-delete-legacy-apis/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "f20e97c3c617c5ad609901e9666516f5ea9f38d8bbb8d2bb0b3458e9a59efe2f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/minimize-reader-load/SKILL.md.tmpl",
+      "target": ".agents/skills/minimize-reader-load/SKILL.md",
+      "mode": "0600",
+      "sha256": "41bda8b0dbd091205858f6ec114dda9deb2504266b5d3663bd297bd9231e0a4f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/minimize-reader-load/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/minimize-reader-load/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "7609a225789e51f61553786881574f705f510b453ab47ff26d57605a3557eb6f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/model-the-domain/SKILL.md.tmpl",
+      "target": ".agents/skills/model-the-domain/SKILL.md",
+      "mode": "0600",
+      "sha256": "87479bb5314e878e6a5fb519b67f6f598958b4f33cf19466c071c3d4139c536d"
+    },
+    {
+      "source": "root/home/user/.agents/skills/model-the-domain/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/model-the-domain/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "c282d25d080a4e7c6267e2d32b412eb485205936d2bba711c3e3a0291d432133"
+    },
+    {
+      "source": "root/home/user/.agents/skills/never-block/SKILL.md.tmpl",
+      "target": ".agents/skills/never-block/SKILL.md",
+      "mode": "0600",
+      "sha256": "122f6e81f18abe31f5ca57356941ab67617f3e50f12d4ae61bc71b57a9dccc33"
+    },
+    {
+      "source": "root/home/user/.agents/skills/never-block/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/never-block/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "67d702c5f2fb7430f50864a229e5492ec4c90a087accc79e0ec0ecf4a3961d8d"
+    },
+    {
+      "source": "root/home/user/.agents/skills/no-comments/SKILL.md.tmpl",
+      "target": ".agents/skills/no-comments/SKILL.md",
+      "mode": "0600",
+      "sha256": "aab6b75d81c432db0ce10f81e568f9fd156d3b5f7eb901d9f2b1b1b9317b6fce"
+    },
+    {
+      "source": "root/home/user/.agents/skills/no-comments/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/no-comments/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "d4e5c26fc65bc0f731642302b8a98d9fd937b9a439116903d980f7fb76f14309"
+    },
+    {
+      "source": "root/home/user/.agents/skills/outcome-oriented-execution/SKILL.md.tmpl",
+      "target": ".agents/skills/outcome-oriented-execution/SKILL.md",
+      "mode": "0600",
+      "sha256": "9a8b14c045ac462dabab8a77c679de7c889114202ebd2765f3e491afbcf0302e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/outcome-oriented-execution/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/outcome-oriented-execution/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "c96ac4e802c419496461d74b5ff01ddc417e605e1c397d9777aee7e6776514b2"
+    },
+    {
+      "source": "root/home/user/.agents/skills/prove-it-works/SKILL.md.tmpl",
+      "target": ".agents/skills/prove-it-works/SKILL.md",
+      "mode": "0600",
+      "sha256": "043755137370a9fd64d2768aef0ba76d74257b49fa68111cb10247f32c0d9b9b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/prove-it-works/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/prove-it-works/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "8c7261138c1627b5103b0dee91ec8b2aaf609df53bed18a6916ec81ac0bc0d6b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/redesign-from-first-principles/SKILL.md.tmpl",
+      "target": ".agents/skills/redesign-from-first-principles/SKILL.md",
+      "mode": "0600",
+      "sha256": "b93b063bd845cfaf534e7ce21aece4b765b880bbb8f15329b5a5148ae66f5536"
+    },
+    {
+      "source": "root/home/user/.agents/skills/redesign-from-first-principles/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/redesign-from-first-principles/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "b71212671ee708645f3f77aed41bf93f0098d73cd15edf5c8d4b4988ee643292"
+    },
+    {
+      "source": "root/home/user/.agents/skills/separate-before-serializing-shared-state/SKILL.md.tmpl",
+      "target": ".agents/skills/separate-before-serializing-shared-state/SKILL.md",
+      "mode": "0600",
+      "sha256": "a052d01a6cf3f5112e954b0143c4bd20de3604e3b92977d792aabdc0f48502f8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/separate-before-serializing-shared-state/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/separate-before-serializing-shared-state/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2bd9180b3b2379002ad5b27386fe31fd48d1467eb108d97b58d844067e935f20"
+    },
+    {
+      "source": "root/home/user/.agents/skills/sequence-verifiable-units/SKILL.md.tmpl",
+      "target": ".agents/skills/sequence-verifiable-units/SKILL.md",
+      "mode": "0600",
+      "sha256": "0330fb667d0346afb881f46e78d916703f7d4af398a50accf026dd784fe06785"
+    },
+    {
+      "source": "root/home/user/.agents/skills/sequence-verifiable-units/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/sequence-verifiable-units/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "779d80fc364f60c97f720a37d31b16e8848746a5bccc1d5b4a4a540864ae5c4a"
+    },
+    {
+      "source": "root/home/user/.agents/skills/show-me-your-work/SKILL.md.tmpl",
+      "target": ".agents/skills/show-me-your-work/SKILL.md",
+      "mode": "0600",
+      "sha256": "5173699f350d4546efbadfc8dc90c18536736f57bce614e422f192347145524e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/show-me-your-work/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/show-me-your-work/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "b152352e1eb3e163c94091758b74fb8f1c51f8e3478e0bed8ecde2b2d1dbe621"
+    },
+    {
+      "source": "root/home/user/.agents/skills/show-me-your-work/references/decision-log-template.tsv.tmpl",
+      "target": ".agents/skills/show-me-your-work/references/decision-log-template.tsv",
+      "mode": "0600",
+      "sha256": "6779378006a2f5225e8c06deb84f1d913fb532041ebbb6e50d94600bfe3f4b76"
+    },
+    {
+      "source": "root/home/user/.agents/skills/show-me-your-work/scripts/log.sh.tmpl",
+      "target": ".agents/skills/show-me-your-work/scripts/log.sh",
+      "mode": "0700",
+      "sha256": "a65a4bc5fb7cdeadbdb7b7ff1ca4682f4d9c42420942b2977cd17b46c4ac338e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/subtract-before-you-add/SKILL.md.tmpl",
+      "target": ".agents/skills/subtract-before-you-add/SKILL.md",
+      "mode": "0600",
+      "sha256": "76fff9022ffcf996a741b683b85bb3c74eaedef26889f227cc26914c8329ab8c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/subtract-before-you-add/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/subtract-before-you-add/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "aea0714da5e8e3742c91a4edbe4cd2fb9e15fb1c8f91263917526d872c179b84"
+    },
+    {
+      "source": "root/home/user/.agents/skills/tailscale/references/session-recording.md.tmpl",
+      "target": ".agents/skills/tailscale/references/session-recording.md",
+      "mode": "0600",
+      "sha256": "6f6c3c12379c6fca73e4c985f166f8d8302654bcd79625ef8327bf879b670b58"
+    },
+    {
+      "source": "root/home/user/.agents/skills/technical-writing/SKILL.md.tmpl",
+      "target": ".agents/skills/technical-writing/SKILL.md",
+      "mode": "0600",
+      "sha256": "506a4cf2639aa05676cc4a67f964bc092c773ea80cda810493e6e561f38f55b0"
+    },
+    {
+      "source": "root/home/user/.agents/skills/technical-writing/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/technical-writing/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "f8b84cd3aeaeb1e274bba4c111a2740787a9778da4fd59be3272d2848a850d9f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/test-behavior-not-implementation/SKILL.md.tmpl",
+      "target": ".agents/skills/test-behavior-not-implementation/SKILL.md",
+      "mode": "0600",
+      "sha256": "57531ef6fc86b31ddd34cc7319be9324892ba62f58e5d6cc8720073b50648725"
+    },
+    {
+      "source": "root/home/user/.agents/skills/test-behavior-not-implementation/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/test-behavior-not-implementation/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "6ccb8ee3946c5199eecc45eb39c1ba51c517ba37c280df84a108a622b0d978be"
+    },
+    {
+      "source": "root/home/user/.agents/skills/unslop/SKILL.md.tmpl",
+      "target": ".agents/skills/unslop/SKILL.md",
+      "mode": "0600",
+      "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4"
+    },
+    {
+      "source": "root/home/user/.agents/skills/unslop/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/unslop/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "83adcad1d111baebfc51089ba0458e8ff3e46c1e2110296d66ab26a83a65ae80"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/SKILL.md.tmpl",
+      "target": ".agents/skills/why/SKILL.md",
+      "mode": "0600",
+      "sha256": "d170c67f39d46d5a563d6e4c7e7b74b902e9051585d4211aebdec24c8ed1593c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/why/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "a55bfbec8de1d58a3470ebc34a63f74514fe70a6ccc05e1ab74072406a4696ea"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/references/epistemics.md.tmpl",
+      "target": ".agents/skills/why/references/epistemics.md",
+      "mode": "0600",
+      "sha256": "1997be29db16ac5b60c4b7f6cb0ce0a3b51ad50b843f1a330d928101e55cbd8f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/references/investigator-prompt.md.tmpl",
+      "target": ".agents/skills/why/references/investigator-prompt.md",
+      "mode": "0600",
+      "sha256": "af74ede6b910d3cc785d0c60341460b6b1372e6fa3b5b53f7852cdb29c614ff3"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/references/source-playbook.md.tmpl",
+      "target": ".agents/skills/why/references/source-playbook.md",
+      "mode": "0600",
+      "sha256": "c90ab364f4f944021c533a638d3f45cf47ce72d9a956d39a9d666069a745c4ed"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/references/sources/code-archaeology.md.tmpl",
+      "target": ".agents/skills/why/references/sources/code-archaeology.md",
+      "mode": "0600",
+      "sha256": "8c14aa382f0de40829b2668d43e3f54814480bb93a486c9282ada4003f6b9dbd"
+    },
+    {
+      "source": "root/home/user/.agents/skills/why/references/synthesizer-prompt.md.tmpl",
+      "target": ".agents/skills/why/references/synthesizer-prompt.md",
+      "mode": "0600",
+      "sha256": "5f10afd5c21ab697cb71d645d615d99aa3908a1f19522c58204716784f7a60d1"
+    },
+    {
+      "source": "root/home/user/.codex/agents/comment-remover.toml.tmpl",
+      "target": ".codex/agents/comment-remover.toml",
+      "mode": "0600",
+      "sha256": "13490ac800f4413820fda9f440310e2a1460bbc1e27db4605dbd1a2a397d099a"
+    },
+    {
+      "source": "root/home/user/.codex/agents/delegate.toml.tmpl",
+      "target": ".codex/agents/delegate.toml",
+      "mode": "0600",
+      "sha256": "e274021f7bfe2836aca3039d31052ac7425957104925c7c7df6ebb4acec2368b"
+    },
+    {
+      "source": "root/home/user/.codex/agents/evidence-auditor.toml.tmpl",
+      "target": ".codex/agents/evidence-auditor.toml",
+      "mode": "0600",
+      "sha256": "52588d87b362e0bd1f9b810efa6dee9898ee56c6aee1d7f4c35fef158decdcba"
+    },
+    {
+      "source": "root/home/user/.codex/agents/oracle.toml.tmpl",
+      "target": ".codex/agents/oracle.toml",
+      "mode": "0600",
+      "sha256": "104904d3b7a7be548fce8f70e756fe63c87cc29c0f8362f8015c8aced55e2f7f"
+    },
+    {
+      "source": "root/home/user/.codex/agents/researcher.toml.tmpl",
+      "target": ".codex/agents/researcher.toml",
+      "mode": "0600",
+      "sha256": "24bf117f64c93bbe60f325b03bce16d14fc0181a488cc8940fc5843719848ced"
+    },
+    {
+      "source": "root/home/user/.codex/agents/reviewer.toml.tmpl",
+      "target": ".codex/agents/reviewer.toml",
+      "mode": "0600",
+      "sha256": "13fa9744571f2b3ca142be2dcd897ba00d41c924bdde49f1e801cff99d37cc33"
+    },
+    {
+      "source": "root/home/user/.codex/agents/scout.toml.tmpl",
+      "target": ".codex/agents/scout.toml",
+      "mode": "0600",
+      "sha256": "9ede56bddf237c72d1f4043d7d67a1f33557e251689c794b37515ec4cf720042"
+    },
+    {
+      "source": "root/home/user/.codex/agents/worker.toml.tmpl",
+      "target": ".codex/agents/worker.toml",
+      "mode": "0600",
+      "sha256": "efbe0f194bc44d538e5fed9e7d874264fc9f7c73032465bfe870fea8394f5ea2"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/comment-remover.md.tmpl",
+      "target": ".pi/agent/agents/comment-remover.md",
+      "mode": "0600",
+      "sha256": "dfda3dadd832073c507f521ac07df1423b72afd86298622f1d3e87b489683fe1"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/delegate.md.tmpl",
+      "target": ".pi/agent/agents/delegate.md",
+      "mode": "0600",
+      "sha256": "9bf7048128f1637d94780962f580a111a415bab2fc63d656171bb64123c310e6"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/evidence-auditor.md.tmpl",
+      "target": ".pi/agent/agents/evidence-auditor.md",
+      "mode": "0600",
+      "sha256": "2e35af9b03b97277a3dc3c3eec62bf66e83ad046de320079a656d741e889f10a"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/oracle.md.tmpl",
+      "target": ".pi/agent/agents/oracle.md",
+      "mode": "0600",
+      "sha256": "b93e1ed26028d1214b0488adbf27b5997df0a78b0d43ef56d9299e8ff19f6fb0"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/researcher.md.tmpl",
+      "target": ".pi/agent/agents/researcher.md",
+      "mode": "0600",
+      "sha256": "89bc9e792a20480c4fc974cf91524df67324389200cf5609f347b82219f4d4d5"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/reviewer.md.tmpl",
+      "target": ".pi/agent/agents/reviewer.md",
+      "mode": "0600",
+      "sha256": "b1130d4643320e7266050aadc68815f1a4e06855765ee65fe8e871c0661c8ef6"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/scout.md.tmpl",
+      "target": ".pi/agent/agents/scout.md",
+      "mode": "0600",
+      "sha256": "67af3bc7d846b8f18e552eb91fb648ffdf9a9d1c31005d7687ce1dd936ad27f0"
+    },
+    {
+      "source": "root/home/user/.pi/agent/agents/worker.md.tmpl",
+      "target": ".pi/agent/agents/worker.md",
+      "mode": "0600",
+      "sha256": "707f423b206c4c5d7fa9ee3a2f177f7cba7e84540e00eae2e6397f51306bb67c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/architect/SKILL.md.tmpl",
+      "target": ".agents/skills/architect/SKILL.md",
+      "mode": "0600",
+      "sha256": "0de7805b1dfe01248b1dfdc7fb1709388415c98c3457e52b8c6c1d609b8b8c79"
+    },
+    {
+      "source": "root/home/user/.agents/skills/architect/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/architect/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "79d16b6a78018d2ea54d071c1ccb3a74c0bb959f8b9729aa95c9b02eb452640e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/architect/references/design-red-flags.md.tmpl",
+      "target": ".agents/skills/architect/references/design-red-flags.md",
+      "mode": "0600",
+      "sha256": "8236352ab3e00c13baba380f2e5143ae7167ba58398bc35fe900c974f948c2ee"
+    },
+    {
+      "source": "root/home/user/.agents/skills/architect/references/rationale-template.md.tmpl",
+      "target": ".agents/skills/architect/references/rationale-template.md",
+      "mode": "0600",
+      "sha256": "9a3df51951d5bcc597fd473cad4656796bfd293d23b3e4c0de8cb17671dca984"
+    },
+    {
+      "source": "root/home/user/.agents/skills/architect/references/runner-prompt.md.tmpl",
+      "target": ".agents/skills/architect/references/runner-prompt.md",
+      "mode": "0600",
+      "sha256": "a1e3751f634a131f5f4803fd2d51c4aca5a144dda7b9bcf00273f973a3946bb4"
+    },
+    {
+      "source": "root/home/user/.agents/skills/arena/SKILL.md.tmpl",
+      "target": ".agents/skills/arena/SKILL.md",
+      "mode": "0600",
+      "sha256": "efdc01631d6d1d0505f4f96feee886d0fa3359cada876127bf4ba81e265e31b8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/arena/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/arena/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "02576ea15892de02e34592f3e6f6c46895c10f3aa607bb9c0e4200b58936b882"
+    },
+    {
+      "source": "root/home/user/.agents/skills/blast-radius/SKILL.md.tmpl",
+      "target": ".agents/skills/blast-radius/SKILL.md",
+      "mode": "0600",
+      "sha256": "558cb861f651cc521979922bf9c54aba3d4e77e1a3901397d98a617e9db529b9"
+    },
+    {
+      "source": "root/home/user/.agents/skills/blast-radius/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/blast-radius/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2e1170b356119ee07ca5b80806e1fe4800d3f1614037d2f939315542df862051"
+    },
+    {
+      "source": "root/home/user/.agents/skills/boundary-discipline/SKILL.md.tmpl",
+      "target": ".agents/skills/boundary-discipline/SKILL.md",
+      "mode": "0600",
+      "sha256": "ab6a64465c1e7ceae3f8eec9971957ed6e923f06a1d64822c758b9fedce0ebae"
+    },
+    {
+      "source": "root/home/user/.agents/skills/boundary-discipline/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/boundary-discipline/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "5f0e7cfc29700e7868903039c066299180cbd9e43eac8b659f06192b88f6cc3f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/caveman/SKILL.md.tmpl",
+      "target": ".agents/skills/caveman/SKILL.md",
+      "mode": "0600",
+      "sha256": "6e730b53398f8dbe9e820b63972612f42c6d1445c26c26e41a7dabea814766b5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/caveman/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/caveman/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "748fb1978d80a31ec32271b122071d5407aee30144020b2d51674e6f7972dda6"
+    },
+    {
+      "source": "root/home/user/.agents/skills/context-window-guard/SKILL.md.tmpl",
+      "target": ".agents/skills/context-window-guard/SKILL.md",
+      "mode": "0600",
+      "sha256": "7295887eca52f01ae3204000fc3a240718e27ee4c9846c80d16312b7bf5dcb38"
+    },
+    {
+      "source": "root/home/user/.agents/skills/context-window-guard/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/context-window-guard/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "1713a8b87e7e244b1c666b0a8fa34dd727cb7f6ab2d8158cbd4d38c204b65d4f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/exhaust-the-design-space/SKILL.md.tmpl",
+      "target": ".agents/skills/exhaust-the-design-space/SKILL.md",
+      "mode": "0600",
+      "sha256": "d692d9598f1515d6a67ae4c58db5357910ce2e1b2e6a06f7ff8378c951703ce5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/exhaust-the-design-space/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/exhaust-the-design-space/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "b65e3ad4dba585f6ff319c8835bfae95378dcbe1d234aa2d4d4fdb49e75053cd"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/SKILL.md.tmpl",
+      "target": ".agents/skills/interrogate/SKILL.md",
+      "mode": "0600",
+      "sha256": "d304daa755774be126ead9e5858cac7f5e5c558fbaea305d5d44b4a6ffed7e77"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/interrogate/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "590eabf8abc1b1aa74fe2d5cb866688e1922f9b387d609f58ce538ae295e019d"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/references/code-quality-review.md.tmpl",
+      "target": ".agents/skills/interrogate/references/code-quality-review.md",
+      "mode": "0600",
+      "sha256": "f37ae357d9a0cae7cf20b811bd5bd09f63330b67dc3c728757c6e98757dd56a8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/references/lead-judgment.md.tmpl",
+      "target": ".agents/skills/interrogate/references/lead-judgment.md",
+      "mode": "0600",
+      "sha256": "1a6ee6c9f719f3417c058ba95785928033ffec3855ba1366c9ee0040d8805db7"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/references/reviewer-prompt.md.tmpl",
+      "target": ".agents/skills/interrogate/references/reviewer-prompt.md",
+      "mode": "0600",
+      "sha256": "5088877ca1701640a3e5f86b31b6357378af84df8fa0f5783a06b9ac40be7964"
+    },
+    {
+      "source": "root/home/user/.agents/skills/interrogate/references/rubric.md.tmpl",
+      "target": ".agents/skills/interrogate/references/rubric.md",
+      "mode": "0600",
+      "sha256": "17cb84bc70561e4416c6bf32e09fe968ea1be9bcace85e8b9d3f7deb9769d271"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/SKILL.md.tmpl",
+      "target": ".agents/skills/saber-mode/SKILL.md",
+      "mode": "0600",
+      "sha256": "71dbeea6e0a447ae00af62122b33bdaa8dd5a34d2886dd1cb0dcfbb796dc508b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/saber-mode/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "880d9b77d5f02a1c29ef9db30742674f599cfc565de60a053994e30d3562d9e0"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/authoring-a-skill.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/authoring-a-skill.md",
+      "mode": "0600",
+      "sha256": "8352e1d0231f4cef71f6f08d28565eb1931b9e101da5b9b9a09c30399e25dd44"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/autonomous-run.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/autonomous-run.md",
+      "mode": "0600",
+      "sha256": "5961dbe1990e7c256a047f810942f1ba7a3003453edcdf35c40eb2286accaa1b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/autopilot-full.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/autopilot-full.md",
+      "mode": "0600",
+      "sha256": "5582bce82acdf800fb64884251499aeb96b908d04217d342c6933ded694c9394"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/autopilot-stack.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/autopilot-stack.md",
+      "mode": "0600",
+      "sha256": "7b17f05c1c9425aee8368b822ad1398ff6ed6d6f469ea09ed286a4d942867bc8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/bug-fix.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/bug-fix.md",
+      "mode": "0600",
+      "sha256": "e763bab1948560ea274ff7d0b46847de54d761986e4aa8aef4bc6eeee7833c19"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/eval.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/eval.md",
+      "mode": "0600",
+      "sha256": "15b0e5e8381f70d1242e819a76d5cdfcbb545d27209e3a4462629352e4f6e15c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/feature.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/feature.md",
+      "mode": "0600",
+      "sha256": "9a1f8cdef7ae65322d4a315d85ffa5e1fe7876def95a67e1f35f45609d27a665"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/hillclimb.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/hillclimb.md",
+      "mode": "0600",
+      "sha256": "4b6799229c665ef2477b3ac5c3efd352d050b89dbc4bc492185c96bb12ad009f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/investigation.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/investigation.md",
+      "mode": "0600",
+      "sha256": "c454fb93445c5a02fb684df5a5baed5ae6f3f6ce6c174c9afcbf80a9a8836f27"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/multi-phase-plan.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/multi-phase-plan.md",
+      "mode": "0600",
+      "sha256": "a7656097924856ce8f27ec63b4ee2887ccd5d227c0b151566c2b2bd267d5c346"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/opening-a-pr.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/opening-a-pr.md",
+      "mode": "0600",
+      "sha256": "64528ed5bd186dd4a7bd492a7c5c520e34abf66a8778a1a7e95554020390669b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/orchestrate.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/orchestrate.md",
+      "mode": "0600",
+      "sha256": "ded209d72c6ee92589fad8d88ce24ce5cce0a8a609c473245038cfac2f34694a"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/pause-safely.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/pause-safely.md",
+      "mode": "0600",
+      "sha256": "78d40168fb616ae442bb401d42a93ed2a0f03d855ca0e301abf3e0c51f14c1f5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/perf-issue.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/perf-issue.md",
+      "mode": "0600",
+      "sha256": "e748769cb47805c654ac7b39b74218180c4517346a018851dffa79942eb851f9"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/prototype.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/prototype.md",
+      "mode": "0600",
+      "sha256": "f847ab229eb05063706d54437d92d933a438c7d7e70fd13c359ae02d3eb155e3"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/refactoring.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/refactoring.md",
+      "mode": "0600",
+      "sha256": "5b904f21db3e4c7ce9cccaef6a5dee3cd01f55ee939a5044a15b8f2e5021e7ad"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/runtime-forensics.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/runtime-forensics.md",
+      "mode": "0600",
+      "sha256": "a2e746b73ae0146fb6915af4c01203ac94994da21ac5910a57bac978d37f6c99"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/session-pickup.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/session-pickup.md",
+      "mode": "0600",
+      "sha256": "905f3d58bd49f1b6d31eac190cbfd8f510632f4ae7911943e4faa0afa380d586"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/shipping.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/shipping.md",
+      "mode": "0600",
+      "sha256": "c2a7010aa2f844595c9eafb6588f511d3b44853223e2520e18cee043a865087a"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/trace-forensics.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/trace-forensics.md",
+      "mode": "0600",
+      "sha256": "b03f6ecc87a9e416c1a47ad2d0969a1a4ec29e95c2fad1916c183136650d6a2b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/visual-parity.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/visual-parity.md",
+      "mode": "0600",
+      "sha256": "0083179ec905a47a3149a689610d515e643eb4ad4ce66e24f8c9188ca9031cd2"
+    },
+    {
+      "source": "root/home/user/.agents/skills/saber-mode/playbooks/worktree-cleanup.md.tmpl",
+      "target": ".agents/skills/saber-mode/playbooks/worktree-cleanup.md",
+      "mode": "0600",
+      "sha256": "149783571522981e5fceb273c8c75b2d252e9a4caec396a3c7dffbaa154c3b13"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/SKILL.md.tmpl",
+      "target": ".agents/skills/skill-master/SKILL.md",
+      "mode": "0600",
+      "sha256": "ee19e9c27ff7e70ea4758062ab2681c538c96b3b325d0558c82d48be4dbb1bdb"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/skill-master/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "c016419a56b36c7446411c01fa81ebf4a0f1a2fa9e4f6a75645fe3db9cd13687"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/references/finding-skills.md.tmpl",
+      "target": ".agents/skills/skill-master/references/finding-skills.md",
+      "mode": "0600",
+      "sha256": "9cb9d14997473737605ad46e119efe54e530539d8ad3a6ad731e9480bae8f520"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/references/output-patterns.md.tmpl",
+      "target": ".agents/skills/skill-master/references/output-patterns.md",
+      "mode": "0600",
+      "sha256": "8b4cd866565a7532c240819f6e9bb250561a33fad306fb4931d58b8d93545dcf"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/references/skill-mechanics.md.tmpl",
+      "target": ".agents/skills/skill-master/references/skill-mechanics.md",
+      "mode": "0600",
+      "sha256": "1e1a573d331c9fff20e24ee7c928a7b4bec76aee8b46cdc3e051f78ec37f1e2f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/references/workflows.md.tmpl",
+      "target": ".agents/skills/skill-master/references/workflows.md",
+      "mode": "0600",
+      "sha256": "c6b6cc81ec50fcba2ba47c4e81f7af405db6b70c570ceaf5a7201dbb83857684"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/scripts/init_skill.py.tmpl",
+      "target": ".agents/skills/skill-master/scripts/init_skill.py",
+      "mode": "0700",
+      "sha256": "9a9707346ecbbbb6fa068bec2d9a8b87e4284ffef9200a4afbf1a281ee14778c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/scripts/package_skill.py.tmpl",
+      "target": ".agents/skills/skill-master/scripts/package_skill.py",
+      "mode": "0700",
+      "sha256": "e2df922721a8c86befe32793f851a5d63cdb27061a5499ef7b226ed495e3e12d"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/scripts/quick_validate.py.tmpl",
+      "target": ".agents/skills/skill-master/scripts/quick_validate.py",
+      "mode": "0700",
+      "sha256": "2e76dc8927926c3631c7014ff38336794ddc2f32cd9e65e3f11aa26fde61252f"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/SKILL.md.tmpl",
+      "target": ".agents/skills/solid/SKILL.md",
+      "mode": "0600",
+      "sha256": "98532a40aa6e023a47bfcfe0b57b9b97b72d525aea4683c918f76a9802545def"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/solid/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "907ad8e90b8209c4cad8ca6fbd8a14982b6757ce604ef6980f0d835af770f7b6"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/architecture.md.tmpl",
+      "target": ".agents/skills/solid/references/architecture.md",
+      "mode": "0600",
+      "sha256": "912616bd07f607749250f96153d457dbca78bb48f372a6fbe328ce39242eae7c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/clean-code.md.tmpl",
+      "target": ".agents/skills/solid/references/clean-code.md",
+      "mode": "0600",
+      "sha256": "8ed124b05f5b4e26d7db278ec5fe966839f1f30b9bc7a0ce64684835a1ae9576"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/code-smells.md.tmpl",
+      "target": ".agents/skills/solid/references/code-smells.md",
+      "mode": "0600",
+      "sha256": "85bb394f922c605173209a7d14f1612808dd3ed6f998b6c97199c9644fdc1b9b"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/complexity.md.tmpl",
+      "target": ".agents/skills/solid/references/complexity.md",
+      "mode": "0600",
+      "sha256": "a30c6f54e05eceaf8465bad75b7444fa68f057780a525bf38cef97f8a3168fc8"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/design-patterns.md.tmpl",
+      "target": ".agents/skills/solid/references/design-patterns.md",
+      "mode": "0600",
+      "sha256": "19036c53fd9332d9967ffb953f8d5cce755044247e05e518ee2ce38f41b93da0"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/object-design.md.tmpl",
+      "target": ".agents/skills/solid/references/object-design.md",
+      "mode": "0600",
+      "sha256": "bed837c9ac45f4fffbdbae170ed6694f23eb2d9ee03eba1ce8a4acb97c8d08a9"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/solid-principles.md.tmpl",
+      "target": ".agents/skills/solid/references/solid-principles.md",
+      "mode": "0600",
+      "sha256": "e72a3ca78afaeae1b9a569e6cb330c0e37422d170f36f2e06fed554561542dce"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/tdd.md.tmpl",
+      "target": ".agents/skills/solid/references/tdd.md",
+      "mode": "0600",
+      "sha256": "fa7c875b3790044eaf993223805688135736e70d8ada7d1263302d1b01b2c6bb"
+    },
+    {
+      "source": "root/home/user/.agents/skills/solid/references/testing.md.tmpl",
+      "target": ".agents/skills/solid/references/testing.md",
+      "mode": "0600",
+      "sha256": "39ccb279659d7fd78b5e88060773b458970f4c8e3bedcb42df99c79a3be29d9e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/swarm/SKILL.md.tmpl",
+      "target": ".agents/skills/swarm/SKILL.md",
+      "mode": "0600",
+      "sha256": "711f36de620b2cc0af1b9dd8df8011ffcd8058847440528caa4eefef96d988d5"
+    },
+    {
+      "source": "root/home/user/.agents/skills/swarm/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/swarm/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "610d638845f2b92e681435f88e3c5734464a1e016103c5a63bd187f7f48a3e74"
+    },
+    {
+      "source": "root/home/user/.agents/skills/type-system-discipline/SKILL.md.tmpl",
+      "target": ".agents/skills/type-system-discipline/SKILL.md",
+      "mode": "0600",
+      "sha256": "453f662cd57e077d0a4b788f7b51f8cd51e78e1c75c0d4e577b934d054a6b4fb"
+    },
+    {
+      "source": "root/home/user/.agents/skills/type-system-discipline/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/type-system-discipline/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "af9d77d3f837c5ce35b6fdb76180366bfe6293c0d9f3e29a6a327d95450b0757"
+    },
+    {
+      "source": "root/home/user/.agents/skills/skill-master/references/writing-for-agents.md.tmpl",
+      "target": ".agents/skills/skill-master/references/writing-for-agents.md",
+      "mode": "0600",
+      "sha256": "9ceb4363c2099cffd20ab66deb24625ae4c02fa99df7ad24ac9becdb2bb4e17e"
+    },
+    {
+      "source": "root/home/user/.agents/skills/figure-it-out/SKILL.md.tmpl",
+      "target": ".agents/skills/figure-it-out/SKILL.md",
+      "mode": "0600",
+      "sha256": "279b35b0c475902fbdbf4a18b25054586c55c7076988540fd483548ad0774a65"
+    },
+    {
+      "source": "root/home/user/.agents/skills/figure-it-out/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/figure-it-out/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "4326a6d4bea07e2d76848328b4693ad77bd301010770f5264615ca24774b208c"
+    },
+    {
+      "source": "root/home/user/.agents/skills/drive-surface/SKILL.md.tmpl",
+      "target": ".agents/skills/drive-surface/SKILL.md",
+      "mode": "0600",
+      "sha256": "e2ff2c1fe55438ab2b37a49423f6a5de51708aaae5bcdf9d42229bb01c8bbeee"
+    },
+    {
+      "source": "root/home/user/.agents/skills/drive-surface/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/drive-surface/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "e832fdfddba144fddebb4c1fa46f3add900171e8cbba44b2c9a0c2bd4f8e4672"
     }
   ],
   "symlinks": [
@@ -3621,7 +4569,7 @@
     ".ssh",
     ".gnupg",
     ".cache",
-    ".pi (retired harness)",
+    ".pi runtime, sessions and installed packages (authored agents captured separately)",
     ".config/blender",
     ".config/ghidra",
     ".config/REAPER",

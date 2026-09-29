@@ -1,6 +1,6 @@
 ---
 name: 9router
-description: Entry point for 9Router — local/remote AI gateway with OpenAI-compatible REST for chat, image, TTS, embeddings, web search, web fetch. Use when the user mentions 9Router, NINEROUTER_URL, or wants AI without writing provider boilerplate. This skill covers setup + indexes capability skills; fetch the relevant capability SKILL.md from the URLs below when needed.
+description: "Entry point for 9Router — local/remote AI gateway with OpenAI-compatible REST for chat, image, TTS, embeddings, web search, web fetch. Use when the user mentions `9Router`, `ninerouter`, `NINEROUTER_URL`, or wants AI without writing provider boilerplate."
 ---
 
 # 9Router
@@ -30,7 +30,7 @@ curl $NINEROUTER_URL/v1/models/stt              # speech-to-text
 curl $NINEROUTER_URL/v1/models/image-to-text    # vision
 ```
 
-Use `data[].id` as `model` field in requests. Combos appear with `owned_by:"combo"`.
+Use `data[].id` as the `model` field in requests. Combos appear with `owned_by:"combo"`.
 
 Response shape:
 ```json
@@ -42,7 +42,7 @@ Response shape:
 
 ## Capability skills
 
-When the user needs a specific capability, fetch that skill's `SKILL.md` from its raw URL:
+Need a capability? Fetch that skill's `SKILL.md` raw:
 
 | Capability | Raw URL |
 |---|---|

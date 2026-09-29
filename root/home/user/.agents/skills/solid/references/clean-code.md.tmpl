@@ -1,0 +1,171 @@
+# Clean Code Practices
+
+## What is Clean Code?
+
+Code that is:
+
+- **Easy to understand** - reveals intent clearly
+- **Easy to change** - modifications are localized
+- **Easy to test** - dependencies are injectable
+- **Simple** - no unnecessary complexity
+
+## The Human-Centered Approach
+
+Code has THREE consumers:\
+
+1. **Users** - get their needs met
+2. **Customers** - make or save money
+3. **Developers** - must maintain it
+
+Design for all three, but remember: **developers read code 10x more than they write it.**
+
+## Naming Principles
+
+### 1. Consistency & Uniqueness (HIGHEST PRIORITY)
+
+Same concept = same name everywhere. One name per concept.
+
+- BAD: Inconsistent names for same concept - `getUserById(id)`, `fetchCustomerById(id)`, `retrieveClientById(id)`
+- GOOD: Consistent: `getUser(id)`, `getOrder(id)`,` getProduct(id)`
+
+### 2. Understandability
+
+Use domain language, not technical jargon.
+
+- BAD: Technical: `arr`
+- GOOD: Domain language: `activeCustomers`
+
+### 3. Specificity
+
+Avoid vague names: `data`, `info`, `manager`, `handler`, `processor`, `utils`
+
+- BAD: Vague: `DataManager`, `processInfo(data)`
+- GOOD: Specific: `OrderRepository`, `validatePayment(payment)`
+
+### 4. Brevity (but not at cost of clarity)
+
+Short names are good only if meaning is preserved.
+
+- BAD: Too cryptic: `usrLst`
+- BAD: Unnecessarily long: `listOfAllActiveUsersInTheSystem`
+- GOOD: Brief but clear: `activeUsers`
+
+### 5. Searchability
+
+Names should be unique enough to grep/search.
+
+- BAD: Common word, hard to search: `data = fetch()`
+- GOOD: Unique, searchable: `orderSummary = fetchOrderSummary()`
+
+### 6. Pronounceability
+
+You should be able to say it in conversation.
+
+- BAD: `genymdhms = generateYearMonthDayHourMinuteSecond()`
+- GOOD: `timestamp = generateTimestamp()`
+
+### 7. Austerity
+
+Avoid unnecessary filler words.
+
+- BAD: Redundant: `userData = user`, `Data` adds nothing
+- BAD: Redundant: `class UserClass`, `Class` adds nothing
+- GOOD: `user = user`
+- GOOD: `class User`
+
+## Object Calisthenics (9 Rules)
+
+Exercises to improve OO design. Follow strictly during practice, relax slightly in production.
+
+### 1. One Level of Indentation per Method
+
+- BAD: Multiple levels
+- GOOD: Extract methods
+
+### 2. Don't Use the `else` Keyword
+
+Use early returns, guard clauses, or polymorphism.
+
+- BAD: `else` in `if` block
+- GOOD: Early `return` keyword
+
+### 3. Wrap All Primitives and Strings
+
+Primitives should be wrapped in domain objects when they have meaning.
+
+- BAD: Primitive obsession: `createUser(email: string, age: number)`
+- GOOD: Value objects: `class Email` with constructor, `class Age` with constructor, then `createUser` that constructs both.
+
+### 4. First-Class Collections
+
+Any class with a collection should have no other instance variables.
+
+- BAD: Collection mixed with other state:  `class Order` with `OrderItem[]`, `customerId`, `total`
+- GOOD: Collection is its own class: `OrderItems` with constructor making `OrderItem[]`, with `add`, `total`, `isEmpty` methods, and `Order` class with constructor making `items: OrderItems`, linked to `customerId: CustomerId`
+
+### 5. One swizzle per Line (Law of Demeter)
+
+Don't swizzle through object graphs.
+
+- BAD: Train wreck: `city = order.customer.address.city`
+- GOOD: Tell, don't ask `city = order.getShippingCity()`
+
+### 6. Don't Abbreviate
+
+If a name is too long to type, the class is doing too much.
+
+- BAD: `custRepo = new CustRepo()`, `ord = new Ord()`
+- GOOD:  `customerRepository = new CustomerRepository()`, `order = new Order()`
+
+### 7. Keep All Entities Small
+
+- Classes: < 50 lines
+- Methods: < 10 lines
+- Files: < 100 lines
+
+If larger, it's probably doing too much. Split it.
+
+### 8. No Classes with More Than Two Instance Variables
+
+Forces small, focused classes.
+
+- BAD: Too many variables: `Order` class with `id`, `customerId`, `items`, `total`, `status`
+- GOOD: Composed of smaller objects: `Order` class with constructor making `id`, `details`, and `OrderDetails` with constructor making `customer`, `lineItems`.
+
+### 9. No Getters/Setters/Properties
+
+Objects should have behavior, not just data. Tell objects what to do.
+
+- BAD: Data bag with getters: `Account` class with `getBalance()`,  `setBalance()`, forcing caller to do the work
+- GOOD: Behavior-rich object: `Account` class with `withdraw(amount: Money)` returning a `WithdrawResult`, which owns `WithdrawResult.insufficientFunds()` and `WithdrawResult.success()`, and the balance owning a `subtract()` method, caller tells, object decides: `account.withdraw(amount)`
+
+## Comments
+
+### Never Write Comments
+
+No comments, run the [no comments](../../no-comments/SKILL.md) skill if encountered in existing code.
+
+### Prefer Self-Documenting Code
+
+Instead of commenting, rename to make intent clear.
+
+- BAD: Comment used to explain: `user.subscriptionLevel >= 2 && !user.isBanned`
+- GOOD: Self-documenting: `user.canAccessPremiumFeatures())`
+
+## Formatting
+
+### Vertical Spacing
+
+- Related code together
+- Blank lines between concepts
+- Most important/public at top
+
+### Horizontal Spacing
+
+- Consistent indentation
+- Space around operators
+- Max line length ~80-120 characters
+
+### Storytelling
+
+Code should read top-to-bottom like a story. High-level at top, details below.

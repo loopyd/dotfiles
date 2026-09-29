@@ -1,0 +1,130 @@
+# Code Smells & Anti-Patterns
+
+## What Are Code Smells?
+
+Indicators that something MAY be wrong. Not bugs, but design problems that make code hard to understand, change, or test.
+
+## The Five Categories
+
+### 1. Bloaters
+
+Code that has grown too large.
+
+| Smell | Symptom | Refactoring |
+| ----- | ------- | ----------- |
+| **Long Method** | > 10 lines | Extract Method |
+| **Large Class** | > 50 lines, multiple responsibilities | Extract Class |
+| **Long Parameter List** | > 3 parameters | Introduce Parameter Object |
+| **Data Clumps** | Same group of variables appear together | Extract Class |
+| **Primitive Obsession** | Primitives instead of small objects | Wrap in Value Object |
+
+### 2. Object-Orientation Abusers
+
+Misuse of OO principles.
+
+| Smell | Symptom | Refactoring |
+| ------- | --------- | ------------- |
+| **Switch Statements** | Type checking, large switch/if-else | Replace with Polymorphism |
+| **Parallel Inheritance** | Adding subclass requires adding another | Merge Hierarchies |
+| **Refused Bequest** | Subclass doesn't use parent methods | Replace Inheritance with Delegation |
+| **Alternative Classes** | Different interfaces, same concept | Rename, Extract Superclass |
+
+### 3. Change Preventers
+
+Code that makes changes difficult.
+
+| Smell | Symptom | Refactoring |
+| ------- | --------- | ------------- |
+| **Divergent Change** | One class changed for many reasons | Extract Class (SRP) |
+| **Shotgun Surgery** | One change touches many classes | Move Method/Field together |
+| **Parallel Inheritance** | (see above) | Merge Hierarchies |
+
+### 4. Dispensables
+
+Code that can be removed.
+
+| Smell | Symptom | Refactoring |
+| ------- | --------- | ------------- |
+| **Comments** | Explaining bad code | Rename, Extract Method |
+| **Duplicate Code** | Copy-paste | Extract Method, Pull Up Method |
+| **Dead Code** | Unreachable code | Delete |
+| **Speculative Generality** | "Just in case" code | Delete (YAGNI) |
+| **Lazy Class** | Class that does almost nothing | Inline Class |
+
+### 5. Couplers
+
+Excessive coupling between classes.
+
+| Smell | Symptom | Refactoring |
+| ------- | --------- | ------------- |
+| **Feature Envy** | Method uses another class's data extensively | Move Method |
+| **Inappropriate Intimacy** | Classes know too much about each other | Move Method, Extract Class |
+| **Message Chains** | `a.getB().getC().getD()` | Hide Delegate |
+| **Middle Man** | Class only delegates | Inline Class |
+
+## The Seven Most Common Code Smells
+
+### 1. Long Method
+
+**Symptom:** Method > 10 lines, doing multiple things.
+
+- SMELL: A `processOrder` function doing validation by checking `order` items length, and existance of `customer` object, performing calculations by multiplying `item` price and `quantity` to apply the item `discount` against the total, applying tax, then saving via the `db.orders.insert()` method, then notifying order confirmation via `emailService.send()`.
+- REFACTORED: A compact `processOrder` function, taking in an `Order` object and calling `validateOrder()`, `calculateTotal()`, `saveOrder()`, `notifyCustomer()` methods neatly
+
+### 2. Large Class
+
+**Symptom:** Class with many responsibilities, > 50 lines.
+
+- SMELL: God class: A `User` class containing `name`, `email`, authentication methods `login()`, `logout()`, `resetPassword()`, preferences via `setTheme()`, `setLanguage()`, notifications via `sendEmail()`, `sendSMS()`, billing methods `charge()`, `refund()`
+- REFACTORED: Separate classes for `User`, `AuthService`, `UserPreferences`, `NotificationService`, `BillingService`, responsibility neatly split
+
+### 3. Feature Envy
+
+**Symptom:** Method uses another class's data more than its own.
+
+- SMELL: Order envies Customer, class `Order` implements `calculateShipping` which access data from the `Customer` object, such as `country` and `state`
+- REFACTORED: Move to Customer, class `Customer` implements `getShippingCost()` which uses the `this` keyword to calculate the shipping cost via `this.country` and `this.state`, and the `Order` class using the `this` keyword to access its owned `customer` object to call `getShippingCost()`
+
+### 4. Primitive Obsession
+
+**Symptom:** Using primitives for domain concepts.
+
+- SMELL: A `createUser` function with no validation where `email` is a `string` and `age` is an `int`, checking `if (!email.includes('@')) throw new Error()`, `if (age < 0) throw new Error()`
+- REFACTORED: Value objects, an `Email` class with a constructor that checks if email is valid (`if (!value.includes('@')) throw new InvalidEmail()`), with scoped error, and an `Age` class with a constructor that checks if value passed is in range (`if (value < 0 || value > 150) throw new InvalidAge()`) with scoped error, then when creating a `createUser(email: Email, age: Age, address: Address)` function, the type system prevents invalid data.
+
+### 5. Switch Statements
+
+**Symptom:** Switching on type, repeated across codebase.
+
+- SMELL: A `getArea` function using the switch keyword on `Shape.type` for `circle`, `rectangle`, `triangle`, and a `getPerimeter` function that does the same `Shape.type` for `circle`, `rectangle`, `triangle` switch block.
+- REFACTORED: Polymorphism with `Shape` interface, containing `getArea()`, `getPerimeter()`, and a `Circle`, `Triangle`, `Rectangle` with a constructor and both methods implemented via `implements` or class inheritance keywords.
+
+### 6. Inappropriate Intimacy
+
+**Symptom:** Classes know too much about each other's internals.
+
+- SMELL: An `Order` class with a `process()` method that reaches far into `Inventory` objects to iterate `stockLevels` on each object and check `quantity` against them, throw a generic `Error` if out of stock, then deduct `stockLevels` array with `item.quantity`
+- REFACTORED: Tell, don't ask, an Inventory class with `reserve` method returning a `ReserveResult`, iterating the items, and calling `this.canReserve(item)` to return `ReserveResult.outOfStock(item)` if the item can't be reserved, where the `this` keyword is used to call `deductStock(item)` to remove stock from inventory then return `ReserveResult.success()` if it is possible, then an `Order` class containing a `process` method that calls `result = inventory.reserve(this.items)` and checks `result.isSuccess()` to throw an `OutOfStockError` if inventory could not be reserved.
+
+### 7. Speculative Generality
+
+**Symptom:** "Just in case" abstractions that aren't used.
+
+- SMELL: Over-engineered for hypothetical needs, a `PaymentProcessor` interface containing `process()`, `rollback()`, `audit()`, `generateReport()`, `scheduleRecurring()` and a `StripeProcessor` class that implements `PaymentProcessor` where only `process()` is implemented and the rest throw a "not implemented" `Error`.
+- REFACTORED: Using YAGNI, a `PaymentProcessor` interface with only `process()`, and a `StripeProcessor` class implementing `PaymentProcessor` where `process()` contains actual code, add other methods only when needed.
+
+## Prevention Strategies
+
+1. **Follow Object Calisthenics** - Rules prevent most smells
+2. **Practice TDD** - Tests reveal design problems early
+3. **Review in pairs** - Fresh eyes catch smells
+4. **Refactor continuously** - Don't let smells accumulate
+5. **Apply SOLID** - Prevents structural smells
+6. **Use static analysis** - Tools catch common issues
+
+## When You Find a Smell
+
+1. **Confirm it's a problem** - Not all smells need fixing
+2. **Ensure test coverage** - Before refactoring
+3. **Refactor in small steps** - Keep tests passing
+4. **Commit frequently** - Easy to revert if needed

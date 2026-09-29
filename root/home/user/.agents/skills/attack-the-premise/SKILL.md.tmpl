@@ -1,0 +1,23 @@
+---
+name: attack-the-premise
+description: "Apply when two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it."
+disable-model-invocation: true
+---
+
+# Attack the Premise
+
+Two or more fixes sharing one premise failed the same gate? Suspect the premise, not the fixes.
+
+**Why:** Each failure under a shared premise is evidence about the premise.
+
+**Pattern:**
+- **Write the premise down.** One sentence every failed fix assumed.
+- **Take a census before the next fix.** Count the imbalance per actor. The census shows which actors hold the imbalance, not how large it is. Write it as a rerunnable script per [build the lever](../build-the-lever/SKILL.md) skill.
+- **Read the skew.** Same few actors hold most of the imbalance on every run? Something assigns them that role. Find what assigns it. That assignment is the next "why" per [fix root causes](../fix-root-causes/SKILL.md) skill.
+- **Remove the asymmetry instead of compensating**, per the [laziness protocol](../laziness-protocol/SKILL.md) skill. Rotate the role between actors, randomize the assignment, or move the role, so no actor holds it on every run. A return path, shared pool, batched hand-off, or periodic rebalance leaves the assignment in place and adds work every run.
+
+**Stop:**
+- Don't start the next fix before the premise is written down and the census exists.
+- Census even across actors? The premise is not the cause. Look elsewhere, keep the census as evidence.
+
+Distinct from [redesign from first principles](../redesign-from-first-principles/SKILL.md) skill, which rebuilds a design around a new requirement. This questions a fact the current design assumes.

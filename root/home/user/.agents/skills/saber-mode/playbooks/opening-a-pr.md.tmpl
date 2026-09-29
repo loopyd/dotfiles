@@ -1,0 +1,31 @@
+### Opening a PR
+
+Invoked at the end of every other playbook.
+
+**Worktree.** Work from a git worktree off main. Subagents inherit it. Multiple subagent calls on the same branch each get their own worktree, or `git fetch && git reset --hard origin/<branch>` between them. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: reset from main, redo minimally.
+
+**Commits.** Commit liberally. Rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable.
+
+**PRs.** Run [unslop](../../unslop/SKILL.md) over the diff before commit. Run [`/no-comments`](../../no-comments/SKILL.md) before review. Write every PR title, PR description, commit body with [`/technical-writing`](../../technical-writing/SKILL.md), then apply [`/unslop`](../../unslop/SKILL.md). Every technical-writing layer except Diátaxis. One word per action, keep articles, avoid `-ing` when a plain verb works.
+
+**Titles.** Conventional Commits, `type(scope): subject`. Type: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`. Scope: changed area, e.g. module or repository name. Subject short, imperative. Name a real symbol when one carries the change. E.g. `fix(pstack): retarget opening-a-pr stack trigger`. No trailing period.
+
+**Descriptions.** PR body = briefing, not lab notebook. Reviewer with the diff learns why the change exists, what is out of scope, how you proved it works. Squash commit body = PR body. Body would push the squash commit past ~40 lines? Cut it.
+
+Sections in order. Drop one with nothing to say.
+
+- `## Why`. Intent and approach, one or two short paragraphs. No SHAs or rebase genealogy. No "based on main" preamble.
+- `## Scope`. Bullets: real symbols and paths. Name both sides of a rename or retarget. State in/out only when the boundary matters. No file-by-file essay.
+- `## Tradeoffs`. Only rejected alternatives a reviewer would otherwise ask about. Skip when there was no real choice.
+- `## Blast Radius`. One to three sentences: who or what the change touches, why it is safe or risky. State the continuing cost if main stays red without the fix.
+- `## Verification`. Each real run path and its outcome. Performance change: one primary number with its unit in `before → after` form. Link the [arena](../../arena/SKILL.md) or [swarm](../../swarm/SKILL.md) directory for the rest. No sample-size methodology, swarm recitals, metric tables.
+
+After the sections, attach videos or screenshots when they prove a claim. Don't paste full SHAs, swarm or arena lane recitals, lever-correction essays, file-by-file checklists, or "CLEAN" verdicts. Put details in a linked artifact. No `## Summary` or `## Test plan` boilerplate. A commit body does not restate its subject.
+
+**Forge.** Use GitHub CLI (`gh`) for create, edit, view, watch, merge. Don't require Graphite (`gt`).
+
+**Size and stacks.** Prefer five narrow PRs to one large PR. A stack is a base-branch chain. Root PR targets trunk. Each child branch rebases onto its parent's exact tip; its PR targets the parent branch. Create a child with `gh pr create --base <parent-branch>`. Retarget an existing child with `gh pr edit <pr> --base <parent-branch>`. Branch from trunk only for independent work. Rebase on trunk before substantial stack work.
+
+**Readiness.** Open every PR ready, never draft. Omit `--draft`. Background-agent PR tools default to draft, so set `draft: false` on every PR creation call. PR still opens as a draft? Run `gh pr ready <number>`. Run `gh pr view <number>` before you refer to PR status.
+
+A subagent that opens a PR runs [`interrogate`](../../interrogate/SKILL.md), [unslop](../../unslop/SKILL.md), and [`/no-comments`](../../no-comments/SKILL.md), posts the URL. Then it returns to the parent, unless it is an [Autopilot-full](autopilot-full.md) or [Autopilot-stack](autopilot-stack.md) owner. That owner's brief assigns the merge loop, which starts after its code-ready report; the owner reports merge-ready or STACK-READY as its playbook says.

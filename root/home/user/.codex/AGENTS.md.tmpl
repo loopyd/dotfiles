@@ -32,6 +32,39 @@ and metadata preserve provenance without restricting cross-project recall.
 - If memory is unavailable, report the gap when relevant and continue applicable
   work. Do not expose the API publicly or weaken sandbox/approval settings to recover.
 
+## Shared skills and named agents
+
+Shared skills live in `~/.agents/skills/`. Read the relevant `SKILL.md` and resolve
+its relative links from that directory. A skill's `agents/openai.yaml` supplies
+Codex UI metadata, not subagent definitions or tool permissions. References such
+as `/how` and `/why` mean the corresponding shared skills, invoked in Codex as
+`$how` and `$why` or by reading their instructions.
+
+Use native Codex subagents for skill-requested delegation. Personal definitions
+live in `~/.codex/agents/`. Use the exact agent types `reviewer`, `worker`,
+`scout`, `delegate`, `oracle`, `researcher`, `evidence-auditor`, and
+`comment-remover`. The skill name `Comment Remover` maps to `comment-remover`.
+Pi aliases `advisor` and `developer` map to `oracle` and `worker` respectively.
+Do not invoke Pi's `subagent` workflow API, `contact_supervisor`, or
+`watchdog_diff` in Codex. Pass each child its scope, relevant context, output
+format, and no-edit constraints. Collect the results with Codex's native agent
+controls and use follow-up messages to resolve blockers.
+
+The `how`, `why`, and `explain` skills use `reviewer` for investigation and
+`worker` for synthesis. Synthesis is an explanation-only task, not permission to
+edit. Read-only agents return reports for the parent to save. Code-editing agents
+inherit the parent's sandbox and approval policy; their definitions do not grant
+broader access. Models and reasoning settings inherit from Codex unless the
+caller explicitly overrides them. Pi's ninerouter model names are not copied.
+
+The `no-comments` skill references `/architect`, which is part of this collection
+and must be invoked explicitly. The `saber-mode` skill references a `figure-it-out`
+skill that is not part of this captured collection; if its fallback playbook design
+is required, report the missing skill and ask for it or for an explicit alternative.
+Do not pretend it ran. `show-me-your-work` requires a reviewer from a different
+model family. Verify the actual selected model family before claiming that
+requirement passed. The `reviewer` role name or a fresh context alone does not meet it.
+
 ## Local 9router
 
 Use the global `9router` skill for gateway/model diagnostics. Private client settings

@@ -1,0 +1,24 @@
+---
+name: drive-surface
+description: "Drive a real surface for verification: browser / Electron / web UIs, or CLIs and TUIs. Route by surface, exercise the artifact at the exact revision, and return a pass or fail with its evidence. Use when a playbook says to verify on the matching surface or to use the control skill."
+disable-model-invocation: true
+---
+
+# Drive surface
+
+Verify on real surface, not proxy. Route by surface the change touches. Exercise artifact at exact revision. Return pass or fail with evidence.
+
+## Route by surface
+
+- **Browser, Electron, web UI.** Drive with `playwright` MCP tools: navigate, interact like a user, read accessibility tree, capture screenshot or video. Real interactions over scraping markup.
+- **CLI, TUI.** Drive in real terminal through the `herdr` skill (open pane, run command or app, read output and exit status), or run the command directly and capture stdout and stderr. TUI: drive keys, read rendered pane.
+- **Two surfaces.** Change touching two surfaces gets a lane per surface.
+
+## Procedure
+
+1. Pin revision. Drive exact head SHA or working tree. Never a stale dev server.
+2. Exercise load-bearing behavior: user-visible outcome the change produces, plus regression scenario on pre-change state.
+3. Capture evidence: screenshot or video for a UI, command and output for a CLI or TUI, trace or log for timing. Artifact is proof.
+4. Report verdict, not narration: pass, pass with notes, or fail, with evidence and exact repro steps.
+
+No unit test, self-report, or "it compiles" substitutes for driving the surface. Surface undrivable: say so, mark claim unproven.

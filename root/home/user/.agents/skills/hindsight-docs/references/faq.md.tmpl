@@ -385,7 +385,7 @@ Hindsight uses an **event-centric graph** that organizes data around moments (co
 
 ```
 Scrapbook page: "Math Class"
-  [Alice]   [Acme]   [@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK_2@@:scaffolding]
+  [Alice]   [Acme]   [pedagogy:scaffolding]
 ```
 
 #### How do the two handle change over time?
@@ -401,7 +401,7 @@ This is where traditional graphs run into major limitations when used for AI mem
 The creation of stickers happens through a mix of AI automation and developer control:
 
 - **Open-world automation (default):** Hindsight's LLM pipeline automatically detects and extracts standard entities — people, places, dates — from raw text and turns them into stickers.
-- **Developer control via `entity_labels`:** You can define a custom schema using [entity labels](developer/retain.md#entity-labels). This forces the LLM to categorize memories using a strict, predefined vocabulary. Instead of letting the AI invent random descriptors, you choose the exact names and parameters for the stickers — for example, forcing a `@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK_2@@` key to only choose from `scaffolding`, `direct_instruction`, or `socratic_questioning`. To lock the bank to *only* your configured labels and turn off the open-world automation above, also set `entities_allow_free_form: false` on the bank config — the LLM then skips free-form named entities entirely and emits only entries that match your schema.
+- **Developer control via `entity_labels`:** You can define a custom schema using [entity labels](developer/retain.md#entity-labels). This forces the LLM to categorize memories using a strict, predefined vocabulary. Instead of letting the AI invent random descriptors, you choose the exact names and parameters for the stickers — for example, forcing a `pedagogy` key to only choose from `scaffolding`, `direct_instruction`, or `socratic_questioning`. To lock the bank to *only* your configured labels and turn off the open-world automation above, also set `entities_allow_free_form: false` on the bank config — the LLM then skips free-form named entities entirely and emits only entries that match your schema.
 
 #### Can I build direct entity-to-entity pipelines?
 
@@ -411,7 +411,7 @@ No. In Hindsight, entities (people, places, concepts, or classification labels) 
 
 Recall starts with semantic search — finding the memories most relevant to your query as seed pages — and then expands from those seeds through three parallel signals:
 
-- **Shared entities.** If Memory A and Memory B both anchor to the same entity node — like `[@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK_2@@:scaffolding]` — Hindsight traverses `Memory A → [@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK_2@@:scaffolding] → Memory B`. This is the scrapbook-pages-with-the-same-stickers case.
+- **Shared entities.** If Memory A and Memory B both anchor to the same entity node — like `[pedagogy:scaffolding]` — Hindsight traverses `Memory A → [pedagogy:scaffolding] → Memory B`. This is the scrapbook-pages-with-the-same-stickers case.
 - **Semantic links between memories.** When a new memory is retained, Hindsight precomputes links to its nearest neighbors in embedding space, so semantically related pages connect directly without needing a shared sticker.
 - **Causal links between memories.** Hindsight also extracts explicit causal relationships (`causes`, `caused_by`, `enables`, `prevents`) between memories, so cause-and-effect chains are first-class edges rather than something the model has to infer.
 

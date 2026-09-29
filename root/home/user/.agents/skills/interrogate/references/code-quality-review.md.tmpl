@@ -1,0 +1,47 @@
+# Code Quality Review
+
+Each reviewer applies this code-quality lens in addition to the rubric. Strict standard: implementation quality, maintainability, abstraction quality, codebase health.
+
+Above all, be ambitious about code structure. Don't merely identify local cleanup. Actively search for "code judo" moves — restructurings that preserve behavior while making the implementation dramatically simpler, smaller, more direct, more elegant.
+
+## Core Prompt
+
+Start from this baseline:
+
+> Perform a deep code quality audit of the current branch's changes.
+> Rethink how to structure / implement the changes to meaningfully improve code quality without impacting behavior.
+> Work to improve abstractions, modularity, reduce Spaghetti code, improve succinctness and legibility.
+> Be ambitious, if there is a clear path to improving the implementation that involves restructuring some of the codebase, go for it.
+> Be extremely thorough and rigorous. Measure twice, cut once.
+
+## Dimensions
+
+Each dimension stated once. Apply the relevant ones.
+
+0. **Be ambitious about structural simplification.** Don't stop at "a bit cleaner." Look for reframings that make whole branches, helpers, modes, conditionals, layers disappear. Assume a "code judo" move is often available: uses existing architecture more effectively, makes the change dramatically simpler. Can delete complexity rather than rearrange it? Push hard.
+
+1. **No PR pushes a file from under 1k lines to over 1k without a very strong reason.** Strong smell. Prefer extracting helpers, subcomponents, modules. Diff crosses the threshold? Ask whether to decompose first. Waive only for a compelling structural reason where the file stays clearly organized.
+
+2. **No spaghetti growth in existing code.** Suspicious of new ad-hoc conditionals, scattered special cases, one-off branches in unrelated flows. "Weird if statements in random places" = design problem, not style nit. Push logic into a dedicated helper, state machine, or module instead of tangling an existing path.
+
+3. **Bias toward cleaning the design, not just accepting working code.** Behavior same while structure becomes meaningfully cleaner? Push the cleaner version. Prefer simplifications that remove moving pieces over refactors spreading the same complexity around.
+
+4. **Prefer direct, boring, maintainable code over hacky or magical code.** Brittle, ad-hoc, "magic" behavior = problem. Skeptical of generic mechanisms hiding simple data-shape assumptions. Flag thin abstractions, identity wrappers, pass-through helpers adding indirection without clarity.
+
+5. **Push on type and boundary cleanliness when it affects maintainability.** Question unnecessary optionality, `unknown`, `any`, cast-heavy code when a clearer type boundary could exist. Prefer explicit typed models over loosely-shaped ad-hoc objects. Branch leaning on a silent fallback to paper over an unclear invariant? Ask whether the boundary should be explicit.
+
+6. **Keep logic in the canonical layer, reuse existing helpers.** Call out feature logic leaking into shared paths or implementation details leaking through APIs. Prefer existing canonical utilities over bespoke one-offs. Push code toward the right package, service, or module instead of normalizing drift.
+
+7. **Unnecessary sequential orchestration and non-atomic updates are design smells when the cleaner structure is obvious.** Independent work serialized for no reason? Ask whether it should run in parallel. Related updates leaving state half-applied? Push for a more atomic structure. Don't over-index on micro-optimizations, but flag avoidable orchestration complexity that makes the code more brittle.
+
+## Output Expectations
+
+Prioritize structural code-quality regressions and missed simplifications first, then spaghetti and branching complexity, then boundary, type, and file-size concerns, then smaller modularity and legibility issues.
+
+## Approval Bar
+
+Don't approve merely because behavior seems correct. Presumptive blockers unless the author justifies them: PR keeps incidental complexity when a code-judo move would delete it. Pushes a file below 1000 lines to above 1000. Adds ad-hoc branching that tangles an existing flow. Scatters feature checks across shared code. Adds an unnecessary abstraction, wrapper, or cast-heavy contract, or duplicates an existing helper or puts logic in the wrong layer when there is a clear canonical home. Conditions not met? Leave explicit, actionable feedback, push for a cleaner decomposition.
+
+## Review Tone
+
+Be direct, serious, demanding about quality. Not rude, but don't soften major maintainability issues into mild suggestions. Code making the codebase messier? Say so. Missed an obvious dramatic simplification? Say that too. Don't settle for "maybe rename this" when the real issue is structural.

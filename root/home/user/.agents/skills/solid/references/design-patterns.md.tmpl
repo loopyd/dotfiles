@@ -1,0 +1,124 @@
+# Design Patterns
+
+## What Are Design Patterns?
+
+Reusable solutions to common design problems. A shared vocabulary for discussing design.
+
+## WARNING: Don't Force Patterns
+
+> "Let patterns emerge from refactoring, don't force them upfront."
+
+Patterns should solve problems you HAVE, not problems you MIGHT have.
+
+## When to Use Patterns
+
+1. **You recognize the problem** - You've seen it before
+2. **The pattern fits** - Not forcing it
+3. **It simplifies** - Doesn't add unnecessary complexity
+4. **Team understands it** - Shared knowledge
+
+## Creational Patterns
+
+### Singleton
+
+**Purpose:** Ensure only one instance exists.
+**When to use:** Global configuration, connection pools, logging.
+**Warning:** Often overused. Consider dependency injection instead.
+**Example:** A `Logger` class holding a static instance of itself, with a constructor, a static `getInstance()` method dynamically constructing the logger if the instance is null or returning the instance, and a `log()` method.
+
+### Factory
+
+**Purpose:** Create objects without specifying exact class.
+**When to use:** Object creation logic is complex, or varies by type.
+**Example:** A `Notification` interface which expects a `send()` method, an `EmailNotification`, `SMSNotification`, `PushNotification` implementing `Notification`, and a `NotificationFactory` class with a `create` method containg a `type` enumorator, returning a derived `Notification` type based upon the enum.
+
+### Builder
+
+**Purpose:** Construct complex objects step by step.
+**When to use:** Objects with many optional parameters, test data creation.
+**Warning:** Only some languages support nullable object types in constructors.
+**Example:** A `UserBuilder` class with a partial `User` object, implementing a `withName()` method that uses the`User` partial to set its name via the `this` keyword: `this.user.name = name`, a `withEmail()` method that uses the `User` partial to set its email with `this` keyword: `this.user.email = email`, a `withAge()` method that uses the `User` partial to set its age via `this` keyword: `this.user.age = age` and a `build()` method that constructs new `User` object with `this.user.name!` nullable, `this.user.email!` nullable, and `this.user.age` mandatory.  The `UserBuilder()` constructor would allow apply `.withName()`, `withEmail()` and call the `build()` method inline at construction time.
+
+### Prototype
+
+**Purpose:** Create new objects by cloning existing ones.
+**When to use:** Object creation is expensive, or you need copies with slight variations.
+**Example:** A `Prototype` interface requiring a `clone()` method that returns a `Prototype` object, and a `Document` class implementing `Prototype` with a constructor asking for `title`, `content`, and a `Metadata` object, where `clone()` returns a new Document object using the `this` keyword to copy `this.title`, `this.content`, and extend the `Metadata` object.
+
+## Structural Patterns
+
+### Adapter
+
+**Purpose:** Make incompatible interfaces work together.
+**When to use:** Integrating third-party libraries, legacy code.
+**Example**: A Third-party library with different interface `OldPaymentAPI`, with a `makePayment()` method taking in `cents` which is of type `number`, our interface is a `PaymentGateway` with a `charge()` method returning a `ChargeResult` object with an amount of type `Money`, the `OldPaymentAdapter` implements `PaymentGateway` which holds a private `OldPaymentAPI` object at construction implementing the `charge()` method taking the `Money` type and calling its `toCents()` method to convert it to the compatible type expected by the old API: `this.oldAPI.makePayment(cents)`, then returning the result of `ChargeResult.success()` or `ChargeResult.failure()` based upon the result of calling `makePayment` on the old API.
+
+### Decorator
+
+**Purpose:** Add behavior to objects dynamically.
+**When to use:** Adding features without modifying existing code.
+**Warning:** Only some languages support decorators or composables.
+**Example** A `Notifier` interface expecting a `send()` method, an `EmailNotifier` class implementing the `Notifier` with `send()` implementation, a `SMSDecorator` class implementing the `Notifier` and wrapping the `Notifier` interface at construction to give an SMS-supporting `send()` implementation to the wrapped object, a `SlackDecorator` wrapping the `Notifier` interface at construction to give a Slack-supporting `send()` implementation to the wrapped object, then a composer that constructs them via  `new SlackDecorator(new SMSDecorator(new EmailNotifier))`. When you call the constructed `send()` method, all three in the composable will invoke `send()` together.
+
+### Proxy
+
+**Purpose:** Control access to an object.
+**When to use:** Lazy loading, access control, logging, caching.
+**Warning:** Only some languages support nullable object types.
+**Example:** An `Image` interface that expects a `display()` method,  and a `RealImage` class implementing the `Image` interface, where its constructor calls an expensive IO blocking `loadFromDisk()` private method taking in a filename, and implements the `display()` method expected by the interface.  An `ImageProxy` that implements `Image` and contains a private `RealImage` nullable instance can avoid including IO blocking operations in its constructor, allowing us to call `display()` after object construction to proxy the `RealImage` constructor call if the private `RealImage` instance is null, and then call `display()` back on the `RealImage` object, proxying it behind the first call of `display()` on the `ImageProxy` object.
+
+### Composite
+
+**Purpose:** Treat individual objects and compositions uniformly.
+**When to use:** Tree structures, hierarchies (files/folders, UI components).
+**Example:** A `Component` interface that expects a `getPrice()` method, a `Product` class implementing `Component` with the `getPrice()` method implemented getting the price via `this` keyword, a `Box` class implementing `Component` with a private array of children of `Component` objects with an `add()` method that supports adding child `Component` objects and the  `getPrice()` implementation iterating children to sum them by calling their `getPrice()` method and aggregating their sum to produce a total for all child components.
+
+## Behavioral Patterns
+
+### Strategy
+
+**Purpose:** Define a family of algorithms, make them interchangeable.
+**When to use:** Multiple ways to do something, switchable at runtime.
+**Example:** A `PricingStrategy` interface expecting a `calculate()` method, where a `RegularPricing` class implements `PricingStrategy` and its `calculate` method returning the base price passed in, a `PremiumDiscount` class implementing `PricingStrategy` with the `calculate()` method taking 20% off, a `BlackFriday` class implementing `PricingStrategy` taking 50% off in the `calculate()` method, and a `ShoppingCart` class whose constructor takes in a PricingStrategy, and where its `calculateTotal()` method reduces to sum all members of the private `PricingStrategy` members and calls its private object's `calculate()` method to set the new calculated base price.
+
+### Observer
+
+**Purpose:** Notify multiple objects about state changes.
+**When to use:** Event systems, pub/sub, reactive updates.
+**Example:** An `Observer` interface that expects an `update()` method taking an `Event` object, and an `EventEmitter` class that contains private array of `Observer` objects, with a `subscribe()` method that pushes one and an `unsubscribe()` method that removes the matching object using a !== lambda exclusion filter a `notify()` method that notifies all subscribed `Observer` objects via `forEach`-style lambda calling each's `update()` method.  Declare an `OrderService` extending the `EventEmitter` class with a `placeOrder` method taking in an `Order` and call `this.notify`  passing in the type 'ORDER_PLACED' and order object in the event dispatch payload. Then, declare an `EmailService` implementing the `Observer` interface, and implement the `update()` method to check that the type is 'ORDER_PLACED' in the `Event` payload and then calling `sendConfirmation()` to send an email with the `Order` object from the `Event` payload.
+
+### Template Method
+
+**Purpose:** Define algorithm skeleton, let subclasses override steps.
+**When to use:** Common algorithm with varying steps.
+**Warning:** Only some languages support `abstract` and `virtual` classes, and some may also require the `sealed` keyword to protect private members when inheriting.
+**Example:** An abstract `DataExporter` class implementing a template `export()` method that calls private abstract `validate()` member then calls protected abstract `format()` member with resulting data then calls protected abstract `write()` member with the formatted data then calls private `notify()` member, forming common steps privately and steps to override as protected scope to set the algorithm. A `CSVExporter` extending from `DataExporter` could override protected members `format()` and `write()` to implement the CSV algorithm while keeping `validate()` and `notify()` untouched. A `JSONExporter` extending from `DataExporter` could override protected members `format()` and `write()`to impelment the JSON algorithm  while keeping `validate()` and `notify()` untouched.
+
+### Command
+
+**Purpose:** Encapsulate a request as an object.
+**When to use:** Undo/redo, queuing, logging actions.
+**Example:** A `Command` interface that expects `execute()` and `undo()` methods, an `AddItemCommand` that implements `Command` interface with a constructor initializing private `Cart` and `Item` object class members, where `execute()` will add item to the Cart object by calling the `Cart` object's `add()` method and `undo()` will remove item from the `Cart` object by calling the `Cart` object's `remove()` method, then a `CommandHistory` class can contain a private array of `Command` objects, and calls `execute()` on the passed in command on its own `execute()` implementation and pushes it to the array, while `undo()` will pop from the array and then call `undo()` on the popped `Command` if it is not null.
+
+## Pattern Awareness
+
+### The Four-Dimensional Lens
+
+When analyzing new code/libraries, ask:
+
+1. **What problem does it solve?** (Creational, Structural, Behavioral)
+2. **What scope?** (Object-level, Class-level, System-level)
+3. **When is it applied?** (Compile-time, Runtime)
+4. **How coupled?** (Tight, Loose)
+
+This helps recognize patterns even in unfamiliar code.
+
+## Anti-Patterns to Avoid
+
+| Anti-Pattern | Problem | Solution |
+| -------------- | --------- | ---------- |
+| **God Object** | Class does everything | Split by responsibility |
+| **Spaghetti Code** | Tangled, no structure | Refactor to layers |
+| **Golden Hammer** | Using one pattern for everything | Match pattern to problem |
+| **Premature Optimization** | Optimizing before needed | YAGNI, profile first |
+| **Copy-Paste Programming** | Duplication | Extract, Rule of Three |

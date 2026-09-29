@@ -293,7 +293,7 @@ For non-English banks (especially CJK) and the language/extraction-language trad
 | `HINDSIGHT_API_LLM_SEND_BANK_AS_USER` | Tag outbound LLM and embedding calls with `user=<bank_id>` so gateways (OpenRouter usage accounting, LiteLLM, Helicone) can attribute spend per bank. When enabled, the bank id is transmitted to the upstream provider as the end-user identifier. | `false` |
 | `HINDSIGHT_API_LLM_GROQ_SERVICE_TIER` | Groq service tier: `on_demand`, `flex`, `auto` | `auto` |
 | `HINDSIGHT_API_LLM_OPENAI_SERVICE_TIER` | OpenAI service tier: `flex` for 50% cost savings (OpenAI Flex Processing) | None (default) |
-| `HINDSIGHT_API_LLM_BEDROCK_SERVICE_TIER` | Bedrock service tier: `flex` for 50% cost savings (best-effort inference), `@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@` (guaranteed throughput), or `reserved` (provisioned capacity) | Unset (default tier) |
+| `HINDSIGHT_API_LLM_BEDROCK_SERVICE_TIER` | Bedrock service tier: `flex` for 50% cost savings (best-effort inference), `priority` (guaranteed throughput), or `reserved` (provisioned capacity) | Unset (default tier) |
 | `HINDSIGHT_API_LLM_GEMINI_SERVICE_TIER` | Gemini service tier: `flex` for 50% cost savings (best-effort inference) | Unset (default tier) |
 | `HINDSIGHT_API_LLM_EXTRA_BODY` | JSON dict of extra request-body params (e.g. `temperature`, `top_p`, `max_tokens`) merged into every LLM call. Applied across the OpenAI-compatible, Fireworks, Anthropic, Gemini/VertexAI and LiteLLM (incl. Bedrock/Router) providers. Each provider merges them in its own native parameter space, so use that provider's field names (e.g. `max_tokens` for OpenAI/Anthropic vs `max_output_tokens` for Gemini). The native Ollama structured-output path is a special case — see the note below. Also useful for custom model servers (e.g. vLLM `chat_template_kwargs`). | `null` |
 | `HINDSIGHT_API_LLM_DEFAULT_HEADERS` | JSON dict passed as `default_headers` to provider SDK clients. Used by operators routing through proxies / request-tracing middleware (e.g. Cloudflare AI Gateway, Helicone, corporate proxies). Wired into the Anthropic provider, the OpenAI-compatible providers, Fireworks, Nous, the OpenAI Responses API, and the LiteLLM-backed providers (`litellm`, `litellmrouter`, `bedrock`); other providers can opt in. | `null` |
@@ -351,7 +351,7 @@ export HINDSIGHT_API_LLM_MODEL=gpt-5.6
 
 # Gemini
 export HINDSIGHT_API_LLM_PROVIDER=gemini
-export HINDSIGHT_API_LLM_API_KEY=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_MODELS_MD_HINDS_4@@
+export HINDSIGHT_API_LLM_API_KEY=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_CONFIGURATION_M_3@@
 export HINDSIGHT_API_LLM_MODEL=gemini-2.0-flash
 # Optional: Use Gemini Flex for 50% cost savings (best-effort inference)
 # export HINDSIGHT_API_LLM_GEMINI_SERVICE_TIER=flex
@@ -1054,7 +1054,7 @@ export HINDSIGHT_API_EMBEDDINGS_LITELLM_MODEL=text-embedding-3-small  # or coher
 
 # Google - Gemini API (API key auth)
 export HINDSIGHT_API_EMBEDDINGS_PROVIDER=google
-export HINDSIGHT_API_EMBEDDINGS_GEMINI_API_KEY=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_MODELS_MD_HINDS_4@@  # or reuses HINDSIGHT_API_LLM_API_KEY
+export HINDSIGHT_API_EMBEDDINGS_GEMINI_API_KEY=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_CONFIGURATION_M_3@@  # or reuses HINDSIGHT_API_LLM_API_KEY
 export HINDSIGHT_API_EMBEDDINGS_GEMINI_MODEL=gemini-embedding-001  # 768 dimensions (default)
 # export HINDSIGHT_API_EMBEDDINGS_GEMINI_OUTPUT_DIMENSIONALITY=768  # configurable: 256, 512, 768, 1024, etc.
 
@@ -2033,7 +2033,7 @@ export HINDSIGHT_API_FILE_STORAGE_TYPE=s3
 export HINDSIGHT_API_FILE_STORAGE_S3_BUCKET=my-bucket
 export HINDSIGHT_API_FILE_STORAGE_S3_REGION=auto
 export HINDSIGHT_API_FILE_STORAGE_S3_ENDPOINT=https://your-minio.example.com
-export HINDSIGHT_API_FILE_STORAGE_S3_ACCESS_KEY_ID=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_CONFIGURATION_M_31@@
+export HINDSIGHT_API_FILE_STORAGE_S3_ACCESS_KEY_ID=minioadmin
 export HINDSIGHT_API_FILE_STORAGE_S3_SECRET_ACCESS_KEY=@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_CONFIGURATION_M_31@@
 
 # Tigris (S3-compatible, single global endpoint)
@@ -2289,7 +2289,7 @@ Configuration for background task processing. By default, the API processes task
 | `HINDSIGHT_API_OPERATION_CLEANUP_BATCH_SIZE` | Maximum expired terminal operation rows deleted per tenant schema during each cleanup cycle. Together with the cleanup interval this sets the drain rate for a backlog. Must be a positive integer. | `1000` |
 | `HINDSIGHT_API_OPERATION_CLEANUP_INTERVAL_SECONDS` | How often the cleanup cycle runs. Each cycle costs one cross-tenant discovery round-trip, so the interval is the main lever on that cost for deployments with many tenants (see [Background Maintenance](#background-maintenance)). `0` disables the job. | `900` |
 | `HINDSIGHT_API_WORKER_CONSOLIDATION_RESERVED_SLOTS` | Reserved (minimum) slots for consolidation within `WORKER_MAX_SLOTS` — a floor that guarantees capacity, **not** a per-type cap (bank-serialization preserved). See the note below. | `2` |
-| `HINDSIGHT_API_WORKER_CONSOLIDATION_BANK_PRIORITY` | Per-bank @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ for consolidation scheduling (see note below) | _(unset)_ |
+| `HINDSIGHT_API_WORKER_CONSOLIDATION_BANK_PRIORITY` | Per-bank priority for consolidation scheduling (see note below) | _(unset)_ |
 | `HINDSIGHT_API_WORKER_RETAIN_RESERVED_SLOTS` | Reserved (minimum) slots for retain within `WORKER_MAX_SLOTS`. | `0` |
 | `HINDSIGHT_API_WORKER_FILE_CONVERT_RETAIN_RESERVED_SLOTS` | Reserved (minimum) slots for file_convert_retain within `WORKER_MAX_SLOTS`. | `0` |
 | `HINDSIGHT_API_WORKER_REFRESH_MENTAL_MODEL_RESERVED_SLOTS` | Reserved (minimum) slots for refresh_mental_model within `WORKER_MAX_SLOTS`. | `0` |
@@ -2309,15 +2309,15 @@ With the defaults (`MAX_SLOTS=10`, `CONSOLIDATION_RESERVED_SLOTS=2`, all other r
 The legacy `..._MAX_SLOTS` env vars are a deprecated alias for `..._RESERVED_SLOTS` — despite the name they set the reservation floor, never a ceiling. They still work but log a warning; migrate to `..._RESERVED_SLOTS`.
 :::
 
-:::note Consolidation bank @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@
-`HINDSIGHT_API_WORKER_CONSOLIDATION_BANK_PRIORITY` controls which banks' consolidation tasks are claimed first when a slot becomes available. Format: comma-separated `bank-pattern:@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@` pairs where higher numbers mean higher @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@. Patterns support `*` as a wildcard; a bare `*` is the catch-all default for unlisted banks (defaults to `1` if omitted).
+:::note Consolidation bank priority
+`HINDSIGHT_API_WORKER_CONSOLIDATION_BANK_PRIORITY` controls which banks' consolidation tasks are claimed first when a slot becomes available. Format: comma-separated `bank-pattern:priority` pairs where higher numbers mean higher priority. Patterns support `*` as a wildcard; a bare `*` is the catch-all default for unlisted banks (defaults to `1` if omitted).
 
 Example:
 ```
 HINDSIGHT_API_WORKER_CONSOLIDATION_BANK_PRIORITY="shadow-*:10,staging-*:5,*:1"
 ```
 
-This ensures `shadow-*` banks are always consolidated before others, even if their tasks were submitted later. Useful for deployments with asymmetric bank sizes where a large bank might be starved by many small banks cycling through limited slots. Bank-serialization (max one concurrent consolidation per bank) is preserved regardless of @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@. When unset, consolidation tasks are claimed in `created_at` order (default behavior).
+This ensures `shadow-*` banks are always consolidated before others, even if their tasks were submitted later. Useful for deployments with asymmetric bank sizes where a large bank might be starved by many small banks cycling through limited slots. Bank-serialization (max one concurrent consolidation per bank) is preserved regardless of priority. When unset, consolidation tasks are claimed in `created_at` order (default behavior).
 :::
 
 ### Performance Optimization
@@ -2723,7 +2723,7 @@ broken server-level setting cannot wedge all callers.
 Example (compact, single-line JSON as required by env vars):
 
 ```bash
-export HINDSIGHT_API_DEFAULT_BANK_TEMPLATE='{"version":"1","bank":{"reflect_mission":"Help support agents remember customer interactions.","retain_extraction_mode":"verbose","disposition_empathy":5},"directives":[{"name":"Be concise","content":"Always respond concisely.","@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@":10}]}'
+export HINDSIGHT_API_DEFAULT_BANK_TEMPLATE='{"version":"1","bank":{"reflect_mission":"Help support agents remember customer interactions.","retain_extraction_mode":"verbose","disposition_empathy":5},"directives":[{"name":"Be concise","content":"Always respond concisely.","priority":10}]}'
 ```
 
 #### API Endpoints

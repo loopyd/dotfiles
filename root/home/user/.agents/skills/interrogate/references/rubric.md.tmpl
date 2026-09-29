@@ -1,0 +1,77 @@
+# Review Rubric
+
+Review through relevant lenses. Not every lens applies to every change. Use judgment.
+
+## Correctness
+
+Does the code actually do what the intent says?
+
+- Edge cases: empty inputs, nil/undefined, boundary values, concurrent access
+- Error handling: errors caught, propagated, silently swallowed?
+- Off-by-one, type coercion, integer overflow, string encoding
+- State management: race conditions, stale closures, dangling references
+- Happy path works? Sad path works?
+- Idempotency: operation runs twice, or a prior run crashed halfway? Answer "depends on state left behind" → missing reconciliation step.
+- Concurrency: multiple actors touch same mutable state (files, branches, shared data)? Access serialized structurally (locks, sequential phases, exclusive ownership), or by conventions that won't hold?
+
+Found a potential bug? Trace the execution path. Don't flag "this could be nil". Show the call chain that makes it nil.
+
+## Root Causes vs. Symptoms
+
+Code fixing the actual problem or papering over a symptom?
+
+Often needs looking beyond changed files. Read surrounding code (callers, callees, type definitions, sibling modules), understand the architecture. Use tools (Read, Grep, Glob). Follow the call chain. Read the types. Understand why the code exists before judging whether the change addresses the right layer.
+
+- Guard clauses masking a deeper invariant violation
+- Retry logic hiding a broken contract
+- Type casts silencing a modeling error
+- Workaround? Ask: why needed? What would a proper fix look like?
+- Fix in module A that should be a fix in module B's contract
+- Instructions where structure is better: fix is a comment "don't do X" or a convention someone remembers? Ask whether a type constraint, lint rule, or runtime check makes the wrong thing impossible
+
+## Structural Integrity
+
+Code fits the system?
+
+- Boundary discipline: validation at system boundaries, or scattered through business logic? Validate once where data enters, trust internally.
+- Abstraction level: mixing high-level orchestration with low-level detail?
+- Coupling: dependencies that make future changes harder?
+- Data model fit: structures match actual access patterns? Right structure makes downstream code obvious. Wrong one fights you.
+- Bolted-on vs. integrated: patched onto the existing design, or reads as if the design always accounted for it? New requirement known from the start — would the code look like this?
+- Legacy dual-paths: new API while old one stays alive? No external consumers → migrate callers, delete old path same wave. No permanent compatibility layers.
+
+Don't penalize simple code for lacking abstraction. Premature abstraction worse than duplication.
+
+## Verification
+
+Can you tell the code works from reading it?
+
+- Tests? Test behavior or implementation details?
+- Assertions/invariants that catch regressions?
+- Bug fix: test for the bug?
+- Integration boundary: full path tested?
+- Check the real thing, not a proxy. Liveness via file mtime or cached state instead of the actual value → verification gap.
+- Delegated or async work: verify actual output artifacts, or trust self-reports and summaries?
+
+## Complexity Budget
+
+Complexity justified by what the code accomplishes?
+
+- Could be simpler without losing correctness or clarity
+- Abstractions serving one call site
+- Configuration/parameterization for cases that don't exist yet
+- Dead code, unused imports, vestigial parameters
+- Over-engineering: "just in case" paths with no current callers
+- Obsolete compatibility paths kept for transitional stability no longer needed. Migration done? Delete the scaffolding
+- Does the UX justify the complexity? Every feature, control, option earns its place. Half-finished features worse than missing ones.
+
+Simpler is better unless simpler is wrong. Three lines of duplication beat a premature abstraction.
+
+## Security
+
+Each security finding: trace the input path through the code, show it.
+
+- User input to dangerous sinks (SQL, shell, eval, innerHTML) without sanitization
+- Auth/authz gaps in new endpoints
+- Secrets in code, logs, or error messages
+- TOCTOU (time-of-check-time-of-use) in security-critical paths

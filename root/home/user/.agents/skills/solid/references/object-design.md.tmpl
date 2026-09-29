@@ -1,0 +1,166 @@
+# Object-Oriented Design
+
+## Responsibility-Driven Design (RDD)
+
+The key insight: **Objects are defined by their responsibilities, not their data.**
+
+### Finding Objects
+
+Start with:
+
+1. **Nouns** in requirements → candidate objects
+2. **Verbs** → candidate methods/behaviors
+3. **Domain concepts** → value objects
+
+### Finding Responsibilities
+
+Each object should answer:
+
+- What does this object **know**?
+- What does this object **do**?
+- What does this object **decide**?
+
+### Object Stereotypes
+
+Every class fits one (or maybe two) stereotypes:
+
+| Stereotype | Purpose | Example |
+| ------------ | --------- | --------- |
+| **Information Holder** | Knows things, holds data | `User`, `Product`, `Address` |
+| **Structurer** | Maintains relationships | `OrderItems`, `UserGroup` |
+| **Service Provider** | Performs work | `PaymentProcessor`, `EmailSender` |
+| **Coordinator** | Orchestrates workflow | `OrderFulfillmentService` |
+| **Controller** | Makes decisions, delegates | `CheckoutController` |
+| **Interfacer** | Transforms between systems | `UserAPIAdapter`, `DatabaseMapper` |
+
+### The Two Questions
+
+For every class, ask:
+
+1. **"What pattern is this?"** - Which stereotype? Which design pattern?
+2. **"Is it doing too much?"** - Check object calisthenics rules
+
+If you can't answer clearly, the class needs refactoring.
+
+## Tell, Don't Ask
+
+**Command objects to do work. Don't interrogate them and do the work yourself.**
+
+- BAD: Asking, then doing, checking `if (account.getBalance() >= amount)` then setting balance `account.setBalance(account.getBalance() - amount)`
+- GOOD: Telling, `result = account.withdraw(amount)`, then `if (result.isSuccess())`
+
+The object that has the data should have the behavior.
+
+## Design by Contract (DbC)
+
+Every method has:
+
+- **Preconditions** - What must be true BEFORE calling
+- **Postconditions** - What will be true AFTER calling
+- **Invariants** - What is ALWAYS true about the object
+
+### Design by Contract (DbC) Example
+
+A `BankAccount` class with a private `Money` member called `balance`, a `withdraw()` method returning a `WithdrawResult()` that returns `WithdrawResult.invalidAmount()` if `amount.isNegativeOrZero()`, a `WithdrawResult.insufficientFunds()` if balance is less than amount desired `this.balance.isLessThan(amount)` then updating the balance with `this.balance = this.balance.minus(amount)` then returning success result `WithdrawResult.success(this.balance)`.
+
+- **INVARIANT:** balance is never negative
+- **PRECONDITION:** amount > 0
+- **POSTCONDITION:** balance decreased by amount OR error returned
+
+## Composition Over Inheritance
+
+**Prefer composing objects over extending classes.**
+
+### Why Inheritance is Problematic
+
+- Tight coupling between parent and child
+- Fragile base class problem
+- Difficult to change parent without breaking children
+- Forces "is-a" relationship that may not fit
+
+### When to Use Inheritance
+
+- True "is-a" relationship (rare)
+- Framework requirements
+- Template Method pattern (intentional)
+
+### Prefer Composition
+
+- BAD: Inheritance, A `PremiumUser` class extending `User` implementing `getDiscount()` from the parent.
+- GOOD: Composition, A `User` class with a constructor taking a `DiscountPolicy` object with a `getDiscount()` method returning the result of `this.discountPolicy.calculate()`, making discount behavior pluggable (e. g.: `new User(new PremiumDiscount())`, `new User(new StandardDiscount())`, `new User(new NoDiscount())`)
+
+## The Law of Demeter (Principle of Least Knowledge)
+
+**Only talk to your immediate friends.**
+
+A method should only call:
+
+1. Methods on `this`
+2. Methods on parameters
+3. Methods on objects it creates
+4. Methods on its direct components
+
+- BAD: Deep-swizzling through objects, (`order.getCustomer().getAddress().getCity()`)
+- GOOD: Ask the immediate friend (`order.getShippingCity()`)
+
+This reduces coupling - changes to `Address` don't ripple through all callers.
+
+## Encapsulation
+
+**Hide internal details, expose behavior.**
+
+### Levels of Encapsulation
+
+1. **Data** - private fields, no direct access
+2. **Implementation** - how things work internally
+3. **Type** - concrete class hidden behind interface
+4. **Design** - architectural decisions hidden from clients
+
+- BAD: Exposed internals, an Order class with public `Item` members and pulbic `total` allows the client to corrupt state (e. g.: `order.items.push(item)`, `order.total = -999`)
+- GOOD: Encapsulated, an Order class with private `OrderItems` and `Money` members, and `addItem()` and `getTotal()` members manipulating the members, returning copies or immutable objects safely.
+
+## Polymorphism
+
+**Replace conditionals with types.**
+
+- BAD: Type checking, `calculateShipping()` function string-checking a `method` argument for an explicit value (`standard`, `express`, or `overnight`), throwing a generic `Error`, masking malformed strings.
+- GOOD: Polymorphism, `ShippingMethod` interface expecting a `calculateCost()` method, `StandardShipping` class implementing `ShippingMethod()` overriding `calculateCost()` and `ExpressShipping` class implementing `ShippingMethod` overriding `calculateCost()` for their own purpose, requiring no sensitive conditions in our `calculateShipping()` implementation by passing `ShippingMethod` and resolving safely by calling `method.calculateCost()`.
+
+## Value Objects vs Entities
+
+### Value Objects
+
+- Defined by their attributes (no identity)
+- Immutable
+- Comparable by value
+- Examples: `Money`, `Email`, `Address`, `DateRange`
+
+#### Value Objects Example
+
+`Money` class with private read-only primatives: `amount`, and `currency` and `equals()` method offering equality comparison returing a `Boolean` comparing other `Money` object as well as `add()` method returning sum of this + other `Money` object while validating that `currency` is the same, if not throwing `CurrencyMismatch()`, if so returning a copy `new Money(this.amount + other.amount, this.currency)`
+
+### Entities
+
+- Have identity (survives attribute changes)
+- Usually mutable (via methods)
+- Comparable by identity
+- Examples: `User`, `Order`, `Product`
+
+#### Entities Example
+
+`User` class with a constructor setting its `UserId` as readonly, with private `Email` object and `Name` object members, offering `equals()` identity comparison returning a `Boolean` and changeEmail replacing the current `Email` object with that passed as an argument.
+
+## Aggregates
+
+A cluster of objects treated as a single unit for data changes.
+
+- One object is the **aggregate root** (entry point)
+- External code only references the root
+- Root enforces invariants for the entire cluster
+
+### Aggregates Example
+
+Class `Order` containing private `OrderItem` array, `addItem()` method taking a `Product` and quantity value, constructing a new `OrderItem` with the product and quantity and pushing onto our `OrderItem` stack, then calling `validateTotal()`, `removeItem()` method taking `ItemId` object filtering items by aggregate / negative identity comparison in a lambda (`this.items = this.items.filter(i => !i.id.equals(itemId))`), where the root enforces invariants in `validateTotal()` checking if `this.calculateTotal().exceeds(MAX_ORDER_VALUE)` to throw new `OrderTotalExceeded()` error if true.
+
+- BAD: Accessing items directly, `rder.items.push(new OrderItem(...))`,Bypasses validation!
+- GOOD: Through the root, `order.addItem(product, 2)`, Validation happens!

@@ -1,0 +1,121 @@
+---
+name: why
+description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, Discovers and queries each evidence category (source control) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
+disable-model-invocation: true
+---
+
+# Why
+
+Investigate the motivation and intent behind code.
+
+Companion to the [how](../how/SKILL.md) skill. [how](../how/SKILL.md) answers what the code does and how it works. `why` answers what forces led to its shape.
+
+## Operating Posture
+
+Operate as a **careful, cautious, precise investigator**. Be honest about what you know vs what you infer. Read [epistemics](./references/epistemics.md) for the full confidence framework and phrasing guide. The synthesizer must follow it.
+
+## Step 1. Understand the Target and the Question
+
+Parse what the user is asking. The **target** is usually a chunk of code, a pattern, a feature, or a named design decision. The **question** is usually design rationale, a tradeoff, a motivating edge case, an external constraint, dead code, or a broad history sweep.
+
+Target vague ("why do we do it this way?" with no clear referent): make your best guess from conversation context (open files, recent edits, cursor location, what was just discussed). State your interpretation briefly so the user can redirect, then proceed.
+
+## Step 2. Establish the Code Anchor
+
+Before spawning investigators, anchor in concrete code. You need:
+
+- Relevant file path(s) and line range(s)
+- Key symbols (function names, class names, constants)
+- Initial commit list: last few commits touching the target.
+- PR numbers from merge commits (pattern `(#1234)` in the subject)
+
+Build inline.
+
+```bash
+# Blame target lines for last-touch commits
+git blame -L <start>,<end> <file>
+
+# Full file history, with patches, through renames
+git log --follow -p -- <file>
+
+# Last N commits touching the file, PR numbers visible
+git log --oneline -20 -- <file>
+
+# Extract PR numbers from a commit message
+git log -1 --format=%B <commit>
+```
+
+Pull PR bodies and discussion via `gh` for substantive commits:
+
+```bash
+gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIssuesReferences,comments,reviews
+```
+
+Capture as seed context (file paths, symbols, commits, PR numbers, linked ticket IDs). Pass it to the investigators.
+
+## Step 3. Spawn Parallel Investigators (default posture)
+
+**Default to the full parallel investigation.**
+
+### Discovery
+
+Source control is always available through git and `gh`. Record ambiguous cases in the coverage map.
+
+Aim for a complete **coverage map**, not a minimal one. Document the null, don't skip the search.
+
+Launch all matching investigators as `reviewer` subagents in a single message so they run concurrently.
+
+Each investigator gets:
+1. The base prompt from [investigator prompt template](./references/investigator-prompt.md)
+2. The category playbook `references/sources/<source>.md`, adapted from examples in the [source playbook](./references/source-playbook.md)
+3. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers)
+4. The user's original question
+
+### Investigator roster. One per available evidence category
+
+Spawn one investigator per category.
+
+Each entry names the category and the kind of "why" it uniquely surfaces. Use it to know what to expect back, how to name a gap when a category returns empty, and (only in the rare provably-irrelevant case) justify a skip.
+
+1. **Source control investigator**. Git history, `gh` for PRs, code comments, tests. Always spawn. The only guaranteed source. Best at surfacing *implementation-time rationale captured during review*.
+
+### When to skip an investigator
+
+Skip only with an **explicit, written justification** in the final "Sources Consulted" section. One valid reason:
+
+- **Source provably irrelevant**, not just "probably irrelevant." A high bar. Example: "Error / exception tracking skipped. Target is a build-time script with no runtime code path."
+
+Scope assessment suggests a single-commit trivial target where the PR description already holds the complete answer: answer inline **only after** confirming the source-control category search would be redundant. Say so explicitly. Rare.
+
+## Step 4. Synthesize
+
+Spawn one `worker` subagent.
+
+The worker gets:
+1. Investigator findings, including any null results and any categories skipped with justification
+2. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
+3. The user's original question
+4. The epistemics framework from [epistemics](./references/epistemics.md)
+5. The synthesizer prompt template from [synthesizer prompt template](./references/synthesizer-prompt.md)
+
+## Step 5. Present
+
+Take the synthesizer's output, present it. Light edit for clarity or conversation context allowed, but **do not rewrite the confidence language**.
+
+## Output Format
+
+The structure in [synthesizer prompt template](./references/synthesizer-prompt.md): The Question, The Code in Question, What We Found, What We Can Reasonably Infer, Competing Hypotheses, What We Don't Know, Sources Consulted, Confidence Summary. Adapt as needed, keep the confidence separation intact, keep Sources Consulted as one line per investigator, including ones that returned nothing or were skipped, with the reason.
+
+After Sources Consulted, if the user's `why` question precedes actually changing this code, convert the lineage findings into a Preserve / Change / Avoid / Risk constraint set suitable for planning the change.
+
+## Common Failure Modes to Avoid
+
+- **Recency bias**. Assuming the most recent commit is authoritative. The current shape is often accretion of many earlier decisions. Trace back.
+
+## Reference Files
+
+- [epistemics](./references/epistemics.md). Confidence tiers, phrasing guide. The synthesizer must follow it.
+- [investigator prompt template](./references/investigator-prompt.md). Base prompt for investigator subagents.
+- [source playbook](references/source-playbook.md). Index pointing at the category playbooks below.
+- `references/sources/<source>.md`. One self-contained example playbook per source category. Give an investigator the single file matching its category.
+- [synthesizer prompt template](./references/synthesizer-prompt.md). Prompt template for the synthesizer subagent, including the output format.

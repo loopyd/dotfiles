@@ -79,9 +79,9 @@ If the key is missing or invalid, requests will receive a `401 Unauthorized` res
 
 ## Bank Selection
 
-The memory bank is resolved in this @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ order:
+The memory bank is resolved in this priority order:
 
-1. **URL path** (highest @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@): `http://localhost:8888/mcp/my-bank/`
+1. **URL path** (highest priority): `http://localhost:8888/mcp/my-bank/`
 2. **X-Bank-Id header**: `--header "X-Bank-Id: my-bank"`
 3. **Default**: Uses `HINDSIGHT_MCP_BANK_ID` env var (default: "default")
 
@@ -489,7 +489,7 @@ Create a new directive in a bank.
 |-----------|------|----------|-------------|
 | `name` | string | Yes | Human-readable name for the directive |
 | `content` | string | Yes | The directive content/instruction |
-| `@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@` | integer | No | Priority level (higher = more important) |
+| `priority` | integer | No | Priority level (higher = more important) |
 | `is_active` | boolean | No | Whether the directive is active (default: `true`) |
 | `tags` | list[string] | No | Execution scope for the directive. Empty/omitted (default) means global; non-empty means reflect must use a matching tag scope |
 

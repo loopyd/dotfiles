@@ -1,0 +1,159 @@
+# Finding and installing skills
+
+This feature helps the user find by query, search, download, install and uninstall skills from `skill.sh` community repository.
+
+## What is the Skills CLI?
+
+The Skills CLI (`npx skills`) is the package manager for the open agent skills ecosystem. Skills are modular packages that extend agent capabilities with specialized knowledge, workflows, and tools.
+
+**Key commands:**
+
+- `npx skills find [query]` - Search for skills interactively or by keyword
+- `npx skills add <package>` - Install a skill from GitHub or other sources
+- `npx skills check` - Check for skill updates
+- `npx skills update` - Update all installed skills
+
+**Browse skills at:** <https://skills.sh/>
+
+## Workflow 1: Find Skills
+
+Execute:
+
+RESPONSE: Store remaining arguments (words after find, match, query, search) keyword or NULL if empty.
+
+### Step 1: Understand Need
+
+Execute:
+
+If RESPONSE is a KEYWORD_LIST, jump to [Step 2](#step-2-search)
+IF RESPONSE is a questionare ANSWER, continue here
+If RESPONSE is NULL, continue here
+If RESPONSE is "cancel", "quit", "exit", "stop", or denial phrase, exit workflow and continue with previous task(s).
+
+Questionare:
+
+1. Ask: What is the domain (e.g., React, Testing, Design, Deployment)?
+2. Ask: What is the specific task (e.g., writing tests, creating animations, reviewing PRs) you are trying to accomplish?
+3. Think: Is this request a common enough task that a skill likely exists for it.
+4. Do we have another skill that already accomplishes the requested task?
+5. Ask: Suggest KEYWORD_LIST to use, and ask for acknowledgement / ammendment before approval
+
+Satisfy all Questionare by grilling the user relentlessly in a loop with [Step 1](#step-1-understand-need) until mutual understanding is reached.  Once satisfied:  go to [Step 2](#step-2-search) with KEYWORD_LIST
+
+### Step 2: Search
+
+Execute, with KEYWORD_LIST:
+
+```bash
+npx skills find {KEYWORD_LIST}
+```
+
+The command will return results with shape:
+
+```
+Install with npx skills add <owner/repo@skill>
+
+vercel-labs/agent-skills@vercel-react-best-practices
+└ https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices
+```
+
+#### Tips for Effective Searches
+
+1. **Use specific keywords**: "react testing" is better than just "testing"
+2. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
+3. **Check popular sources**: Many skills come from `vercel-labs/agent-skills` or `ComposioHQ/awesome-claude-skills`
+
+### Step 3: Collect Metadata
+
+#### Step 3.1: Skill Category Metadata
+
+Choose UP TO THREE of these common categories based on fuzzy-match search keywords:
+
+- **Web Development:** react, nextjs, typescript, css, tailwind, js, commonjs, html, php, asp, scss, sass
+- **Testing:** testing, jest, playwright, e2e, pytest, unittest, fixture
+- **DevOps:** deploy, docker, kubernetes, ci-cd, podman, runpod, azure, aws, gcp
+- **Documentation:** docs, readme, changelog, api-docs, oxygen, cdoc, pydoc, shdoc, asciidoc, markdown, text, txt, pdf, ocr
+- **Code Quality:** review, lint, refactor, best-practices, linter, pyright, lsp, ast
+- **Design:** ui, ux, design-system, accessibility, user-interface, design
+- **Productivity:** workflow, automation, git, jobs, tasks, todo, svn, source-control, pipeline, orchestration, orchestrator
+
+And assign to the CATEGORY metadata.
+
+#### Step 3.2: Collect Remianing Metadata
+
+Fill out the remaining metadata:
+
+1. NAME: The skill name
+2. SHORT_DESCRIPTION: Shortened skill description
+3. COMMAND: The install command they can run (e. g.: `npx skills add vercel-labs/agent-skills@vercel-react-best-practices`)
+4. LINK: A link to learn more at `skills.sh` (e. g.: `https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices`)
+5. KEYWORDS: The keywords used to search
+
+Sort into **Misc** category anything else.
+
+### Step 4: Display Findings
+
+Response Template:
+```
+Skillmaster found the {NAME} skill - {SHORT_DESCRIPTION}
+
+To install it **manually**, run:
+
+  {COMMAND}
+
+**Learn more:** {LINK}
+
+If you would like, I can install this skill for you, just say "go", "yes", or "continue" to proceed!
+```
+
+RESPONSE: Await and store user next chat message
+
+### Step 5: Install if Authorized
+
+Execute:
+
+If RESPONSE_1 is "go", "yes", "continue" or acknowledging phrase, proceed and run:
+
+```bash
+npx skills add <owner/repo@skill> -g -y
+```
+
+The `-g` flag installs globally (user-level) and `-y` skips confirmation prompts.
+
+If RESPONSE_1 is "no", "nope", "next" or neutral denial phrase, jump back to [Step 1](#step-2-search)
+If RESPONSE_1 is "cancel", "stop", "quit", "exit" or hard denial phrase, begin [Workflow 2](#workflow-2-when-no-skills-are-found)
+
+## Workflow 2: When No Skills Are Found
+
+If no relevant skills exist after searching, follow this workflow.
+
+### Step 1: Display Not Found Message
+
+Use metadata from above and:
+
+1. Acknowledge that no existing skill was found
+2. Offer to help with the task directly using your general capabilities
+3. Suggest the user could create their own skill with `npx skills init`
+
+Response Template
+```
+I searched for skills on `skills.sh` elated to **{KEYWORDS}** under **{CATEGORY}** but didn't find any matches.
+
+You can create your own skill with me as your assistant by invoking `/skill-master create {description}` or `/skill-master make {description}` to get started, or manually:
+
+    npx skills init custom-skill-name
+
+to begin skill creation yourself.  
+
+I can also help you with this task __directly__. If you would like to proceed, say "yes", "go", "continue", or acknowledge I move forward independently **without** creating a new skill.
+```
+
+RESPONSE_2: Store user next chat message
+
+### Step 2: Not Found Resolution
+
+Execute:
+
+If RESPONSE_2 is "no", "nope", "nah", "no thanks", "cancel", "stop" or denial phrase, exit the workflow immediately and proceed with former task.
+If RESPONSE_2 is "yes", "go", "continue", "ok", or acknowledging phrase, exit workflow and proceed with user specified task
+If RESPONSE_2 is otherwise, continue normally with user instructions

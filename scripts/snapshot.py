@@ -71,7 +71,10 @@ class Scrubber:
             suffix += 1
             name = original + '_' + str(suffix)
         self.values[name] = value
-        if len(value) < 8:
+        if len(value) < 8 or value.isalpha():
+            # Short values and plain-word documentation examples are not global
+            # secrets: scrub them only in the assignment that declared them, so a
+            # common word such as "priority" cannot rewrite unrelated files.
             if key:
                 self.local.setdefault(self.label, []).append((key, value, name))
         else:
@@ -158,13 +161,16 @@ def reason(path, is_dir=False):
         return 'installed MCP package'
     if is_dir:
         return None
-    if any(word in name for word in ('history', 'recent', 'session', 'cookie', 'usage', 'license', 'request-details', 'login data', 'model_catalog', 'models_cache')):
+    skill_asset = parts[:2] == ('.agents', 'skills')
+    skill_document = skill_asset and path.suffix.lower() == '.md'
+    if not skill_document and any(word in name for word in ('history', 'recent', 'session', 'cookie', 'usage', 'license', 'request-details', 'login data', 'model_catalog', 'models_cache')):
         return 'history/identity/runtime'
     if name in {'auth.json', 'installation_id', 'machine-id', 'jwt-secret', '.netrc', '.npmrc', '.pypirc'} or name.startswith(('id_rsa', 'id_ed25519')):
         return 'credential store'
     if path.suffix.lower() in {'.db', '.sqlite', '.sqlite3', '.jsonl', '.bak', '.save', '.log', '.pem', '.p12', '.pfx', '.kdbx', '.rk', '.key', '.gpg'} or re.search(r'\.(?:bak|save|backup)[.-]', name):
         return 'database/secret/backup'
-    if path.suffix and path.suffix.lower() not in EXTENSIONS | {'.jinja'} and str(path) not in ROOT_FILES:
+    allowed_extensions = EXTENSIONS | {'.jinja'} | ({'.tsv'} if skill_asset else set())
+    if path.suffix and path.suffix.lower() not in allowed_extensions and str(path) not in ROOT_FILES:
         return 'not configuration text'
     return None
 
@@ -243,7 +249,7 @@ def capture(args):
             collected[relative] = (template.read_text(), False)
     exclusions = Counter()
     links = []
-    roots = ['.config', '.agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
+    roots = ['.config', '.agents', '.pi/agent/agents', '.codex/agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
     fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.local/lib/dotfiles/hindsight-hook.mjs', '.local/lib/dotfiles/sudo-askpass', '.cargo/env', '.rustup/settings.toml']
     candidates = [home / name for name in fixed if (home / name).exists()]
     for prefix in roots:
@@ -344,7 +350,7 @@ def capture(args):
     (output / 'templates').mkdir(parents=True, exist_ok=True)
     example = {name: None for name in sorted(used) if name not in {'HOME', 'USER', 'UID', 'GID'}}
     (output / 'templates/values.example.json').write_text(json.dumps(example, indent=2) + '\n')
-    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.config/blender', '.config/ghidra', '.config/REAPER', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi (retired harness)']}
+    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.config/blender', '.config/ghidra', '.config/REAPER', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi runtime, sessions and installed packages (authored agents captured separately)']}
     (output / 'templates/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(json.dumps({'templates': len(entries), 'variables': len(example), 'unit_links': len(links), 'excluded_file_counts': dict(exclusions), 'private_values': str(values_path)}, indent=2))
 

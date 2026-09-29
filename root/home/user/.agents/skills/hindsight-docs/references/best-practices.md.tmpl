@@ -162,7 +162,7 @@ Define a controlled vocabulary for classification. The LLM will extract and norm
 - **`type: "multi-values"`** — accumulates multiple values
 - **`tag: true`** — extracted label values are also added as tags (enables filtering by entity value)
 
-Use entity labels when you need consistent classification — domain-specific terms, status values, @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@ levels, @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK@@ types.
+Use entity labels when you need consistent classification — domain-specific terms, status values, priority levels, engagement types.
 
 ---
 
@@ -283,7 +283,7 @@ Use for source tracking and downstream linking. **Not filterable** — use tags 
 metadata={"source": "slack", "channel": "#engineering", "thread_id": "T123456"}
 
 # Ticket linking
-metadata={"ticket_id": "JIRA-123", "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@": "high", "reporter": "alice"}
+metadata={"ticket_id": "JIRA-123", "priority": "high", "reporter": "alice"}
 
 # Document provenance
 metadata={"url": "https://...", "section": "pricing-faq", "version": "2025-Q1"}

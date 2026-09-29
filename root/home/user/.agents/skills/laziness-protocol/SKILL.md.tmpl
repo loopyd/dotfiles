@@ -1,0 +1,18 @@
+---
+name: laziness-protocol
+description: "Apply when refactoring, evaluating diff size, or tempted to add abstractions, layers, or signal threading. Bias toward deletion and the smallest change that solves the problem."
+disable-model-invocation: true
+---
+
+# Laziness Protocol
+
+Most result with least code and complexity.
+
+- **Prefer deletion.** Asked to refactor or improve? Look for removals before additions.
+- **Maintain a flat call hierarchy.** Avoid deep call chains. A rich interface hiding substantial work is not a deep call chain. Answering a question needs tracing more than 3 files or layers? Flatten it.
+- **Consolidate decisions.** Don't repeat the same choice in several places. Put it behind one source of truth, pass the result as a simple flag.
+- **Minimize the diff.** Smallest change that solves the problem. Fewer lines beat "elegant" boilerplate.
+- **Question the threading.** Task asks you to pass a new signal through types, schemas, pipelines, or similar layers? Stop, look for a more direct path.
+- **Sweat the small leaks.** Remove tiny pass-throughs, representation leaks, duplicated choices before they spread. Small leaks compound into permanent coordination costs.
+
+**The test:** A human developer would find the code exhausting to maintain? Bad solution.

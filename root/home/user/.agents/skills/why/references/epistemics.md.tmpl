@@ -1,0 +1,144 @@
+# Epistemics
+
+Reason about confidence when evidence is historical, fragmentary, contradictory. Communicate without flattening to false certainty.
+
+Code carries no motivation. Read what code does. Can't read why it exists. Why lives in commits, PRs, tickets, docs, conversations — incomplete, biased, sometimes missing. Pretending otherwise produces confident guesses that mislead.
+
+## Confidence Tiers
+
+Every claim sits in one tier. Tier picks output section and phrasing.
+
+### 1. Direct
+
+Explicit textual citation answering the question. Not "code does X so author wanted X". Something the author *wrote* saying why.
+
+Examples:
+- PR description: "this fixes the bug where users with >1000 items couldn't paginate"
+- Ticket: "we're adding this because customer Acme requested it in their security review"
+- Code comment: "// clamp to 100 because the upstream API rejects larger values"
+- Design doc: "we chose option A over option B because we need persistence across restarts"
+- Author chat: "switching to this approach since the old one was flaky in tests"
+
+Phrasing: confident, present tense. "This exists because X." Cite source.
+
+### 2. Supported
+
+Multiple indirect evidence pieces converge. No single source states it; pattern across sources makes it likely.
+
+Examples:
+- PR title "improve performance", ticket labeled "perf", surrounding commits all touch same hot path
+- Multiple tests added alongside change, all large-input edge cases
+- Author's other same-week PRs all mention same incident
+
+Phrasing: confident but derived. "The evidence points strongly to X: [pieces]." Cite multiple sources.
+
+### 3. Inferred
+
+Reasonable reading, nothing explicit. Reader must see it as *your interpretation*, not record fact.
+
+Examples:
+- PR gives no why, but error was in production (incident-channel timing) and fix rushed (merged same day) → likely hotfix.
+- Function name suggests retry. Retry count 3. Matches team convention "3 retries" seen elsewhere.
+
+Phrasing: hedged. "It appears", "likely", "suggests", "is consistent with", "one reading is". Make the chain explicit: "Given A and B, C seems likely because D."
+
+### 4. Speculative
+
+Plausible hypothesis, thin evidence, other explanations fit equally. Valuable, but mark as guess.
+
+Examples:
+- "This might be a workaround for a browser bug since fixed, but no contemporary evidence found."
+- "It's possible this threshold matched an SLA commitment, but no SLA doc references it."
+
+Phrasing: explicitly speculative. "One possibility is X, but we have no direct evidence." Usually in "Competing Hypotheses".
+
+### 5. Unknown
+
+Looked, couldn't find out. Valid, important. Document it.
+
+Phrasing: "We searched X, Y, Z and found no evidence of why." Be specific about *what* was searched. "Couldn't find out" is weak. Better: "searched ticket tracker with keywords A and B, scanned 6 PRs touching this file since 2023, grep'd repo for string literals matching the threshold. None surfaced a rationale."
+
+## Phrasing Guide
+
+### Words that carry confidence. Use carefully
+
+Imply **Direct** or **Supported**. Never for inferences.
+
+- "because" — causal claim with evidence
+- "the reason is" — same
+- "was designed to" — claims author intent
+- "fixes", "addresses", "solves" — claims the change achieved its goal
+- "the team decided" — claims a group decision happened
+
+Using these? Have a citation adjacent.
+
+### Words that hedge. Use for inferences
+
+- "appears to"
+- "seems to"
+- "likely"
+- "suggests"
+- "is consistent with"
+- "one reading is"
+- "plausibly"
+- "may have been"
+- "the evidence points toward"
+
+Signal interpretation, not report. Use liberally in "What We Can Reasonably Infer".
+
+### Words to avoid
+
+- "obviously" — if obvious, user wouldn't ask
+- "clearly" — almost always precedes an unclear claim
+- "of course" — same
+- "just" (as in "it's just X for performance") — dismissive, hides uncertainty
+- "I think" / "I believe" — you synthesize evidence, not offer opinion. Use "the evidence suggests".
+
+### Avoid rationalization
+
+Code that "makes sense" today may have been written for reasons that no longer apply, or were wrong then. Don't retrofit a clean rationale onto messy history.
+
+Resist:
+- Assume author did the "right" thing, work backward to justify
+- Assume a consistent codebase pattern was intentional when it may be copy-paste
+- Turn absence of evidence into evidence of absence ("no one mentioned security, so it wasn't a concern")
+
+## The Sycophancy Trap
+
+`why` questions often embed a hypothesis: "Why do we do this, I assume it's for performance?" Don't confirm it. Treat as one candidate, check evidence independently. Evidence supports it? Say so with citations. Not? Say so, present what evidence *does* support.
+
+User's guess = prompt for investigation, not conclusion to validate.
+
+## When Evidence Contradicts
+
+Two sources disagree (PR says one thing, ticket another)? Surface both. Don't pick the tidier narrative. Typical pattern:
+
+- **Maintainer says** "we need this for customer X's compliance requirement"
+- **PR says** "cleaning up tech debt in this area"
+
+Both may be true (maintainer motivated it, PR is author's framing), or one wrong. Present both with citations, let user decide.
+
+## When Evidence Is Missing
+
+Honest "we don't know" is among the most valuable outputs. User now knows:
+
+- Answer isn't in the obvious places
+- They must ask a human (original author, product owner, team lead)
+- Or decide the question isn't worth pursuing
+
+Failing to mark a gap, filling it with a confident guess, actively harms the user. They'll act on the guess.
+
+Hit a gap? Name it concretely:
+- What question you tried to answer
+- What sources you searched
+- What you searched for in each
+- What you found (nothing, or only tangential)
+
+## Calibration Check Before Finalizing
+
+Before delivering, synthesizer reviews every claim in "What We Found" and "What We Can Reasonably Infer":
+
+1. Citation? If not, add one or move it to "Inferred" / "Hypotheses".
+2. Phrasing calibrated to tier? (Direct can use "because". Inferred cannot.)
+3. Treating code itself as evidence for its own intent? That's not evidence. Remove or reclassify.
+4. Output includes "What We Don't Know"? No gaps mentioned is suspicious. Either evidence unusually complete or something swept under the rug.

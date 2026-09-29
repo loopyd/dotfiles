@@ -1,0 +1,97 @@
+---
+name: interrogate
+description: "Use for \"interrogate\", \"adversarial review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+disable-model-invocation: true
+---
+
+# Interrogate
+
+Spawn several independent reviewers to adversarially review code changes. Each gets same prompt and rubric. Adversarial signal from independent review, not assigned personas.
+
+Deliverable: synthesized verdict. Do NOT auto-apply changes.
+
+## Step 1, Determine Scope
+
+Identify what to review from context:
+
+- User points at files or a diff: use that
+- On a feature branch: run `git diff main...HEAD` (or appropriate base) for the full changeset
+- Message references recent work: gather relevant files
+
+Package the diff (or file contents) plus surrounding context files reviewers need.
+
+## Step 2, State the Intent
+
+Before spawning reviewers, state intent explicitly. Derive from:
+
+- User's message
+- Commit messages
+- PR description, if one exists
+- The code itself
+
+One clear paragraph. Unsure about intent? Ask the user first.
+
+## Step 3, Spawn Reviewers
+
+Launch all `reviewer` subagents. One reviewer per entry, extending or shrinking the Reviewer A/B/C labels below to the configured entry count. Rule or line missing? Use table defaults.
+
+Read [reviewer prompt template](./references/reviewer-prompt.md), fill with:
+1. Stated intent
+2. Diff or file contents
+3. Review rubric from [rubric](./references/rubric.md)
+4. Code-quality lens from [code quality review](./references/code-quality-review.md)
+
+Same filled template to all reviewers, so every lane applies the code-quality lens.
+
+## Step 4, Synthesize
+
+As results return, build a unified picture:
+
+1. **Parse all findings**
+2. **Identify consensus**. Findings raised by 2+ reviewers independently are highest signal.
+3. **Identify lone findings**. Still worth reading, weight accordingly.
+4. **Deduplicate**. Reviewers may describe the same issue differently. Merge, note which reviewers raised it.
+5. **Note disagreements**. One reviewer flags something, another says the opposite? Useful context for the verdict.
+
+## Step 5, Lead Judgment
+
+You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator.
+
+Read [lead judgement](./references/lead-judgment.md) for the full framework.
+
+Categorize every finding:
+
+- **Act on**. Real issues affecting correctness, security, or maintainability given the actual goals. Block a real PR.
+- **Consider**. Legitimate points, not sure they outweigh the cost right now. Worth the user's attention.
+- **Noted**. Technically valid, not actionable. Context-dependent, premature optimization, or low-impact at this stage.
+- **Dismissed**. Wrong, nitpicky, or missing context. Brief why.
+
+For each finding, include:
+- Which reviewer(s) raised it
+- Category (act on / consider / noted / dismissed)
+- One-line rationale
+
+## Output Format
+
+Present the verdict in this structure:
+
+### Intent
+> [stated intent paragraph from Step 2]
+
+### Reviewers
+- Reviewer [label]: [N findings] (one bullet per reviewer)
+
+### Act On
+[Findings to address. Each: description, which reviewers raised it, why it matters.]
+
+### Consider
+[Findings worth thinking about. Each: description, which reviewers raised it, tradeoff.]
+
+### Noted
+[Valid but low-priority. Brief list.]
+
+### Dismissed
+[Rejected findings with brief rationale.]
+
+### Agreement Map
+[Where lanes agreed, where they diverged, what the pattern tells us.]

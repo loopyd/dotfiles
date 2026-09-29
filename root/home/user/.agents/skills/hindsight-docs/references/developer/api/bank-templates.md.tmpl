@@ -56,7 +56,7 @@ Browse the Bank Templates Hub for ready-to-use templates.
     {
       "name": "directive-name",
       "content": "The directive instruction text",
-      "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@": 0,
+      "priority": 0,
       "is_active": true,
       "tags": ["optional", "tags"]
     }
@@ -119,7 +119,7 @@ Schema; each field means the same thing it does in
 |-------|----------|-------------|
 | `name` | Yes | Directive name. Used as the match key on re-import. |
 | `content` | Yes | The directive instruction text. |
-| `@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@` | No | Priority value (higher = more important). Default: `0` |
+| `priority` | No | Priority value (higher = more important). Default: `0` |
 | `is_active` | No | Whether the directive is active. Default: `true` |
 | `tags` | No | Tags for categorization. Default: `[]` |
 
@@ -149,7 +149,7 @@ template = {
         {
             "name": "Acknowledge frustration",
             "content": "Always acknowledge frustration before offering solutions.",
-            "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@": 10,
+            "priority": 10,
         }
     ],
 }
@@ -186,7 +186,7 @@ const template = {
     {
       name: 'Acknowledge frustration',
       content: 'Always acknowledge frustration before offering solutions.',
-      @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@: 10,
+      priority: 10,
     },
   ],
 };
@@ -229,7 +229,7 @@ curl -X POST "$HINDSIGHT_URL/v1/default/banks/my-bank/import" \
       {
         "name": "Acknowledge frustration",
         "content": "Always acknowledge frustration before offering solutions.",
-        "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@": 10
+        "priority": 10
       }
     ]
   }'

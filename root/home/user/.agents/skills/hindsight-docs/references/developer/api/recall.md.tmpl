@@ -625,7 +625,7 @@ Each tag resolves to the bank tags scoring at least 0.45, and the leaf then matc
 }
 ```
 
-**Nested OR inside AND** — user must match, plus either step OR @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@:
+**Nested OR inside AND** — user must match, plus either step OR priority:
 
 ```json
 {
@@ -633,7 +633,7 @@ Each tag resolves to the bank tags scoring at least 0.45, and the leaf then matc
     { "tags": ["user:alice"], "match": "all_strict" },
     { "or": [
         { "tags": ["step:5"], "match": "any_strict" },
-        { "tags": ["@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_BEST_PRACTICES_MD_KEY_2@@:high"], "match": "all_strict" }
+        { "tags": ["priority:high"], "match": "all_strict" }
     ]}
   ]
 }

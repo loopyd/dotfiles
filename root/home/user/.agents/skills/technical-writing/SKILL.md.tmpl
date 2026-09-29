@@ -1,0 +1,105 @@
+---
+name: technical-writing
+description: "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for /technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages."
+---
+
+# Technical writing
+
+Goal: writing a tired engineer understands first read. Four layers, one question each: what kind of document, how sentences address the reader, how much each sentence carries, can any sentence read two ways. Apply all four.
+
+Three rules above the layers:
+
+- **Cut every word that does no work.** Sentence survives without a word? Word goes. "In order to" is "to". "It is important to note that" is nothing.
+- **Use the short, everyday word.** "Use", not "utilize". "Help", not "facilitate". "Do", not "perform". A long word buys its length with precision.
+- **Rule makes a sentence worse?** Fix the sentence another way or leave it. Rules serve the reader. A sentence that follows every rule and reads machine-written has failed.
+
+The codebase is the word list. Write the real symbol, file, flag, or command name, not a synonym or description.
+
+Don't invent jargon. Use words a developer says out loud: "move", "delete", "a budget that only decreases", not "evacuate", "ratchet", "endgame". A named pattern is fine when the doc says what it means the first time. Propose a new offender and its replacement as an addition to [unslop](../unslop/SKILL.md)'s abstract-metaphor rule in your reply, with the diff. Don't edit that skill.
+
+## Vary the rhythm
+
+The layers decide what a document says and how much each sentence carries. A doc can obey all of them and still read machine-written: every sentence clipped short, no view, nothing specific.
+
+- Mix sentence lengths on purpose. Short sentences land a point. Longer ones carry a fact with its condition or consequence.
+- One thought per sentence does not mean one length per sentence. Split the sentence carrying two thoughts. Keep the long sentence carrying one.
+- Have a view where the mode allows. Explanation weighs trade-offs: say what you make of them, don't list pros and cons. Reference stays dry.
+- Be specific over sterile. Not "schema changes can cause issues" but "a column rename fails the build".
+
+## Pick the mode first (Diátaxis)
+
+One document, one mode. Two questions pick it: does the content inform action (doing) or understanding (thinking), and does it serve learning or work?
+
+- Action + learning: **tutorial**.
+- Action + work: **how-to**.
+- Understanding + work: **reference**.
+- Understanding + learning: **explanation**.
+
+Use the compass on a whole document or one sentence.
+
+**Tutorial: learning by doing.** You are the teacher. Learner's success is your job, not theirs. Open by saying what the learner will build, not what they will "learn". Every step produces a visible result, early and often. Tell them what they should see: expected output, prompt change, log line. Cut explanation to one clause and a link. Teaching pauses break the lesson. Stay concrete. Write as "we", in commands: "First, do x. Now, do y."
+
+**How-to: steps to a goal.** Solve a problem a person has, not an operation the machine can perform. Assume competence. Skip teaching. Action only: no digressions, background, or completeness for its own sake. Link those. Allow forks and judgment: "If you want x, do y." Name the guide by task: "How to calibrate the radar array", not "Radar array calibration".
+
+**Reference: facts for lookup.** Describe. Only describe. No instruction, persuasion, or opinion. Dry, complete, sure. State facts, options, limits, errors, no hedging. Mirror the structure of the thing described, so code and docs navigate together. Put material where readers expect. Generate from code where possible, so it stays true.
+
+**Explanation: understanding and why.** One bounded topic, readable away from the product. Each title tolerates an implicit "About..." in front. Anchor on a real why question. Give context: design decisions, history, constraints, alternatives. Opinion allowed here and nowhere else.
+
+Don't mix modes: no reference tables in a tutorial, no tutorial hand-holding in reference, no arguing in a how-to. Split and link.
+
+## Write sentences to the reader (Google developer style)
+
+- Talk to the reader as "you", present tense. "Will" only for things that genuinely happen later.
+- Say who does what: "the compiler checks", not "is checked". Passive fine only when the actor is unknown or beside the point.
+- Write instructions as commands: "Click Submit." State facts plainly. Never "should be done".
+- Put the condition before the instruction: "To delete the document, click Delete." The reader skips what does not apply.
+- Put the common case first. Exceptions after.
+- Sound like a knowledgeable friend. No buzzwords, figurative language, or "please" in instructions, never "simply", "easy", "quickly" in a procedure. If it were simple, the reader would not be here.
+- Don't pre-announce ("we will soon support..."), don't start consecutive sentences with the same phrase.
+- Link with words that say where the link goes: page title or short description. Never "click here". Prefer a sentence of context on the page over a link off it.
+- Headings carry the point, not just the topic ("Pick the mode first", not "Modes"). Sentence case. A task heading is a bare verb phrase ("Create an instance"). A concept heading is a noun phrase. One h1 per page, no skipped levels.
+- Numbered lists for sequences, bullets else. Introduce a list with a complete sentence. Keep items parallel.
+- Code in code font. UI elements in bold. Serial commas. Drop "etc."; say up front that a list is partial.
+
+## Make statements load one at a time (STE rules)
+
+- One instruction per sentence. One thought per sentence else.
+- Split instructions over ~20 words and other sentences over ~25.
+- Put the warning or condition before the step it guards: "If hot oil touches your skin, injuries can occur."
+- Keep "the" and "a": "Remove backup file" reads two ways. "Remove the backup file" reads one.
+- Give each word one meaning and one job, keep it. "Check" means inspect? Don't also use it for restrain.
+- Pick one word per action, stick to it: "start", not "start" here and "initiate" there.
+- Write procedures as direct commands, never narration or passive: "Install the component", not "the component must be installed".
+- Avoid "-ing" words where you can. Too many grammatical jobs, breeds misreadings.
+
+## Leave no sentence open to two readings (Global English)
+
+- Keep "only" and "not" next to the word they change: "only fails on growth" and "fails only on growth" say different things.
+- Break up long noun strings: "the proto import budget check script" becomes "the script that checks the proto-import budget".
+- Make every "it", "they", "this" point at one obvious thing. Repeat the noun when in doubt. Never use "this" or "which" to point at a whole clause.
+- Don't drop verbs: "Phase 1 moves the converters and Phase 2 the runtime" leaves Phase 2 without one. Give it one.
+- Keep the small words that show structure. "Ensure that the switch is off" keeps "that" because it makes the sentence parse one way. Never trade clarity for word count.
+- Repeat the article in a series when it prevents a misread: "the client and the host", not "the client and host", when they are two things.
+- Say which parts "and" or "or" joins when a sentence can group two ways. "Both...and", "either...or", "if...then" are free disambiguators.
+- Use periods, not semicolons. Replace an em dash with a new sentence.
+- Make parenthetical text a full grammatical unit or its own sentence. Never form plurals with "(s)".
+- No slashes: "a, b, or both", not "a/b" or "and/or".
+- Call each thing by one name, everywhere. A doc saying "the gate", "the ratchet", "the budget check" for one thing teaches three things. Rewording an unchanged sentence between edits costs the same way. Don't churn what didn't change.
+- Skip idioms, colloquialisms, Latin abbreviations, metaphors. A non-native reader, a translator, and an agent parse plain constructions best.
+
+## Voice and repo specifics
+
+- Apply the [unslop](../unslop/SKILL.md) skill to every doc this skill touches. That skill owns the slop-pattern catalog: AI vocabulary, filler, hedging, formatting tells.
+- PR descriptions and commit messages are writing too. Every layer except Diátaxis applies. A PR body is a briefing a reviewer reads in under a minute. Don't paste swarm logs, SHA lists, or metric tables. Link them.
+- Product UI strings are not documentation. Use your product's copy guidelines.
+- Indent code snippets with tabs. Write real paths and real symbols. Make every count or tree claim true at the commit that lands it, include the command that regenerates it.
+
+## Worked example
+
+Before:
+
+> Configuration of the proto import ratchet budget script parameters is performed via budget.json. Note that it's important to remember that running with --write, which updates the committed budget to reflect the current count, should only be done when lowering it. If exceeded, CI fails.
+
+After:
+
+> `budget.mjs` reads the committed budget from `budget.json` and counts the files that import protos. If the count exceeds the budget, CI fails. Run `budget.mjs --write` only to lower the budget.

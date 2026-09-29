@@ -1,0 +1,132 @@
+# Testing Strategy
+
+## The Testing Pyramid
+
+```
+       /\
+      /  \        E2E Tests (Few)
+     /----\       - Full system
+    /      \      - Slow, brittle
+   /--------\
+  /          \    Integration Tests (Some)
+ /------------\   - Multiple components
+/              \  - Medium speed
+----------------
+      Unit Tests (Many)
+      - Single unit
+      - Fast, isolated
+```
+
+## Test Types
+
+### Unit Tests
+
+Test ONE class or function in isolation.
+
+**Characteristics:**
+
+- Fast (milliseconds)
+- No external dependencies (mocked)
+- Most of your tests should be unit tests
+
+### Integration Tests
+
+Test multiple components together.
+
+**Characteristics:**
+
+- Slower (may use real API/services)
+- Test boundaries between components
+- Fewer than unit tests
+
+### E2E / Acceptance Tests
+
+Test the entire system from user perspective.
+
+**Characteristics:**
+
+- Slowest
+- Most brittle (many moving parts)
+- Test critical paths only
+
+## Arrange-Act-Assert
+
+Structure EVERY test:
+
+- **ARRANGE:** Set up the world (construct objects, set known state)
+- **ACT:** Execute the behavior being tested
+- **ASSERT:** Verify the outcome(s)
+
+## Writing Tests Backwards
+
+Sometimes it helps to write AAA in reverse:
+
+1. Write the ASSERT first - what do you want to verify?
+2. Write the ACT - what action produces that result?
+3. Write the ARRANGE - what setup is needed?
+
+## Test Naming
+
+- BAD: Abstract, Technical (`it('should work correctly')`, `it('handles the edge case')`, `it('sets the data property')`)
+- GOOD: Concrete Examples, Domain Language: (`it('calculates 20% discount for premium users')`, `it('returns error when cart is empty')`, `it('recognizes "racecar" as a palindrome')`)
+
+### Format
+
+3 Format Options:
+
+1. Should + Behavior: `it('should apply tax based on shipping state')`
+2. When + Then: `it('when adding 2 + 3, then returns 5')`
+3. Given-When-Then (for complex scenarios): `describe('given a premium user', () => { describe('when they checkout', () => { it('then they receive 20% discount', () => { ... }); }); })`
+
+## Test Doubles
+
+- Dummy objects: Object passed but never used
+- Stubs: Returns predefined values
+- Spy: Records how it was called + contains expected value test
+- Mocks: Verifies expected interactions
+- Fake: Working implementation but simplified
+
+## Testing Strategies by Layer
+
+### Domain Layer (Most Tests)
+
+- Unit tests with no mocks
+- Test business rules, value objects, entities
+- Fast, comprehensive
+
+### Application Layer
+
+- Integration tests with mocked infrastructure
+- Test use case orchestration
+
+### Infrastructure Layer
+
+- Integration tests with real dependencies
+- Test database, API integrations
+
+## High-Value Integration Tests
+
+Focus integration tests on:
+
+1. **Boundaries** - Where systems meet
+2. **Critical paths** - Money, security, core features
+3. **Complex queries** - Database operations
+
+### Contract Tests
+
+Verify implementations match interfaces with shared contract tests that apply to all interfaces at end
+
+## Test Builders
+
+Create test objects easily with SOLID builders
+
+## Common Testing Mistakes
+
+| Mistake | Problem | Solution |
+| --------- | --------- | ---------- |
+| Testing implementation | Brittle tests | Test behavior only |
+| Too many mocks | Tests prove nothing | Use real objects when possible |
+| Shared state | Flaky tests | Isolate each test |
+| No assertions | False confidence | Always assert something meaningful |
+| Testing trivial code | Wasted effort | Focus on logic and edge cases |
+| Slow tests | Reduced feedback | Optimize, use unit tests |

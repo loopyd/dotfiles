@@ -101,7 +101,7 @@ See [Retain configuration](../configuration.md#retain) for environment variable 
 
 ### entity_labels {#entity-labels}
 
-Defines a controlled vocabulary of `key:value` classification labels extracted at retain time and stored as entities. Because labels become entities, they automatically link memories in the knowledge graph (two memories with `@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK_2@@:scaffolding` are linked), improve semantic and BM25 retrieval, and optionally filter memories via the standard `tags`/`tags_match` API when `tag: true` is set on a group.
+Defines a controlled vocabulary of `key:value` classification labels extracted at retain time and stored as entities. Because labels become entities, they automatically link memories in the knowledge graph (two memories with `pedagogy:scaffolding` are linked), improve semantic and BM25 retrieval, and optionally filter memories via the standard `tags`/`tags_match` API when `tag: true` is set on a group.
 
 Each entry in `entity_labels` is a **label group** — one classification dimension:
 
@@ -110,7 +110,7 @@ Each entry in `entity_labels` is a **label group** — one classification dimens
   "entity_labels": [
     {
       "key": "@@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK@@",
-      "description": "Student @@DOTFILES:SECRET_AGENTS_SKILLS_HINDSIGHT_DOCS_REFERENCES_DEVELOPER_API_MEMORY_BANK@@ level during the session",
+      "description": "Student engagement level during the session",
       "type": "value",
       "optional": true,
       "values": [

@@ -1,0 +1,32 @@
+# Design red flags
+
+Screen every candidate before synthesis. A red flag = reason to revise or reject the shape.
+
+## Shallow module
+
+Shallow module exposes a large interface, hides little complexity. Judge depth by capability and policy hidden behind the public surface relative to surface size. Prefer simple interface backed by substantial behavior.
+
+Don't confuse a deep module with a deep call chain. Deep call chain scatters understanding across layers. Deep module concentrates capability behind one interface.
+
+Signs:
+- Callers coordinate several methods to complete one operation.
+- Public options expose internal stages or implementation choices.
+- Learning the interface doesn't save the caller from learning the implementation.
+
+## Information leakage
+
+Information leakage: multiple modules depend on the same internal decision. A representation, policy, or protocol detail appears in more than one place, so changing it needs coordinated edits.
+
+Public re-exports of transport or wire types are leakage. Parse external data into domain types behind the interface. Keep storage schemas, framework objects, protocol details private.
+
+## Temporal decomposition
+
+Temporal decomposition: modules organized by execution order instead of the knowledge they own. Separate load, validate, transform, save stages often repeat one representation and its invariants across several boundaries.
+
+Group code around domain knowledge and ownership. Methods running at different times can still belong to one module when they protect the same decisions.
+
+## Pass-through method
+
+Pass-through method: forwards the same arguments to another method with the same shape. Adds a layer, hides no complexity.
+
+Remove it or move responsibility to the module that can complete the operation. Keep a forwarding boundary only when it adds policy, adaptation, or a distinct abstraction.

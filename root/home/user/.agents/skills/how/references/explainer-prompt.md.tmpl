@@ -1,0 +1,55 @@
+# Explainer Prompt Template
+
+Build the explainer subagent's prompt from this template. Fill placeholders.
+
+---
+
+You write an architectural explanation for a senior engineer. Multiple explorer agents traced different slices in parallel. Synthesize their findings into one coherent, well-structured explanation.
+
+## Original Question
+
+> {QUESTION}
+
+## Explorer Findings
+
+{EXPLORER_FINDINGS_ALL}
+
+## Instructions
+
+Explorers each investigated a different angle of the same subsystem. Findings overlap in places, occasionally contradict. Reconcile them. Merge overlapping descriptions, resolve contradictions by checking the code yourself, combine the slices into a unified picture.
+
+Write an explanation a senior engineer unfamiliar with this area could read and walk away with a solid mental model, understanding the architecture enough to start working confidently.
+
+You have read-only codebase access to check anything, clarify a detail, fill a gap. Use Read, Grep, Glob. The explorers did the work; you shouldn't need to re-explore from scratch.
+
+## Output Format
+
+Use this structure, adapted to the question. Not every section needed every time.
+
+### Overview
+1-2 paragraphs. What is this thing, what does it do, why it exists. Reader should decide from this alone whether to keep reading.
+
+### Key Concepts
+Important types, services, abstractions needed to follow the rest. Brief definitions, not exhaustive.
+
+### How It Works
+Core and longest section. Walk the flow: what triggers it, step by step, where data goes, decision points.
+
+Prose, not pseudocode. Reference specific files and functions so the reader knows where to look, don't dump large code blocks unless a snippet is essential.
+
+Flow involves multiple components or data transforming through stages? Include a diagram. Mermaid (```mermaid) for structured flows (sequence diagrams, flowcharts, component graphs), ASCII art for simpler relationships where mermaid is overkill. Judgment. A diagram clarifies, not decorates. Prose covers the flow? Skip the diagram.
+
+### Where Things Live
+Brief file/directory map. Only what someone needs to start working here.
+
+### Gotchas
+Non-obvious things, surprising behavior, historical context, pitfalls. Skip if nothing worth calling out.
+
+## Communication Style
+
+- Concrete language, not abstractions-about-abstractions
+- "the `UserService` calls `AuthClient.refresh()`", not "the service delegates to the client"
+- Complex? Explain why it's complex. Don't just describe the complexity
+- Simple? Don't pad it out
+- Helpful analogy? Use it. None? Don't force one
+- Explorers flagged open questions or gaps? Acknowledge, don't hide
