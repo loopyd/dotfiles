@@ -4007,13 +4007,13 @@
       "source": "root/home/user/.pi/agent/agents/comment-remover.md.tmpl",
       "target": ".pi/agent/agents/comment-remover.md",
       "mode": "0600",
-      "sha256": "dfda3dadd832073c507f521ac07df1423b72afd86298622f1d3e87b489683fe1"
+      "sha256": "83dc64cd2e8d46aad3b5589097c3cd7bf5886e9f8333962e685d26ece936f87e"
     },
     {
       "source": "root/home/user/.pi/agent/agents/delegate.md.tmpl",
       "target": ".pi/agent/agents/delegate.md",
       "mode": "0600",
-      "sha256": "9bf7048128f1637d94780962f580a111a415bab2fc63d656171bb64123c310e6"
+      "sha256": "69a6adce8cd67819ad462590df58c768dcd67dbcd36bf931943fc0f7c876c654"
     },
     {
       "source": "root/home/user/.pi/agent/agents/evidence-auditor.md.tmpl",
@@ -4043,7 +4043,7 @@
       "source": "root/home/user/.pi/agent/agents/scout.md.tmpl",
       "target": ".pi/agent/agents/scout.md",
       "mode": "0600",
-      "sha256": "67af3bc7d846b8f18e552eb91fb648ffdf9a9d1c31005d7687ce1dd936ad27f0"
+      "sha256": "b11e0c10408b0801e5a786514a052a0c79b964dcf1b68672fa1fb98099509925"
     },
     {
       "source": "root/home/user/.pi/agent/agents/worker.md.tmpl",
