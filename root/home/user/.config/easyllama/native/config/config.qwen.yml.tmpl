@@ -1,0 +1,137 @@
+# Bound the silent start wait: llama-swap aborts a start that cannot become
+# healthy after this many seconds instead of hanging for the 1800s default.
+# 300s is ~11x the measured warm-cache cold start of the chat backend (27.4s,
+# 2026-09-20). Raise it if you wipe the flashinfer JIT cache (`clean
+# --wipe-cache jit`), which makes the next vLLM start recompile kernels.
+healthCheckTimeout: 300
+globalTTL: 1800
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        gpu:
+          swap: true
+          exclusive: true
+          members:
+          - qwen3-chat
+        search:
+          swap: false
+          exclusive: true
+          members:
+          - qwen3-embeddings
+          - qwen3-reranker
+macros:
+  vllm_bin: /opt/venv/bin/vllm
+  qwen3_chat_target_hf: lyf/Qwen3.8-27B-Heretic-ARA-NVFP4-MTP-VL
+  embedding_model: /root/.cache/huggingface/hub/models--Qwen--Qwen3-Embedding-0.6B-GGUF/snapshots/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-f16.gguf
+models:
+  # port/lifecyclePort are pinned per model so adding or removing models never
+  # shifts an address (position-derived ports would break pinned deployments).
+  qwen3-chat:
+    port: 9000
+    lifecyclePort: 9008
+    # LMCache chunk size = one vLLM block (1600) for this model's layout.
+    lmcacheChunkSize: 1600
+    concurrencyLimit: 0
+    env:
+      # flashinfer JIT-compile guardrails: cap ninja parallelism so the one-time
+      # kernel build cannot spawn one nvcc/cicc per core and blow the memory cgroup.
+      - MAX_JOBS=8
+      # LMCacheMPConnector shares KV through CUDA IPC, which vLLM's sleep-mode
+      # cuMem allocator does not support; these models therefore use the classic
+      # SIGTERM-on-swap lifecycle while LMCache preserves KV across swaps.
+    name: Qwen3.8 Chat 27B Heretic NVFP4 MTP
+    description: Primary thinking/tool-use model; Heretic Qwen3.8-27B NVFP4 on vLLM with MTP; --language-model-only skips the vision tower; KV offloaded to the shared LMCache server
+    # --gpu-memory-utilization is 0.79, and that is a measured value, not a guess.
+    # vLLM's startup gate needs `free >= util*31.34` at engine init, and the
+    # LMCache server keeps this model's KV pool registered (~6.3 GiB) across
+    # swaps, so at most ~25.0 GiB can ever be free: util must be <= ~0.799 or a
+    # chat restart fails with 'Free memory on device cuda:0 ... less than desired
+    # GPU memory utilization' and the request becomes HTTP 500 'upstream command
+    # exited prematurely'. Do not raise it without first making LMCache release
+    # that pool on swap-out. It cannot go much lower either: at 0.75 the pinned
+    # 4.98 GiB KV cache fails to allocate and the search group then starves.
+    # The qwen3-embeddings context was cut 131072 -> 32768 so the search group no
+    # longer pushes the chat over the gate. The 128K chat context is unaffected:
+    # the KV cache is pinned by --kv-cache-memory-bytes.
+    cmd: '${vllm_bin}
+      serve
+      ${qwen3_chat_target_hf}
+      --host 0.0.0.0
+      --port ${PORT}
+      --served-model-name qwen3-chat
+      --chat-template /chat_template/qwen3.8.jinja
+      --default-chat-template-kwargs ''{"preserve_thinking": true}''
+      --language-model-only
+      --max-model-len 131072
+      --max-num-seqs 16
+      --max-num-batched-tokens 8192
+      --kv-cache-dtype fp8
+      --gpu-memory-utilization 0.79
+      --kv-cache-memory-bytes 5350000000
+
+      --enable-prefix-caching
+      --enable-chunked-prefill
+      --speculative-config ''{"method":"mtp","num_speculative_tokens":2}''
+      --kv-transfer-config ''{"kv_connector":"LMCacheMPConnector","kv_connector_extra_config":{"lmcache.mp.host":"127.0.0.1","lmcache.mp.port":5555},"kv_role":"kv_both"}''
+      --trust-remote-code
+      --reasoning-parser qwen3
+      --enable-auto-tool-choice
+      --tool-call-parser qwen3_xml
+      --uvicorn-log-level info
+      --log-error-stack
+      '
+    cmdStop: /bin/kill -TERM ${PID}
+  qwen3-embeddings:
+    port: 9004
+    lifecyclePort: 9010
+    concurrencyLimit: 0
+    name: Qwen3 Embeddings 0.6B FP16
+    description: Dense embedding model for vector search, RAG, similarity
+    # Context was 131072 across --parallel 4 (n_ctx_slot 32768). At f16 KV that is
+    # ~15 GiB of the 32 GiB card for an embedding server that only ever sees
+    # small chunks, and it is what starved the chat's restart: with the search
+    # group loaded the chat could not pass vLLM's startup gate. 32768 total
+    # (8192 per slot) restores the headroom the swap design needs. This is not
+    # the chat's 128K context, which is unaffected.
+    cmd: '${server_bin}
+      server
+      qwen
+      --bin /app/bin/llama-server-qwen
+      --host 0.0.0.0
+      --port ${PORT}
+      --model ${embedding_model}
+      --n-gpu-layers all
+      --device CUDA0
+      --fit off
+      --threads 4
+      --threads-batch 4
+      --ctx-size 32768
+      --batch-size 512
+      --ubatch-size 512
+      --parallel 4
+      --flash-attn on
+      --cache-type-k f16
+      --cache-type-v f16
+      --no-mmap
+      --no-warmup
+      --embedding
+      --pooling last
+      '
+    cmdStop: /bin/kill -TERM ${PID}
+  qwen3-reranker:
+    port: 9006
+    lifecyclePort: 9011
+    concurrencyLimit: 0
+    name: BGE Reranker v2 M3 Q8_0
+    description: Compact GPU cross-encoder co-resident with embeddings in Qwen mode
+    cmd: '${server_bin}
+      server qwen --bin /app/bin/llama-server-qwen
+      --host 0.0.0.0 --port ${PORT}
+      --model /root/.cache/huggingface/hub/models--gpustack--bge-reranker-v2-m3-GGUF/snapshots/3093af03b1a635e67b084b1d8c03c5f5e020fd05/bge-reranker-v2-m3-Q8_0.gguf
+      --n-gpu-layers all --device CUDA0 --fit off --threads 2 --threads-batch 2
+      --ctx-size 16384 --batch-size 8192 --ubatch-size 8192 --parallel 2
+      --embedding --pooling rank --reranking --no-warmup --no-webui
+      '
+    cmdStop: /bin/kill -TERM ${PID}

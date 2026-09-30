@@ -2885,7 +2885,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "e28d8aabde8d985fc53a917dc43748d4cb2a28b8cf23e5a292cb93291659fe5a"
+      "sha256": "ddf564892e53b4ebc95a2d8da5f0fd3d15797a6011613f6018c926a32b6b1d4c"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",
@@ -4518,6 +4518,138 @@
       "target": ".agents/skills/herdr/agents/openai.yaml",
       "mode": "0600",
       "sha256": "7aa1e0a8453d21b81d74e006a6b804b15d036e502f2c0f99a2dc68fa75dae02b"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
+      "target": ".config/easyllama/deployment.json",
+      "mode": "0600",
+      "sha256": "f248ed614335eabb2039afcfaed41b2ce5b6dbc7e0259f8c942848772370fada"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.5.jinja.tmpl",
+      "target": ".config/easyllama/native/chat_template/qwen3.5.jinja",
+      "mode": "0600",
+      "sha256": "5c7d524b9e4b14f355dc1df03ba9e3f725886df134dc703fc1e0f9c7bbf35a47"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.6-esper3.1.jinja.tmpl",
+      "target": ".config/easyllama/native/chat_template/qwen3.6-esper3.1.jinja",
+      "mode": "0600",
+      "sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.6.jinja.tmpl",
+      "target": ".config/easyllama/native/chat_template/qwen3.6.jinja",
+      "mode": "0600",
+      "sha256": "01cb259b5134ffca8178f839475f44b8e2fce90a5a07d61d00b3481abd440af2"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.8.jinja.tmpl",
+      "target": ".config/easyllama/native/chat_template/qwen3.8.jinja",
+      "mode": "0600",
+      "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config.json.tmpl",
+      "target": ".config/easyllama/native/config.json",
+      "mode": "0600",
+      "sha256": "8c4931a58bc694d1e57534b0dc8f94a0f47a6ba9fde4532d83b97fb179fc54db"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.bonsai-dflash2.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.bonsai-dflash2.yml.example",
+      "mode": "0600",
+      "sha256": "1d4d302c4ee579b0974c3196d7730ef9743737a24abcdc654df3eb7805f82fe8"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.bonsai-plain.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.bonsai-plain.yml.example",
+      "mode": "0600",
+      "sha256": "44d962a4f251c3866edcd1431875f1975e734f13fcecca44ecb6530212415254"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.bonsai.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.bonsai.yml",
+      "mode": "0600",
+      "sha256": "74d2f48d3dd5f6b687cc3d4f18907dd6c1bc6c1efa36910149fbc962536a5b2b"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.bonsai.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.bonsai.yml.example",
+      "mode": "0600",
+      "sha256": "e2e4de231d32730f509346688f453f6cebd3653418fa58c5af0253cbcdec8420"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.glm5.3-flash.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.glm5.3-flash.yml",
+      "mode": "0600",
+      "sha256": "3fc87f2bdc1810851011503ad705cd942d523ae0435bff1f17d824628a89a383"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.glm5.3-flash.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.glm5.3-flash.yml.example",
+      "mode": "0600",
+      "sha256": "3fc87f2bdc1810851011503ad705cd942d523ae0435bff1f17d824628a89a383"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.llamacpp.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.llamacpp.yml",
+      "mode": "0600",
+      "sha256": "90d6f20e4b3031843e8012ddb7dfe0064fb0a8a8f22646d5139bf8531aa4c060"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.llamacpp.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.llamacpp.yml.example",
+      "mode": "0600",
+      "sha256": "b839d2e3cf7909ec3ef3789dab9e7bfd43320b98754b890e4458f2b0181d1f39"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.lucebox.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.lucebox.yml",
+      "mode": "0600",
+      "sha256": "6986a1e1b7649f499a276df5566ee72c27b27476303f8887fc28266e3aead15d"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.lucebox.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.lucebox.yml.example",
+      "mode": "0600",
+      "sha256": "baad5d77a1cb04efd542928803ff7cab9a4d1ac2bb5cd72ba9e26843d74b4325"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.qwen.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.qwen.yml",
+      "mode": "0600",
+      "sha256": "f83a4e70006996f877564ee8dc9274db2122eacdd4cb7101ee75d5a70b1544dc"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.qwen.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.qwen.yml.example",
+      "mode": "0600",
+      "sha256": "f83a4e70006996f877564ee8dc9274db2122eacdd4cb7101ee75d5a70b1544dc"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.spiritbuun.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.spiritbuun.yml",
+      "mode": "0600",
+      "sha256": "56880b1a027dd580033f524f82800692ebcad70b572d4d3e75d3ee1e39762d53"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.spiritbuun.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.spiritbuun.yml.example",
+      "mode": "0600",
+      "sha256": "73c408d5310332ffadef3b8b6fea822dbddce81ad8f2aa9c2d839a5b505bccd7"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.turboquant.yml.tmpl",
+      "target": ".config/easyllama/native/config/config.turboquant.yml",
+      "mode": "0600",
+      "sha256": "36c63081e02ac40b78ebb8c1ff57741dc7077c6ab7d6938b7f7c611837731c7f"
+    },
+    {
+      "source": "root/home/user/.config/easyllama/native/config/config.turboquant.yml.example.tmpl",
+      "target": ".config/easyllama/native/config/config.turboquant.yml.example",
+      "mode": "0600",
+      "sha256": "92734d94a3ddd3e114f7ea6e1cff6cf9db4aa682bc4acaa7e0defdc7a3388e85"
     }
   ],
   "symlinks": [

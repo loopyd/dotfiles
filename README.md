@@ -133,15 +133,15 @@ Keep `tool_timeout_sec = 720` under `[mcp_servers.hindsight]` and the server's 1
 
 ### Hindsight LLM route
 
-EasyLlama Qwen mode keeps full-GPU embeddings and compact BGE reranking together in a persistent search group. Large Qwen chat swaps out that group. Hindsight uses EasyLlama's authenticated `/v1/rerank` directly through its built-in Cohere-compatible adapter; 9router has no rerank route. LLMs and embeddings continue through 9router, and no native backend should be independently awakened.
+EasyLlama Bonsai mode keeps Ternary Bonsai 2 27B, Qwen3 Embedding 0.6B and compact BGE reranking resident together on the GPU. Hindsight calls EasyLlama's authenticated Responses, embedding and rerank APIs directly on port 8080. Reranking uses the built-in Cohere-compatible adapter.
 
-Hindsight defaults to `cx/gpt-5.6-luna`, with `HINDSIGHT_API_REFLECT_LLM_MODEL=cx/gpt-5.6-terra` and `HINDSIGHT_API_CONSOLIDATION_LLM_MODEL=cx/gpt-5.6-terra` for reflection and consolidation, through authenticated local 9router's Responses API (`LLM_PROVIDER=openai-responses`). Embeddings remain local Qwen3 Embedding 0.6B, 1,024 dimensions, concurrency four. Keep low reasoning for LLM/retain and medium for consolidation/reflect.
+All LLM scopes use `bonsai-chat` through `LLM_PROVIDER=openai-responses`. The current chat profile uses Q8_0 DFlash2 speculation at depth seven, four slots and a shared 262,144-token context. Embeddings remain Qwen3 Embedding 0.6B at 1,024 dimensions, with two concurrent requests and batches of four. All LLM scopes use low reasoning; retain and consolidation also disable thinking in their template arguments.
 
-Reflection has a 250,000-token accumulated-context budget, leaving 22,000 tokens below the gateway-declared 272,000-token window for both models. The 1,000-second wall timeout and other safeguards remain. This margin is not a hard output reservation; large tool results or synthesis can still overflow.
+Reflection has a 250,000-token accumulated-context budget, a 32,768-token output cap and a 2,000-second wall timeout. The context pool is shared across chat slots, so these limits do not guarantee that several maximum-size requests fit at once.
 
 ### Hindsight concurrency
 
-The global LLM cap is five, with retain/consolidation/reflect caps of 2/1/2. Four worker slots and two retain operations reduce contention under the import backlog. Initial LLM retry backoff is 40 seconds (capped at 60), so its ±20% jitter produces 32–48 seconds and clears the gateway's observed 30-second cooldown after upstream stream failures. Retry counts, wall limits, models, embeddings, recall and database limits remain unchanged. This bounds pressure; it cannot prevent upstream disconnects.
+The global LLM cap is four, with retain/consolidation/reflect caps of 2/1/1. Four worker slots reserve one each for retain, consolidation and mental-model refresh, leaving one shared slot for other tasks. Worker reservations are minimums; the LLM caps separately bound inference. Retain database phases are capped at two concurrent operations. This is the initial tuning pass for the four-slot DFlash2 profile; compare completed operations, errors and output tokens per wall second before claiming a performance improvement. Request duration includes permit queueing, so it cannot measure inference speed alone. Initial LLM retry backoff remains 40 seconds, capped at 60.
 
 ## Lifecycle commands
 
@@ -283,9 +283,11 @@ Pinned sources: [herdr release](https://github.com/herdrdev/herdr/releases/tag/v
 
 ### Network services
 
-`scripts/easyllama.sh install|update|uninstall|check` latches the native Qwen Docker stack at `EASYLLAMA_ROOT` with its 0.6.3 source revision and immutable local image IDs. Use `--with-easyllama` or `--only easyllama` in bootstrap; Hindsight and 9router select it automatically for install/update. The user supervisor adopts matching running containers without model reload, starts them at login and stops them on unit shutdown. Ordered startup, bounded readiness waits and explicit stop/restart propagation cover the local stack.
+`scripts/easyllama.sh install|update|uninstall|check` latches the native EasyLlama Docker stack at `EASYLLAMA_ROOT`. Use `--with-easyllama` or `--only easyllama` in bootstrap; Hindsight and 9router select it automatically for install/update. The supervisor adopts a running orchestrator without model reload; native `run.sh` owns stack creation and shutdown. The latch does not enforce source or image pins.
 
-Configuration, mode profiles and chat templates live in the native checkout at `EASYLLAMA_ROOT` (`config.json` plus `config/config.qwen.yml`), which preserves the existing model/cache root. Credentials remain private renderer values. Locally built images require the explicit archive/load workflow; they are not silently rebuilt or pulled from an assumed public registry.
+Dotfiles captures `config.json`, mode profiles and chat templates under `root/home/user/.config/easyllama/native/`. Rendering restores them to `~/.config/easyllama/native/`; it does not overwrite the live checkout. The active profile is `config/config.bonsai.yml`, with four chat slots, DFlash2 depth seven and co-resident GPU search models. Credentials remain private renderer values.
+
+For a replacement host, check out the source commit recorded in rendered `~/.config/easyllama/deployment.json`, then copy the rendered native files into `EASYLLAMA_ROOT` before starting the stack. Keep the existing model/cache directory layout. Model paths pin Hugging Face snapshots, so transfer those cached weights or download the exact snapshots before startup. The receipt records the four running containers' immutable image IDs and resource limits. Transfer locally built images with `docker save` and `docker load`, and verify the loaded IDs against the receipt. These images are not assumed to exist in a public registry. Native lifecycle commands remain `run.sh start|stop|restart`.
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions as other components; bootstrap selects them with `--with-network` or `--only tailscale,router`. The Compose definition runs a locally built image (`9router:local`), 2 CPUs, 4 GiB `/dev/shm` and the existing `~/.9router` data. Its backend is loopback-only `127.0.0.1:20128`; host Tailscale socket/binary mounts are removed and internal publication is set to `false`.
 

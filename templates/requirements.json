@@ -10,7 +10,7 @@
   "9router": "0.5.91-pr4396-140f5404e914",
   "9router_verified_image": "sha256:7c8523a76828f9aae43b96e43c33ff87215cd81107a1f24a96ece2349144aca8 (local PR #4396 source-build deployed and health-checked 2026-09-27; not a remote registry pull pin)",
   "9router_rollback_image": "sha256:54778d769439e8d59f81c0167170ab219907b16f67cf8c3880fab01bbf2903fc (unmodified v0.5.91; local rollback image, not a remote registry pull pin)",
-  "easyllama": "native checkout: config.json + config/config.qwen.yml at EASYLLAMA_ROOT own the stack; scripts/easyllama.sh installs the systemd latch and the checkout run.sh keeps start/stop/restart",
+  "easyllama": "Native Bonsai DFlash2 checkout at EASYLLAMA_ROOT; restore rendered .config/easyllama/native into the checkout pinned by .config/easyllama/deployment.json. Four chat slots, 262144-token unified context, draft-dflash depth 7; exact local image IDs and resources are captured in that receipt. scripts/easyllama.sh installs the systemd latch; native run.sh owns start/stop/restart.",
   "hindsight_cli": "0.9.2",
   "hindsight_coding_agents": "0.5.3",
   "hindsight_build_receipts": "Active receipt: ~/.local/state/dotfiles/hindsight-build.json. Successful recipe/image transitions preserve the previous receipt verbatim in private ~/.local/state/dotfiles/hindsight-build-history/<receipt-sha256>.json before replacing it. A changed pin builds the new recipe; arbitrary existing tags require explicit adoption. Failed builds retain the active receipt.",

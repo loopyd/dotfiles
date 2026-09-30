@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "captured_at": "2026-09-30T18:34:26.559848+00:00",
+  "source": "https://github.com/loopyd/easyllama",
+  "source_commit": "832fe62e14c012a2e3ef2230bbf5fe4bbe5102b5",
+  "source_version": "0.6.3",
+  "mode": "bonsai",
+  "chat_slots": 4,
+  "context_tokens": 262144,
+  "draft_type": "draft-dflash",
+  "draft_depth": 7,
+  "containers": [
+    {
+      "name": "easyllama-server-swap",
+      "image_id": "sha256:0650477a0812138759f1fb153232dd84de766ea6b154af1825327bf569cb7bf2",
+      "image_tag": "easyllama:cuda13-llamaswap",
+      "network_mode": "easyllama-bonsai",
+      "memory_bytes": 8589934592,
+      "memory_swap_bytes": 12884901888,
+      "nano_cpus": 2000000000,
+      "shm_bytes": 67108864
+    },
+    {
+      "name": "easyllama-bonsai-llamacpp-bonsai-chat",
+      "image_id": "sha256:3adb02519c6e039ab6818692c4d0375b191c9a9754c9789fdf4e8d85579b70d5",
+      "image_tag": "easyllama:cuda13-bonsai-llamacpp",
+      "network_mode": "easyllama-bonsai",
+      "memory_bytes": 67108864000,
+      "memory_swap_bytes": 101468602368,
+      "nano_cpus": 24000000000,
+      "shm_bytes": 67108864
+    },
+    {
+      "name": "easyllama-bonsai-llamacpp-qwen3-embeddings",
+      "image_id": "sha256:3adb02519c6e039ab6818692c4d0375b191c9a9754c9789fdf4e8d85579b70d5",
+      "image_tag": "easyllama:cuda13-bonsai-llamacpp",
+      "network_mode": "easyllama-bonsai",
+      "memory_bytes": 67108864000,
+      "memory_swap_bytes": 101468602368,
+      "nano_cpus": 24000000000,
+      "shm_bytes": 67108864
+    },
+    {
+      "name": "easyllama-bonsai-llamacpp-qwen3-reranker",
+      "image_id": "sha256:3adb02519c6e039ab6818692c4d0375b191c9a9754c9789fdf4e8d85579b70d5",
+      "image_tag": "easyllama:cuda13-bonsai-llamacpp",
+      "network_mode": "easyllama-bonsai",
+      "memory_bytes": 67108864000,
+      "memory_swap_bytes": 101468602368,
+      "nano_cpus": 24000000000,
+      "shm_bytes": 67108864
+    }
+  ],
+  "files": [
+    {
+      "path": "config.json",
+      "template_sha256": "8c4931a58bc694d1e57534b0dc8f94a0f47a6ba9fde4532d83b97fb179fc54db"
+    },
+    {
+      "path": "config/config.bonsai.yml",
+      "template_sha256": "74d2f48d3dd5f6b687cc3d4f18907dd6c1bc6c1efa36910149fbc962536a5b2b"
+    },
+    {
+      "path": "config/config.glm5.3-flash.yml",
+      "template_sha256": "3fc87f2bdc1810851011503ad705cd942d523ae0435bff1f17d824628a89a383"
+    },
+    {
+      "path": "config/config.llamacpp.yml",
+      "template_sha256": "90d6f20e4b3031843e8012ddb7dfe0064fb0a8a8f22646d5139bf8531aa4c060"
+    },
+    {
+      "path": "config/config.lucebox.yml",
+      "template_sha256": "6986a1e1b7649f499a276df5566ee72c27b27476303f8887fc28266e3aead15d"
+    },
+    {
+      "path": "config/config.qwen.yml",
+      "template_sha256": "f83a4e70006996f877564ee8dc9274db2122eacdd4cb7101ee75d5a70b1544dc"
+    },
+    {
+      "path": "config/config.spiritbuun.yml",
+      "template_sha256": "56880b1a027dd580033f524f82800692ebcad70b572d4d3e75d3ee1e39762d53"
+    },
+    {
+      "path": "config/config.turboquant.yml",
+      "template_sha256": "36c63081e02ac40b78ebb8c1ff57741dc7077c6ab7d6938b7f7c611837731c7f"
+    },
+    {
+      "path": "config/config.bonsai-dflash2.yml.example",
+      "template_sha256": "1d4d302c4ee579b0974c3196d7730ef9743737a24abcdc654df3eb7805f82fe8"
+    },
+    {
+      "path": "config/config.bonsai-plain.yml.example",
+      "template_sha256": "44d962a4f251c3866edcd1431875f1975e734f13fcecca44ecb6530212415254"
+    },
+    {
+      "path": "config/config.bonsai.yml.example",
+      "template_sha256": "e2e4de231d32730f509346688f453f6cebd3653418fa58c5af0253cbcdec8420"
+    },
+    {
+      "path": "config/config.glm5.3-flash.yml.example",
+      "template_sha256": "3fc87f2bdc1810851011503ad705cd942d523ae0435bff1f17d824628a89a383"
+    },
+    {
+      "path": "config/config.llamacpp.yml.example",
+      "template_sha256": "b839d2e3cf7909ec3ef3789dab9e7bfd43320b98754b890e4458f2b0181d1f39"
+    },
+    {
+      "path": "config/config.lucebox.yml.example",
+      "template_sha256": "baad5d77a1cb04efd542928803ff7cab9a4d1ac2bb5cd72ba9e26843d74b4325"
+    },
+    {
+      "path": "config/config.qwen.yml.example",
+      "template_sha256": "f83a4e70006996f877564ee8dc9274db2122eacdd4cb7101ee75d5a70b1544dc"
+    },
+    {
+      "path": "config/config.spiritbuun.yml.example",
+      "template_sha256": "73c408d5310332ffadef3b8b6fea822dbddce81ad8f2aa9c2d839a5b505bccd7"
+    },
+    {
+      "path": "config/config.turboquant.yml.example",
+      "template_sha256": "92734d94a3ddd3e114f7ea6e1cff6cf9db4aa682bc4acaa7e0defdc7a3388e85"
+    },
+    {
+      "path": "chat_template/qwen3.5.jinja",
+      "template_sha256": "5c7d524b9e4b14f355dc1df03ba9e3f725886df134dc703fc1e0f9c7bbf35a47"
+    },
+    {
+      "path": "chat_template/qwen3.6-esper3.1.jinja",
+      "template_sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259"
+    },
+    {
+      "path": "chat_template/qwen3.6.jinja",
+      "template_sha256": "01cb259b5134ffca8178f839475f44b8e2fce90a5a07d61d00b3481abd440af2"
+    },
+    {
+      "path": "chat_template/qwen3.8.jinja",
+      "template_sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    }
+  ]
+}
