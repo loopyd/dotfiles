@@ -4025,7 +4025,7 @@
       "source": "root/home/user/.pi/agent/agents/oracle.md.tmpl",
       "target": ".pi/agent/agents/oracle.md",
       "mode": "0600",
-      "sha256": "b93e1ed26028d1214b0488adbf27b5997df0a78b0d43ef56d9299e8ff19f6fb0"
+      "sha256": "8946b25c17bf76fa074de9a595a76461026e1c822ef530b1c930908188f48c5a"
     },
     {
       "source": "root/home/user/.pi/agent/agents/researcher.md.tmpl",
@@ -4037,7 +4037,7 @@
       "source": "root/home/user/.pi/agent/agents/reviewer.md.tmpl",
       "target": ".pi/agent/agents/reviewer.md",
       "mode": "0600",
-      "sha256": "b1130d4643320e7266050aadc68815f1a4e06855765ee65fe8e871c0661c8ef6"
+      "sha256": "a707d085779e0d0c1ad304ccecb041a7410c488431c0101fe5d7c43bba5782bb"
     },
     {
       "source": "root/home/user/.pi/agent/agents/scout.md.tmpl",
