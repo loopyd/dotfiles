@@ -4511,7 +4511,13 @@
       "source": "root/home/user/.agents/skills/herdr/SKILL.md.tmpl",
       "target": ".agents/skills/herdr/SKILL.md",
       "mode": "0600",
-      "sha256": "b16ba0d9a22adbaf259d2022cd323801f8e51d530c94cb0cd23a69069292506b"
+      "sha256": "7c59c81c4047c5721a82bdacfdf7fae96409c2d71ab4f2a3e2504c0b932c4733"
+    },
+    {
+      "source": "root/home/user/.agents/skills/herdr/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/herdr/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "7aa1e0a8453d21b81d74e006a6b804b15d036e502f2c0f99a2dc68fa75dae02b"
     }
   ],
   "symlinks": [
