@@ -45,7 +45,6 @@
     "markdownlint-cli2",
     "npm",
     "pi-intercom",
-    "pi-lsp",
     "pi-mcp-adapter",
     "pi-subagents",
     "pi-web-access",
@@ -64,7 +63,6 @@
     "@plannotator/pi-extension",
     "@samfp/pi-memory",
     "pi-intercom",
-    "pi-lsp",
     "pi-mcp-adapter",
     "pi-subagents",
     "pi-web-access"
