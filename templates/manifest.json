@@ -4506,6 +4506,12 @@
       "target": ".agents/skills/drive-surface/agents/openai.yaml",
       "mode": "0600",
       "sha256": "e832fdfddba144fddebb4c1fa46f3add900171e8cbba44b2c9a0c2bd4f8e4672"
+    },
+    {
+      "source": "root/home/user/.agents/skills/herdr/SKILL.md.tmpl",
+      "target": ".agents/skills/herdr/SKILL.md",
+      "mode": "0600",
+      "sha256": "b16ba0d9a22adbaf259d2022cd323801f8e51d530c94cb0cd23a69069292506b"
     }
   ],
   "symlinks": [
