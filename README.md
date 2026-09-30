@@ -179,17 +179,18 @@ Successful component installs record their declared payload files and packages i
 
 `root/home/user/.pi/agent/agents/` captures seven native agent definitions from pi-subagents 0.73.1: `delegate`, `evidence-auditor`, `oracle`, `researcher`, `reviewer`, `scout` and `worker`. `scout` and the lightweight `delegate` use `model: ninerouter/qwen-combo`. The other native agents and the preserved custom `comment-remover` use `model: ninerouter/ds-combo`. Settings retain existing thinking levels but do not override these agents' model fields.
 
-`scripts/skills.py` refreshes only those two sources, `~/.agents/skills` and `~/.pi/agent/agents`, without recapturing unrelated configuration. It scrubs secrets into private value markers and rejects symlinks, binaries and unsafe captures before writing anything:
+`scripts/skills.sh` wraps `scripts/skills.py`, which refreshes only those two sources, `~/.agents/skills` and `~/.pi/agent/agents`, without recapturing unrelated configuration. It scrubs secrets into private value markers and rejects symlinks, binaries and unsafe captures before writing anything:
 
 ```bash
-python3 scripts/skills.py sync --prune --dry-run   # report pending captures and prunes
-python3 scripts/skills.py sync --prune             # capture and prune
-python3 scripts/skills.py check --prune            # fail when either is pending
-python3 -m unittest discover -s tests              # regression tests
-python3 tests/check_codex_agents.py                # isolated Codex metadata check
+./scripts/skills.sh sync --prune --dry-run   # report pending captures and prunes
+./scripts/skills.sh sync --prune             # capture and prune
+./scripts/skills.sh check --prune            # fail when either is pending
+./scripts/skills.sh backup                   # zip every live skill into ~/.agents/skills/archive
+python3 -m unittest discover -s tests        # regression tests
+python3 tests/check_codex_agents.py          # isolated Codex metadata check
 ```
 
-`--prune` removes captured files deleted upstream, but retains repository-authored `agents/openai.yaml`, generated `openspec-*` skills and snapshot-excluded paths. Plain `check` verifies captured files are current; `check --prune` also fails on upstream deletions.
+`--prune` removes captured files deleted upstream, but retains repository-authored `agents/openai.yaml`, generated `openspec-*` skills and snapshot-excluded paths. Plain `check` verifies captured files are current; `check --prune` also fails on upstream deletions. `backup` writes `~/.agents/skills/archive/<skill>.zip` for every live skill (each archive contains a top-level `<skill>/` directory) and is ignored by `sync` and `check`.
 
 `root/home/user/.codex/agents/` holds eight native Codex TOML definitions: `delegate`, `evidence-auditor`, `oracle`, `researcher`, `reviewer`, `scout`, `worker` and `comment-remover`. Definitions inherit the session's model and reasoning effort. The read-only specialists (`scout`, `evidence-auditor`, `oracle`, `researcher`, `reviewer`) set `sandbox_mode = "read-only"`; the writers (`delegate`, `worker`, `comment-remover`) inherit the parent sandbox. Every captured skill carries Codex metadata in `agents/openai.yaml`. Explicit-invocation skills (`disable-model-invocation: true`) set `allow_implicit_invocation: false`, so Codex invokes them only through `$name`; model-invocable skills set `true`. Codex expects `.yaml`, not `.yml`. That metadata names and describes skills but does not define agents. See the official [subagents](https://developers.openai.com/codex/subagents) and [skills](https://developers.openai.com/codex/skills) documentation.
 

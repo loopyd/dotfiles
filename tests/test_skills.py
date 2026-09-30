@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/skills.py'
@@ -63,6 +64,26 @@ class SkillsSyncTests(unittest.TestCase):
                                   'sha256': hashlib.sha256(text.encode()).hexdigest()})
         self.manifest.write_text(json.dumps(manifest))
         return path
+
+    def test_backup_zips_each_skill_and_sync_ignores_archive(self):
+        helper = self.skill.parent / 'helper.py'
+        helper.write_text('#!/usr/bin/env python3\nprint("hello")\n')
+        preview = self.run_sync('backup', '--dry-run')
+        self.assertEqual(preview['action'], 'backup')
+        self.assertEqual(preview['skills'], ['example'])
+        archive = self.home / '.agents/skills/archive'
+        self.assertFalse(archive.exists())
+        result = self.run_sync('backup')
+        self.assertEqual([entry['files'] for entry in result['archived']], [2])
+        bundle = archive / 'example.zip'
+        self.assertTrue(bundle.is_file())
+        with zipfile.ZipFile(bundle) as opened:
+            self.assertEqual(sorted(opened.namelist()), ['example/SKILL.md', 'example/helper.py'])
+        synced = self.run_sync('sync')
+        self.assertIn('.agents/skills/archive', synced['excluded'])
+        targets = {entry['target'] for entry in json.loads(self.manifest.read_text())['files']}
+        self.assertNotIn('.agents/skills/archive/example.zip', targets)
+        self.run_sync('check')
 
     def test_prune_preserves_metadata_and_unrelated_entries(self):
         old = self.add_entry('.agents/skills/example/old.md', 'old\n')

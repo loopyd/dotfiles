@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Refresh shared skills and Pi agents without recapturing unrelated configuration."""
+"""Refresh shared skills and Pi agents, and archive them, without recapturing unrelated configuration."""
 import argparse
 import datetime
 import hashlib
 import json
 import os
+import zipfile
 from pathlib import Path
 
 from dotfiles import beneath
@@ -13,6 +14,7 @@ from snapshot import MARKER, Scrubber, private_material, private_write, reason
 
 
 ROOTS = ('.agents/skills', '.pi/agent/agents')
+ARCHIVE = 'archive'
 
 
 def unreadable(error):
@@ -35,7 +37,7 @@ def plan(home, repo, values):
                 relative = path.relative_to(home)
                 if path.is_symlink():
                     raise ValueError('Symlink source: ' + str(relative))
-                if reason(relative, is_dir=True) or (prefix == '.agents/skills' and parent == base and name.startswith('openspec-')):
+                if reason(relative, is_dir=True) or (prefix == '.agents/skills' and parent == base and (name == ARCHIVE or name.startswith('openspec-'))):
                     excluded.append(str(relative))
                 else:
                     kept.append(name)
@@ -76,9 +78,48 @@ def plan(home, repo, values):
     return outputs, additions, excluded
 
 
+def archive(home, dry_run=False):
+    base = beneath(home, '.agents/skills')
+    if not base.is_dir() or base.is_symlink():
+        raise ValueError('Missing or symlink source directory: .agents/skills')
+    destination = base / ARCHIVE
+    if destination.exists() and (destination.is_symlink() or not destination.is_dir()):
+        raise ValueError('Unsafe archive destination: .agents/skills/archive')
+    skills = []
+    for entry in sorted(base.iterdir(), key=lambda item: item.name):
+        if entry.name == ARCHIVE:
+            continue
+        if entry.is_symlink():
+            raise ValueError('Symlink source: ' + str(entry.relative_to(home)))
+        if entry.is_dir():
+            skills.append(entry)
+    archived = []
+    if not dry_run:
+        destination.mkdir(mode=0o700, exist_ok=True)
+    for skill in skills:
+        members = []
+        for directory, directories, names in os.walk(skill, followlinks=False, onerror=unreadable):
+            parent = Path(directory)
+            directories[:] = sorted(name for name in directories)
+            for name in sorted(names):
+                path = parent / name
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError('Nonregular source: ' + str(path.relative_to(home)))
+                members.append((path, Path(skill.name) / path.relative_to(skill)))
+        target = destination / (skill.name + '.zip')
+        if not dry_run:
+            with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as bundle:
+                for path, name in members:
+                    bundle.write(path, arcname=str(name))
+        archived.append({'skill': skill.name, 'archive': str(target), 'files': len(members),
+                         'bytes': sum(path.stat().st_size for path, _ in members)})
+    return {'action': 'backup', 'dry_run': dry_run, 'destination': str(destination),
+            'skills': [skill.name for skill in skills], 'archived': archived}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('sync', 'check'))
+    parser.add_argument('action', choices=('sync', 'check', 'backup'))
     parser.add_argument('--home', type=Path, default=Path.home())
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--values', type=Path, default=Path.home() / '.config/dotfiles/values.json')
@@ -86,6 +127,9 @@ def main():
     parser.add_argument('--prune', action='store_true', help='Remove captured files deleted upstream; preserve repository-authored Codex metadata')
     args = parser.parse_args()
     home, repo, values_path = args.home.resolve(), args.repo.resolve(), args.values.resolve()
+    if args.action == 'backup':
+        print(json.dumps(archive(home, dry_run=args.dry_run), indent=2))
+        return
     if values_path.is_relative_to(repo) or any((p / '.git').exists() for p in values_path.parents):
         parser.error('Private values must remain outside Git working trees')
     values = json.loads(values_path.read_text()) if values_path.exists() else {}
