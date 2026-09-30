@@ -1500,16 +1500,18 @@ Backups: `~/.local/share/hindsight/backups/replay-readiness-20260911T225733Z`.
 The deployment never depends on an upstream image tag: `scripts/router.py build`
 downloads the immutable revision in `scripts/router-build.json`, verifies its
 archive SHA-256, and builds with `scripts/9router.Dockerfile`, tagging
-`9router:<tag>` and `9router:local`. The pin selects unmerged PR #4396 atop
-v0.5.91, not a moving branch. Reuse requires matching image IDs and receipt
+`9router:<tag>` and `9router:local`. The pin names its `repository` — the
+maintained `loopyd/9router-custom` fork — and selects an immutable revision
+there, not a moving branch. Reuse requires matching image IDs and receipt
 source/recipe fields; `--force` rebuilds. `router.sh install`/`update` run the build before
 the unit starts, and the unit itself runs `--no-build --pull never`, so a
 missing image fails closed instead of pulling a floating tag.
 
-1. Review the upstream revision and `scripts/9router.Dockerfile`; update the
-   revision, archive SHA-256 and descriptive tag in `scripts/router-build.json`
-   together. Reconcile the Dockerfile if upstream build steps changed. Tracked templates
-   keep their recomputed SHA-256 in `templates/manifest.json`.
+1. Review the pinned fork revision, its `repository` field and
+   `scripts/9router.Dockerfile`; update the revision, archive SHA-256, repository
+   and descriptive tag in `scripts/router-build.json` together. Reconcile the
+   Dockerfile if upstream build steps changed. Tracked templates keep their
+   recomputed SHA-256 in `templates/manifest.json`.
 2. Retain a consistent SQLite backup outside Git. Use SQLite's backup API, not a
    plain copy of a live database file.
 3. Preview `bash scripts/router.sh update --dry-run`, then run
@@ -1544,6 +1546,33 @@ Rollback image: `9router:rollback-pre-pr4396` (unmodified v0.5.91). Private reco
 and evidence: `~/.local/state/9router/pr4396/`, including a SQLite backup with
 `integrity_check` passing, previous build receipt and cutover result. No database
 restore or networking/provider configuration change was part of this cutover.
+
+### Router fork migration to loopyd/9router-custom (2026-09-30)
+
+The build source moved from an unmerged upstream PR pin to the maintained
+`loopyd/9router-custom` fork. Three upstream PRs are merged into the fork's
+`master` (each as a merge commit; git auto-merged all three with no conflicts):
+
+- #4396 `fix(translator)`: keep function-tool strict semantics on every Responses route
+- #4473 `fix(codex)`: refresh CLI identity for GPT-6.1 Sol (Codex CLI version 0.159.0)
+- #4488 `feat(codex)`: add GPT-6.1 Sol (Responses Lite registry entry, low–max
+  effort with Codex's `ultra` mapped to `max`, and pricing)
+
+Fork revision `45f79d1871042f36e4ff289a2203d2be4cb87378` (source archive SHA-256
+`ebe0cf86eaecc13e5203e667372939a81950999a0217faf165f5511ea4d8dcf3`) is pinned in
+`scripts/router-build.json` with `repository: loopyd/9router-custom`. `router.py`
+now reads the source repository from the pin and records it in the build receipt.
+
+Deployed `v0.5.91-fork-45f79d18` (image `sha256:37c1830a…`); `router.sh check`
+passed (75 authenticated models, required Qwen models present), and the API
+exposes `cx/gpt-6.1-sol`. A live `/v1/chat/completions` probe against
+`cx/gpt-6.1-sol` returned HTTP 200 (`model: gpt-6.1-sol`, content `ok`),
+confirming the 0.159.0 Codex identity clears the 400. Rollback alias
+`9router:rollback-pre-fork-45f79d18`
+points at the previous PR #4396 image. Private backup at
+`~/.local/state/9router/fork45f79d18/` (SQLite backup via the backup API,
+`integrity_check` ok, plus the previous receipt and image ID). No database
+restore, networking or provider-configuration change was part of this cutover.
 
 ### Router image update to v0.5.85 (2026-09-22)
 

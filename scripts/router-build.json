@@ -1,7 +1,12 @@
 {
-  "tag": "v0.5.91-pr4396-140f5404e914",
-  "revision": "140f5404e9141521f0aafdf6f1d0114c6024bf09",
-  "archive_sha256": "a556c5b7a942e525917eb483954e587fc1fe9927aec41cfc6c8906558f55574e",
+  "tag": "v0.5.91-fork-45f79d18",
+  "revision": "45f79d1871042f36e4ff289a2203d2be4cb87378",
+  "archive_sha256": "ebe0cf86eaecc13e5203e667372939a81950999a0217faf165f5511ea4d8dcf3",
+  "repository": "loopyd/9router-custom",
   "upstream_base": "v0.5.91",
-  "pull_request": "https://github.com/decolua/9router/pull/4396"
+  "merged_pull_requests": [
+    "https://github.com/decolua/9router/pull/4396",
+    "https://github.com/decolua/9router/pull/4473",
+    "https://github.com/decolua/9router/pull/4488"
+  ]
 }

@@ -19,7 +19,7 @@ from urllib.request import Request, urlopen
 
 from network import decode_files, decode_tables, installed_helpers, restore_files, restore_tables
 
-REPOSITORY = 'decolua/9router'
+REPOSITORY = 'loopyd/9router-custom'
 IMAGE = '9router'
 CONTAINER = '9router'
 SOURCE_LABEL = 'https://github.com/' + REPOSITORY
@@ -241,10 +241,10 @@ def github_json(url):
         return json.load(response)
 
 
-def latest_tag():
+def latest_tag(repository=REPOSITORY):
     names = []
     for page in range(1, 6):
-        payload = github_json('https://api.github.com/repos/' + REPOSITORY + '/tags?per_page=100&page=' + str(page))
+        payload = github_json('https://api.github.com/repos/' + repository + '/tags?per_page=100&page=' + str(page))
         if not isinstance(payload, list) or not payload:
             break
         names.extend(entry['name'] for entry in payload if isinstance(entry, dict) and 'name' in entry)
@@ -253,7 +253,7 @@ def latest_tag():
     releases = [(semver(name), name) for name in names]
     releases = sorted((version, name) for version, name in releases if version is not None)
     if not releases:
-        raise ValueError('No semantic release tags found for ' + REPOSITORY)
+        raise ValueError('No semantic release tags found for ' + repository)
     return releases[-1][1]
 
 
@@ -262,10 +262,10 @@ def image_id(name):
     return result.stdout.strip() if result.returncode == 0 else None
 
 
-def download_source(tag, destination, *, revision=None, archive_sha256=None):
+def download_source(tag, destination, *, repository=REPOSITORY, revision=None, archive_sha256=None):
     archive = destination / ('source-' + tag + '.tar.gz')
     ref = revision or ('refs/tags/' + tag)
-    request = Request('https://github.com/' + REPOSITORY + '/archive/' + ref + '.tar.gz', headers={
+    request = Request('https://github.com/' + repository + '/archive/' + ref + '.tar.gz', headers={
         'User-Agent': 'dotfiles-9router-build',
     })
     with urlopen(request, timeout=300) as response, archive.open('wb') as stream:
@@ -298,6 +298,9 @@ def build(force=False, tag=None):
         if not re.fullmatch(r'[0-9a-f]{64}', str(pin.get('archive_sha256', ''))):
             raise ValueError('Router build requires a source archive digest')
         tag = pin.get('tag')
+    repository = (pin or {}).get('repository', REPOSITORY)
+    if not isinstance(repository, str) or not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repository):
+        raise ValueError('Router build requires a source repository owner/name')
     if not isinstance(tag, str) or not re.fullmatch(r'v\d+\.\d+\.\d+(?:-[a-zA-Z0-9][a-zA-Z0-9_.-]*)?', tag):
         raise ValueError('Invalid router build tag')
     versioned = IMAGE + ':' + tag
@@ -313,6 +316,7 @@ def build(force=False, tag=None):
     built = image_id(versioned)
     if (not force and built is not None and built == image_id(local)
             and previous.get('image_id') == built and previous.get('tag') == tag
+            and previous.get('repository') == repository
             and previous.get('dockerfile_sha256') == dockerfile_sha256
             and previous.get('revision') == (pin or {}).get('revision')
             and previous.get('archive_sha256') == (pin or {}).get('archive_sha256')):
@@ -323,35 +327,43 @@ def build(force=False, tag=None):
         labels = ['--label', 'org.opencontainers.image.revision=' + pin['revision'],
                   '--label', 'org.dotfiles.source-archive-sha256=' + pin['archive_sha256']]
     with tempfile.TemporaryDirectory(prefix='build-' + tag + '-', dir=state) as temporary:
-        context = download_source(tag, Path(temporary), revision=(pin or {}).get('revision'),
+        context = download_source(tag, Path(temporary), repository=repository,
+                                  revision=(pin or {}).get('revision'),
                                   archive_sha256=(pin or {}).get('archive_sha256'))
         subprocess.run([
             'docker', 'build', '--progress=plain',
             '--tag', versioned, '--tag', local,
             '--label', 'org.opencontainers.image.version=' + tag,
-            '--label', 'org.opencontainers.image.source=https://github.com/' + REPOSITORY,
+            '--label', 'org.opencontainers.image.source=https://github.com/' + repository,
             *labels, '--file', str(dockerfile), str(context),
         ], check=True)
     built = image_id(local)
+    provenance = {}
+    if pin:
+        provenance = {
+            'revision': pin['revision'],
+            'archive_sha256': pin['archive_sha256'],
+            'upstream_base': pin.get('upstream_base'),
+            'merged_pull_requests': pin.get('merged_pull_requests', []),
+        }
     record = {
-        'repository': REPOSITORY,
+        'repository': repository,
         'tag': tag,
         'image': local,
         'image_id': built,
         'dockerfile_sha256': dockerfile_sha256,
-        **({'revision': pin['revision'], 'archive_sha256': pin['archive_sha256'],
-            'pull_request': pin['pull_request'], 'upstream_base': pin['upstream_base']} if pin else {}),
+        **provenance,
         'built_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
     }
     (state / 'build.json').write_text(json.dumps(record, indent=2) + '\n')
-    print('Built ' + local + ' from ' + REPOSITORY + ' ' + tag)
+    print('Built ' + local + ' from ' + repository + ' ' + tag)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=['prepare', 'initialize', 'restore', 'build', 'stage', 'health', 'check', 'ready', 'wait', 'preflight'])
     parser.add_argument('--port', type=int, default=20128)
-    parser.add_argument('--tag', help='explicit upstream release override; defaults to router-build.json')
+    parser.add_argument('--tag', help='explicit release override resolved against the pinned source repository; defaults to router-build.json')
     parser.add_argument('--force', action='store_true', help='rebuild even when the image is current')
     args = parser.parse_args()
     if args.command == 'ready':

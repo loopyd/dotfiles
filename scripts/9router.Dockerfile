@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# Vendored from decolua/9router @ v0.5.91 (Dockerfile).
+# Vendored from decolua/9router @ v0.5.91 (Dockerfile); the pinned
+# loopyd/9router-custom revision keeps this Dockerfile unchanged.
 # Owned by this repository so the deployment never depends on upstream image
 # tags being present or reproducible; scripts/router.py builds the digest-checked
 # revision in router-build.json (or an explicit --tag override). Review on bumps.
