@@ -3545,13 +3545,13 @@
       "source": "root/home/user/.pi/agent/models.json.tmpl",
       "target": ".pi/agent/models.json",
       "mode": "0600",
-      "sha256": "515bc3a809904441eaaae80f0a75fc56664c8d2577dfbb99b7fef83ec7e46901"
+      "sha256": "743e8409079ab11dd23248a94d07b45ccdd1a88a361b58023749a9bb63c0ba78"
     },
     {
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
       "target": ".pi/agent/settings.json",
       "mode": "0600",
-      "sha256": "88e6980131c5a46a616f8734196f45e9adea570ba694062d688b246823bd8774"
+      "sha256": "75e989534029e691272669bbc57e9c3f4aa0b3b003a4cb393435563b99075509"
     },
     {
       "source": "root/home/user/.config/openspec/config.json.tmpl",

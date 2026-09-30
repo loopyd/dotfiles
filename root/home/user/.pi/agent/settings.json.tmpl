@@ -27,7 +27,12 @@
   "compaction": {
     "enabled": true,
     "reserveTokens": 32768,
-    "keepRecentTokens": 24000
+    "keepRecentTokens": 24000,
+    "modelOverrides": {
+      "ninerouter/gpt-combo": {
+        "reserveTokens": 128000
+      }
+    }
   },
   "branchSummary": {
     "reserveTokens": 32768,
