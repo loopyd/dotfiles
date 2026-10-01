@@ -4535,7 +4535,7 @@
       "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
       "target": ".config/easyllama/deployment.json",
       "mode": "0600",
-      "sha256": "f248ed614335eabb2039afcfaed41b2ce5b6dbc7e0259f8c942848772370fada"
+      "sha256": "537e8115e5975c787aa33bb471492056cbbbbb3369dcc8fc291780c75748d236"
     },
     {
       "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.5.jinja.tmpl",
@@ -4571,25 +4571,25 @@
       "source": "root/home/user/.config/easyllama/native/config/config.bonsai-dflash2.yml.example.tmpl",
       "target": ".config/easyllama/native/config/config.bonsai-dflash2.yml.example",
       "mode": "0600",
-      "sha256": "1d4d302c4ee579b0974c3196d7730ef9743737a24abcdc654df3eb7805f82fe8"
+      "sha256": "4dad47efbbd77b103bf0ed4be257f78cff08e872b9dd5b65587ca199d78e0fa7"
     },
     {
       "source": "root/home/user/.config/easyllama/native/config/config.bonsai-plain.yml.example.tmpl",
       "target": ".config/easyllama/native/config/config.bonsai-plain.yml.example",
       "mode": "0600",
-      "sha256": "44d962a4f251c3866edcd1431875f1975e734f13fcecca44ecb6530212415254"
+      "sha256": "e083f6a8a1244348eb1dfb6ca6cf7961f5827848426b38a3de291c36a448cd8b"
     },
     {
       "source": "root/home/user/.config/easyllama/native/config/config.bonsai.yml.tmpl",
       "target": ".config/easyllama/native/config/config.bonsai.yml",
       "mode": "0600",
-      "sha256": "74d2f48d3dd5f6b687cc3d4f18907dd6c1bc6c1efa36910149fbc962536a5b2b"
+      "sha256": "096011b9bc84e43cc3cde69fb511b53cbf9080a690820dc401bf25a0ab08abc2"
     },
     {
       "source": "root/home/user/.config/easyllama/native/config/config.bonsai.yml.example.tmpl",
       "target": ".config/easyllama/native/config/config.bonsai.yml.example",
       "mode": "0600",
-      "sha256": "e2e4de231d32730f509346688f453f6cebd3653418fa58c5af0253cbcdec8420"
+      "sha256": "0b6baec07d6000d8a59b3905912201474e3fbbed10eeeaca67ed57d1d9bb3bc2"
     },
     {
       "source": "root/home/user/.config/easyllama/native/config/config.glm5.3-flash.yml.tmpl",
