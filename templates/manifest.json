@@ -4508,10 +4508,22 @@
       "sha256": "e832fdfddba144fddebb4c1fa46f3add900171e8cbba44b2c9a0c2bd4f8e4672"
     },
     {
+      "source": "root/home/user/.agents/skills/gateway/SKILL.md.tmpl",
+      "target": ".agents/skills/gateway/SKILL.md",
+      "mode": "0600",
+      "sha256": "14a5da9082ef6712d84cf74df3fc8beabeab4cf9b21ab3a83bfccfc768747ced"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/agents/openai.yaml.tmpl",
+      "target": ".agents/skills/gateway/agents/openai.yaml",
+      "mode": "0600",
+      "sha256": "2ae408d4ed376c2d6d7f537942525805acf0ba067f8ec575ee8f1ee291d1fa86"
+    },
+    {
       "source": "root/home/user/.agents/skills/herdr/SKILL.md.tmpl",
       "target": ".agents/skills/herdr/SKILL.md",
       "mode": "0600",
-      "sha256": "7c59c81c4047c5721a82bdacfdf7fae96409c2d71ab4f2a3e2504c0b932c4733"
+      "sha256": "9356d81dbf00d46e06ccca5b3cc1819508b85f2eb30ec05a152a016c15f9949a"
     },
     {
       "source": "root/home/user/.agents/skills/herdr/agents/openai.yaml.tmpl",
