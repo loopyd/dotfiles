@@ -158,13 +158,14 @@ Do not print, share or commit environment/initialization files. Upgrades are man
 
 ## Models and database
 
-- LLM: `qwen-combo` through local 9router's OpenAI-compatible API.
-- Embeddings: `qwen3-chat/qwen3-embeddings`, preserving all 4096 dimensions.
-- Reranker: local FlashRank `ms-marco-MiniLM-L-12-v2`.
+- LLM: `qwen-combo` through local 9Router's Responses API at `http://127.0.0.1:20128/v1`. The combo selects `qwen3-chat/bonsai-chat` through EasyLlama's Chat Completions API at `http://127.0.0.1:8080/v1`.
+- Embeddings: direct EasyLlama `qwen3-embeddings`, preserving 1024 dimensions.
+- Reranker: direct EasyLlama `qwen3-reranker` through its Cohere-compatible `/v1/rerank` API.
 - Database: VectorChord 1.1.1 / PostgreSQL 18, configured as `vchord`.
 - Hindsight: official 0.9.2 image; both container digests are pinned in Compose.
 
-The sole enabled existing 9router key is reused for the two model clients. No
+The existing 9Router client key is reused for Hindsight's LLM client. Embeddings
+and reranking retain the EasyLlama key. No
 Codex OAuth credentials are copied or mounted. The skill supplies documentation;
 it does not automatically ingest project files. The unsuccessful embedded-DB
 index-threshold workaround is removed, not bypassed.

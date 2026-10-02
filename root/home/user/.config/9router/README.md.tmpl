@@ -10,9 +10,11 @@ Private settings are in `~/.config/9router/client.env`:
   inside a requesting process; never print it, put it in command arguments, or
   retain it in repository or memory documents.
 
-Use `${NINEROUTER_URL}/v1/...` with the Bearer credential. The selected Hindsight
-models remain `qwen-combo` and `qwen3-chat/qwen3-embeddings`. Authenticated health
-and model discovery pass; the same key is already configured for Hindsight.
+Use `${NINEROUTER_URL}/v1/...` with the Bearer credential. Hindsight's LLM scopes
+select `qwen-combo`, which routes to `qwen3-chat/bonsai-chat`. The provider prefix
+`qwen3-chat` uses EasyLlama's Chat Completions API at `http://127.0.0.1:8080/v1`.
+Hindsight embeddings and reranking call EasyLlama directly with its own key;
+the gateway's `qwen3-chat/qwen3-embeddings` alias remains available for other clients.
 
 `verification.json` records configuration checks. `inference-check.json` records
 bounded synthetic probes, which exposed an intermittent chat 503 and an embedding

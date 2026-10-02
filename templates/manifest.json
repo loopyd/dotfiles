@@ -1037,7 +1037,7 @@
       "source": "root/home/user/.config/9router/README.md.tmpl",
       "target": ".config/9router/README.md",
       "mode": "0600",
-      "sha256": "52d3f66bcfce32cdd45382f3d58d0f015d03ed99ee07baa10b31d3510d6fb2a3"
+      "sha256": "550e91a60ec6b9e3200a91d7b10c8455b8d82f5ca62e1c0e66196f2a8d99d43d"
     },
     {
       "source": "root/home/user/.config/9router/client.env.tmpl",
@@ -1067,7 +1067,7 @@
       "source": "root/home/user/.config/9router/verification.json.tmpl",
       "target": ".config/9router/verification.json",
       "mode": "0600",
-      "sha256": "3bb67592d92fd699bd747a91a4b44b571ed56c828c4cf8fdf838f0a9453e8452"
+      "sha256": "2cd34b5cba554c1d0f66dd6b8e84f9810b7c04c42a6bea1f9ea4074d765e7952"
     },
     {
       "source": "root/home/user/.config/Cadence/Cadence-Logs.conf.tmpl",
@@ -2855,7 +2855,7 @@
       "source": "root/home/user/.config/hindsight/README.md.tmpl",
       "target": ".config/hindsight/README.md",
       "mode": "0600",
-      "sha256": "1e4398d0dad35880663ccba85a47b27812563bdbd8ac20ea3a49d61dd9270a52"
+      "sha256": "583663789ed0b1f55b91ea2d743a8478a55feb0f541e3d444045f6b70daa4799"
     },
     {
       "source": "root/home/user/.config/hindsight/compose.yaml.tmpl",
@@ -2885,7 +2885,7 @@
       "source": "root/home/user/.config/hindsight/server.env.tmpl",
       "target": ".config/hindsight/server.env",
       "mode": "0600",
-      "sha256": "ddf564892e53b4ebc95a2d8da5f0fd3d15797a6011613f6018c926a32b6b1d4c"
+      "sha256": "153eba9ab014541b95700af4f16d0106fffce489b729d0442b0bdd2784c0bb5a"
     },
     {
       "source": "root/home/user/.config/htop/htoprc.tmpl",

@@ -133,9 +133,9 @@ Keep `tool_timeout_sec = 720` under `[mcp_servers.hindsight]` and the server's 1
 
 ### Hindsight LLM route
 
-EasyLlama Bonsai mode keeps Ternary Bonsai 2 27B, Qwen3 Embedding 0.6B and compact BGE reranking resident together on the GPU. Hindsight calls EasyLlama's authenticated Responses, embedding and rerank APIs directly on port 8080. Reranking uses the built-in Cohere-compatible adapter.
+EasyLlama Bonsai mode keeps Ternary Bonsai 2 27B, Qwen3 Embedding 0.6B and compact BGE reranking resident together on the GPU. Hindsight calls local 9Router's authenticated Responses API on port 20128 for LLM operations. Embedding and rerank requests call EasyLlama directly on port 8080. Reranking uses the built-in Cohere-compatible adapter.
 
-All LLM scopes use `bonsai-chat` through `LLM_PROVIDER=openai-responses`. The current chat profile uses Q8_0 DFlash2 speculation at depth seven, one queued chat slot and the full 262,144-token context. Embeddings remain Qwen3 Embedding 0.6B at 1,024 dimensions, with two concurrent requests and batches of four. All LLM scopes use low reasoning; retain and consolidation also disable thinking in their template arguments.
+All LLM scopes use `qwen-combo` through `LLM_PROVIDER=openai-responses`. The combo selects `qwen3-chat/bonsai-chat`; the `qwen3-chat` provider prefix points to EasyLlama at `http://127.0.0.1:8080/v1` using Chat Completions upstream. The current chat profile uses Q8_0 DFlash2 speculation at depth seven, one queued chat slot and the full 262,144-token context. Embeddings remain Qwen3 Embedding 0.6B at 1,024 dimensions, with two concurrent requests and batches of four. All LLM scopes use low reasoning; retain and consolidation also disable thinking in their template arguments.
 
 Reflection has a 250,000-token accumulated-context budget, a 32,768-token output cap and a 2,000-second wall timeout. Admitted chat requests queue behind one chat slot, so these limits do not guarantee that several maximum-size requests fit at once.
 
