@@ -179,6 +179,10 @@ Successful component installs record their declared payload files and packages i
 
 `root/home/user/.pi/agent/agents/` captures seven native agent definitions from pi-subagents 0.73.1: `delegate`, `evidence-auditor`, `oracle`, `researcher`, `reviewer`, `scout` and `worker`. `scout` and the lightweight `delegate` use `model: ninerouter/qwen-combo`. The other native agents and the preserved custom `comment-remover` use `model: ninerouter/ds-combo`. Settings retain existing thinking levels but do not override these agents' model fields.
 
+`~/.pi/agent/settings.json` installs `npm:@nguyenquangthai/pi-ask@0.2.1` globally at that pinned version. The extension adds `ask_user_question`, a keyboard-driven terminal questionnaire with up to four questions and a review tab. It registers only in Pi's TUI, so run `/reload` or restart Pi before it is available.
+
+Compaction is enabled with `keepRecentTokens: 24000` for every model. The `ninerouter/qwen-combo` override sets `reserveTokens: 131072`, so Pi compacts above 131072 tokens even though the model declares a 262144-token context window. `ninerouter/gpt-combo` keeps its own 128000-token reserve; other models are unchanged and use the base 32768-token reserve.
+
 `scripts/skills.sh` wraps `scripts/skills.py`, which refreshes only those two sources, `~/.agents/skills` and `~/.pi/agent/agents`, without recapturing unrelated configuration. It scrubs secrets into private value markers and rejects symlinks, binaries and unsafe captures before writing anything:
 
 ```bash

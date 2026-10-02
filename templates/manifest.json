@@ -3551,7 +3551,7 @@
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
       "target": ".pi/agent/settings.json",
       "mode": "0600",
-      "sha256": "75e989534029e691272669bbc57e9c3f4aa0b3b003a4cb393435563b99075509"
+      "sha256": "0ba630ca3cab94d336effda8f0b51a8d48f99804d73de6322ab643033267a8a1"
     },
     {
       "source": "root/home/user/.config/openspec/config.json.tmpl",
