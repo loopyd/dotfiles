@@ -4511,13 +4511,31 @@
       "source": "root/home/user/.agents/skills/gateway/SKILL.md.tmpl",
       "target": ".agents/skills/gateway/SKILL.md",
       "mode": "0600",
-      "sha256": "ff8ab4196008ce2bf73dfb7216d3042e0df765b0e546108a6d7fed1efb79f4ff"
+      "sha256": "6d50fb9ac43d872bab607c7daa6654bddaa687ea4322a5a54a34c3bda1ef5408"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/agents/openai.yaml.tmpl",
       "target": ".agents/skills/gateway/agents/openai.yaml",
       "mode": "0600",
       "sha256": "2ae408d4ed376c2d6d7f537942525805acf0ba067f8ec575ee8f1ee291d1fa86"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/references/artifact-transfer.md.tmpl",
+      "target": ".agents/skills/gateway/references/artifact-transfer.md",
+      "mode": "0600",
+      "sha256": "f14b7440d1d8799895aba21498b7f4b4415bd26405f86a4f63b0d4ad040bfb58"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_artifact.cjs.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_artifact.cjs",
+      "mode": "0700",
+      "sha256": "9bc2b10928092fb6dc111e42265f1d460796c816609035384d407d25f858b506"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_pipeline.js.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_pipeline.js",
+      "mode": "0700",
+      "sha256": "ca2a2a91d0a58ebab128428b683e154b1519dc868f2bc0684defe553a6e165eb"
     },
     {
       "source": "root/home/user/.agents/skills/herdr/SKILL.md.tmpl",
@@ -4664,22 +4682,22 @@
       "sha256": "92734d94a3ddd3e114f7ea6e1cff6cf9db4aa682bc4acaa7e0defdc7a3388e85"
     },
     {
-      "source": "root/home/user/.agents/skills/gateway/references/artifact-transfer.md.tmpl",
-      "target": ".agents/skills/gateway/references/artifact-transfer.md",
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_bulk.js.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_bulk.js",
+      "mode": "0700",
+      "sha256": "6937a54272d37f29911384b7c5a03e3d3f74401a49bff7594cf2d985bcbe2ce3"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_purge.js.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_purge.js",
+      "mode": "0700",
+      "sha256": "5a3f3aefe2fc2b4d5008ac4288565e2c811459193300125585e940756f982307"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/references/bulk-terminal.md.tmpl",
+      "target": ".agents/skills/gateway/references/bulk-terminal.md",
       "mode": "0600",
-      "sha256": "f14b7440d1d8799895aba21498b7f4b4415bd26405f86a4f63b0d4ad040bfb58"
-    },
-    {
-      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_artifact.cjs.tmpl",
-      "target": ".agents/skills/gateway/scripts/gateway_artifact.cjs",
-      "mode": "0700",
-      "sha256": "9bc2b10928092fb6dc111e42265f1d460796c816609035384d407d25f858b506"
-    },
-    {
-      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_pipeline.js.tmpl",
-      "target": ".agents/skills/gateway/scripts/gateway_pipeline.js",
-      "mode": "0700",
-      "sha256": "ca2a2a91d0a58ebab128428b683e154b1519dc868f2bc0684defe553a6e165eb"
+      "sha256": "94992127ee7b79e42c0e1054518b30940818579a4d02c0f695f10dc64f2b7c76"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/scripts/json_io.cjs.tmpl",
@@ -4688,16 +4706,10 @@
       "sha256": "ed6cc54e0c5c626fe8000fce776613b33c0998abb78e9bf8cde810df0e098f4c"
     },
     {
-      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_bulk.js.tmpl",
-      "target": ".agents/skills/gateway/scripts/gateway_bulk.js",
-      "mode": "0700",
-      "sha256": "6937a54272d37f29911384b7c5a03e3d3f74401a49bff7594cf2d985bcbe2ce3"
-    },
-    {
-      "source": "root/home/user/.agents/skills/gateway/references/bulk-terminal.md.tmpl",
-      "target": ".agents/skills/gateway/references/bulk-terminal.md",
+      "source": "root/home/user/.agents/skills/gateway/references/artifact-lifecycle.md.tmpl",
+      "target": ".agents/skills/gateway/references/artifact-lifecycle.md",
       "mode": "0600",
-      "sha256": "94992127ee7b79e42c0e1054518b30940818579a4d02c0f695f10dc64f2b7c76"
+      "sha256": "062d7425e4cec2d598c1f6f7cb4ff1db9273363e780dd76b5ba9f723b06daa25"
     },
     {
       "source": "root/home/user/.agents/skills/herdr/scripts/herdr_capture.cjs.tmpl",

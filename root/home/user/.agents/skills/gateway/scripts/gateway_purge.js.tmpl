@@ -1,0 +1,20 @@
+const request=load('gateway_purge_request');
+const id=value=>typeof value==='string'&&/^fil_[A-Za-z0-9]+$/.test(value);
+const parseTime=value=>{if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value))throw Error('invalid_cutoff');const time=Date.parse(value);if(!Number.isFinite(time)||new Date(time).toISOString().slice(0,19)!==value.slice(0,19))throw Error('invalid_cutoff');return time};
+try{
+  if(!request||!['single','multiple','before'].includes(request.mode)||!Array.isArray(request.ledger)||typeof request.workflow_id!=='string'||!request.workflow_id)throw Error('invalid_request');
+  if (request.ledger.some(item => !item || typeof item !== 'object' || !id(item.artifact_id)) || new Set(request.ledger.map(item => item.artifact_id)).size !== request.ledger.length) throw Error('invalid_ledger');
+  let selected;
+  if(request.mode==='before'){const cutoff=parseTime(request.before);if(cutoff>Date.now())throw Error('future_cutoff');selected=request.ledger.filter(item=>Number.isFinite(item.created_at_ms)&&item.created_at_ms<cutoff)}
+  else{const ids=request.mode==='single'?[request.artifact_id]:request.artifact_ids;if(!Array.isArray(ids)||!ids.length||ids.some(value=>!id(value))||new Set(ids).size!==ids.length)throw Error('invalid_ids');selected=ids.map(value=>request.ledger.find(item=>item.artifact_id===value)||{artifact_id:value})}
+  const eligible=[],protectedArtifacts=[];
+  for(const item of selected){if(id(item.artifact_id)&&item.workflow_id===request.workflow_id&&item.temporary===true&&item.readback_verified===true&&item.pending!==true&&item.role!=='deliverable'&&!item.library_file_id&&/^[0-9a-f]{64}$/.test(item.sha256))eligible.push(item.artifact_id);else protectedArtifacts.push(item.artifact_id||null)}
+  const capability=typeof tools.mcp__codex_apps__gateway_expire_artifact==='function';
+  if(request.execute===true){
+    if(!capability)throw Error('artifact_expiration_tool_unavailable');
+    if(!Array.isArray(request.confirmed_artifact_ids)||JSON.stringify([...request.confirmed_artifact_ids].sort())!==JSON.stringify([...eligible].sort())||!eligible.length)throw Error('exact_action_time_confirmation_required');
+    const results=[];
+    for(const artifactId of eligible){const key='gateway_expire:'+artifactId;const prior=load(key);if(prior?.status==='confirmed'){results.push(prior);continue}if(prior?.status==='submitting')throw Error('expiration_outcome_uncertain');store(key,{status:'submitting',artifact_id:artifactId});const response=await tools.mcp__codex_apps__gateway_expire_artifact({artifact_id:artifactId});if(response.isError)throw Error('expiration_rejected');const result=response.structuredContent?.result??response.structuredContent; if(!result||result.artifact_id!==artifactId||result.status!=='expired'||result.expired===false)throw Error('expiration_confirmation_unverified');const record={status:'confirmed',artifact_id:artifactId,result:{artifact_id:artifactId,status:'expired'}};store(key,record);results.push(record)}
+    text({status:'verified',semantics:'expire removes owned regional object, disables download capabilities, retains audit tombstone',results});
+  }else text({status:'preview',eligible_ids:eligible,protected_ids:protectedArtifacts,execution_capability:capability?'available':'unavailable',semantics:'explicit owned artifact expiration; not remote filesystem deletion or link revocation',confirmation_required:true});
+}catch(error){text({status:'incomplete',error_code:/^[a-z_]+$/.test(error.message)?error.message:'tool_or_runtime_failed'})}

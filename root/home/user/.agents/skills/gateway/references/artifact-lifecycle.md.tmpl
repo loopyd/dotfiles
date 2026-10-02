@@ -1,0 +1,11 @@
+# Temporary artifact lifecycle
+
+Current callable API: `gateway_expire_artifact({artifact_id:"<canonical fil_>"})`. Immediately removes owned regional object, disables previously issued download capabilities, keeps non-secret audit tombstone. Repeat documented safe. This is object expiration, not mere link revocation, natural24h retention, Library deletion or remote filesystem deletion.
+
+`scripts/gateway_purge.js` runs in `functions.exec`. `gateway_purge_request`: exact `workflow_id`, verified temporary `ledger` from bulk run state; `mode:"single"`+`artifact_id`, `mode:"multiple"`+unique `artifact_ids`, or `mode:"before"`+strict UTC `before:"YYYY-MM-DDTHH:mm:ssZ"` (optional milliseconds). Reject invalid/rolled dates, offsets, future cutoff, malformed/duplicate IDs. Scope one owned workflow; combine only explicitly reviewed matching ledger entries.
+
+Default preview: eligible/protected IDs, current callable capability and exact semantics. Protect unverified readback, pending operations, unknown IDs, unrelated workflows, final ZIPs, Library deliverables and non-temporary items. Same workflow+known canonical ID+verified SHA/readback required. No broad account purge.
+
+Actual permanent removal requires action-time user confirmation of exact eligible IDs. Only then `execute:true` and `confirmed_artifact_ids:[...]`, matching preview exactly. No preselected confirmation, no permission inferred from feature implementation request. Persist per-artifact submission/outcome. Confirmation requires matching artifact ID and explicit expired status, with no false expired flag; error-shaped, unknown-schema or mismatched responses stay incomplete and cannot be replayed automatically. The live expiration success schema has not been exercised because no removal was authorized. Missing capability -> explicit blocker; uncertain response -> inspect state before any repeat despite documented idempotency. No guessed URL/endpoint or fallback remote delete.
+
+Selectors and mocked adapter tested; live temporary preview tested. No actual artifact expired during implementation. User may confirm selected task artifacts after final readback. Keep final native ZIPs/Library files.
