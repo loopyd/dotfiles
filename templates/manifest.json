@@ -3563,7 +3563,7 @@
       "source": "root/home/user/.codex/openspec.config.toml.tmpl",
       "target": ".codex/openspec.config.toml",
       "mode": "0600",
-      "sha256": "0ed1b9a3e55e955d7cbbbb65dbf61cc691acf2ca88a58e7ea6bcb326c4ae3b3a"
+      "sha256": "9c991ddfc55db8e149867b93f897c8b33df2bbd52dace8edd478df64b4358b12"
     },
     {
       "source": "templates/commands/openspec-pi.tmpl",

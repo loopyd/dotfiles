@@ -13,9 +13,9 @@ usage() {
 Usage: ./scripts/openspec.sh <install|update|uninstall|check> [--dry-run]
 
 Maintain the global OpenSpec integration for the Pi and Codex coding agents.
-The pinned CLI comes from scripts/tools.sh (templates/packages.json); this
-component regenerates its shared Agent Skills and Pi prompts from the rendered
-global config and installs them into ~/.agents/skills and ~/.pi/agent/prompts.
+The CLI comes from scripts/tools.sh (templates/packages.json); this component
+regenerates agent files from the rendered global config. Codex skills go into
+~/.agents/skills; Pi skills and prompts go into ~/.pi/agent/skills and prompts.
 Run as the logged-in destination user after rendering private dotfiles.
 
   --dry-run   Preview only: no writes

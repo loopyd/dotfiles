@@ -204,7 +204,7 @@ Preview restoration with `python3 scripts/dotfiles.py install --dry-run`. The re
 
 ### OpenSpec installation
 
-OpenSpec is a spec-driven planning layer Pi and Codex drive with slash commands. The `@fission-ai/openspec` CLI is restored by `./scripts/tools.sh` from `templates/packages.json`; this component regenerates its agent files from that CLI and installs them into the destination user's global agent directories. Run as the destination user after rendering private dotfiles:
+OpenSpec is a spec-driven planning layer driven through Pi slash commands and Codex skills. The `@fission-ai/openspec` CLI is restored by `./scripts/tools.sh` from `templates/packages.json`; this component regenerates its agent files from that CLI and installs them into the destination user's global agent directories. Run as the destination user after rendering private dotfiles:
 
 ```bash
 ./scripts/openspec.sh install --dry-run
@@ -212,9 +212,11 @@ OpenSpec is a spec-driven planning layer Pi and Codex drive with slash commands.
 ./scripts/openspec.sh check
 ```
 
-`~/.config/openspec/config.json` renders the `custom` profile with every workflow enabled, `delivery: both` and telemetry disabled. From it the helper installs 12 Pi Agent Skills and 12 prompts under `~/.pi/agent/`, and 12 Codex Agent Skills under `~/.codex/skills/` (verified against Codex's own prompt input). Generated files are owned by `scripts/openspec.py`; `scripts/snapshot.py` excludes them from capture and `uninstall` removes only paths recorded in `~/.local/state/dotfiles/openspec.json`.
+`~/.config/openspec/config.json` renders the `custom` profile with every workflow enabled, `delivery: both` and telemetry disabled. From it the helper installs 12 Pi Agent Skills and 12 prompts under `~/.pi/agent/`, and 12 Codex Agent Skills under `~/.agents/skills/`. Updates migrate receipt-owned skills from the legacy `~/.codex/skills/` directory, refusing migration if those files have local edits or unrecorded files. Generated files are owned by `scripts/openspec.py`; `scripts/snapshot.py` excludes them from capture and `uninstall` removes only paths recorded in `~/.local/state/dotfiles/openspec.json`.
 
 Invoke it as `/opsx-propose`, `/opsx-apply`, `/opsx-archive` and the other `/opsx-*` commands in Pi, or `$openspec-propose`, `$openspec-apply-change` and the other `$openspec-*` skills in Codex.
+
+In Codex CLI or the IDE extension, open `/skills` or type `$` to select an OpenSpec skill. In the Codex desktop app, select it from the Skills sidebar. OpenSpec 1.13.2 skips Codex slash-command generation even with `delivery: both`; `/opsx-*` commands are for Pi. If newly installed skills do not appear, restart Codex.
 
 OpenSpec has no model setting of its own, so the OpenSpec model policy is configured on each agent. Both pin `ninerouter/ds-combo` at high reasoning:
 

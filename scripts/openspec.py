@@ -8,7 +8,7 @@ directories:
 
     ~/.pi/agent/skills/openspec-*/     Pi Agent Skills
     ~/.pi/agent/prompts/opsx-*.md      Pi slash commands (/opsx-*)
-    ~/.codex/skills/openspec-*/        Codex Agent Skills ($openspec-*)
+    ~/.agents/skills/openspec-*/       Codex Agent Skills ($openspec-*)
 
 OpenSpec renders a tool-specific variant for each root, so Pi gets the
 ``/opsx-*`` handoffs and Codex the ``$openspec-*`` handoffs.
@@ -54,13 +54,15 @@ CONFIG = HOME / '.config/openspec/config.json'
 STAGING = HOME / '.local/share/dotfiles/openspec/global'
 PI_SKILLS_DIR = HOME / '.pi/agent/skills'
 PROMPTS_DIR = HOME / '.pi/agent/prompts'
-CODEX_SKILLS_DIR = HOME / '.codex/skills'
+CODEX_SKILLS_DIR = HOME / '.agents/skills'
+LEGACY_CODEX_SKILLS_DIR = HOME / '.codex/skills'
 RECEIPT = HOME / '.local/state/dotfiles/openspec.json'
 SCAFFOLD_CANDIDATES = (
     REPO / 'templates/openspec/config.yaml',
     Path(__file__).resolve().parent / 'openspec-config.yaml',
 )
 SKILL_DIRS = (PI_SKILLS_DIR, CODEX_SKILLS_DIR)
+OWNED_SKILL_DIRS = (*SKILL_DIRS, LEGACY_CODEX_SKILLS_DIR)
 
 
 def require(condition, message):
@@ -125,7 +127,7 @@ def file_hash(path):
 
 def owned(path):
     path = Path(path)
-    for directory in SKILL_DIRS:
+    for directory in OWNED_SKILL_DIRS:
         if path.parent == directory and path.name.startswith(SKILL_PREFIX):
             return True
         if directory in path.parents:
@@ -216,6 +218,25 @@ def read_receipt():
     return data
 
 
+def verify_legacy_upgrade(data):
+    if not data:
+        return
+    recorded = data.get('files', {})
+    for name in data.get('roots', []):
+        root = Path(name)
+        if root.parent != LEGACY_CODEX_SKILLS_DIR or not owned(root):
+            continue
+        require(not root.is_symlink(), 'Legacy skill is a symlink; preserve and review: ' + name)
+        if not root.exists():
+            continue
+        require(root.is_dir(), 'Legacy skill is not a directory; preserve and review: ' + name)
+        for path in root.rglob('*'):
+            require(not path.is_symlink(), 'Legacy artifact is a symlink; preserve and review: ' + str(path))
+            if path.is_file():
+                require(str(path) in recorded and file_hash(path) == recorded[str(path)],
+                        'Legacy artifact changed or is unrecorded; preserve and review: ' + str(path))
+
+
 def sync(args):
     if args.dry_run:
         print('DRY-RUN: verify the OpenSpec config, regenerate the integration in ' + str(STAGING)
@@ -223,11 +244,12 @@ def sync(args):
               + str(CODEX_SKILLS_DIR) + '; no writes')
         return
     require(os.geteuid() != 0, 'Run as the destination user, not root')
+    previous = read_receipt()
+    verify_legacy_upgrade(previous)
     text = generate()
     pi_skills, prompts, codex_skills = generated_artifacts()
     for directory in (*SKILL_DIRS, PROMPTS_DIR):
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    previous = read_receipt()
     roots = set()
     files = {}
     for source in pi_skills:
@@ -278,6 +300,9 @@ def check(args):
     data = read_receipt()
     require(data is not None, 'No installation receipt; run ./scripts/openspec.sh install')
     require(data.get('version') == text, 'Receipt version ' + str(data.get('version')) + ' differs from installed ' + text + '; run sync')
+    require(data.get('workflows') == configured_workflows(), 'Configured workflows differ from receipt; run sync')
+    require(any(Path(root).parent == CODEX_SKILLS_DIR for root in data.get('roots', [])),
+            'Codex skills missing from ' + str(CODEX_SKILLS_DIR) + '; run sync to upgrade the legacy installation')
     modified = []
     for name, expected in data.get('files', {}).items():
         path = Path(name)
