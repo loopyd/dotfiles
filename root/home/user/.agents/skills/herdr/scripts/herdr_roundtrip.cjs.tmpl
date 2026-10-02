@@ -1,0 +1,25 @@
+const path=require('node:path');
+const fs=require('node:fs/promises');
+const {run:operate}=require('./herdr_file.cjs');
+const {fail,cli}=require('./json_io.cjs');
+
+async function run(input){
+  if(!input||typeof input!=='object'||Array.isArray(input)||Buffer.byteLength(JSON.stringify(input))>4096)fail('invalid_roundtrip_request');
+  const operation=input.operation;
+  if(!operation||!Number.isInteger(operation.size_bytes)||operation.size_bytes<1||operation.size_bytes>1048576||!/^[0-9a-f]{64}$/.test(operation.sha256))fail('invalid_file_request');
+  let staged;const started=performance.now();
+  if(input.stage){
+    const stage=input.stage;
+    if(stage.action!=='artifact'||stage.destination!==operation.request_path||stage.expected_sha256!==operation.sha256||stage.size_bytes!==operation.size_bytes||stage.inspect_bytes!==0||stage.include_content===true||stage.headers!==undefined)fail('stage_identity_mismatch');
+    const helper=input.download_helper_path;
+    if(typeof helper!=='string'||!path.isAbsolute(helper)||helper.split('/').includes('..')||/[\0\r\n]/.test(helper))fail('invalid_helper_path');
+    for(let current=helper;;current=path.dirname(current)){if((await fs.lstat(current)).isSymbolicLink())fail('symlink_rejected');if(current===path.dirname(current))break}
+    staged=await require(helper).main(stage);
+    if(staged.status!=='verified'||staged.path!==operation.request_path||staged.sha256!==operation.sha256||staged.size_bytes!==operation.size_bytes)fail('staged_integrity_mismatch');
+  }else if(input.download_helper_path!==undefined)fail('invalid_roundtrip_request');
+  const operationStarted=performance.now();
+  const receipt=await operate(operation);
+  return{...receipt,...(staged?{input_verified:true,input_path:staged.path,input_sha256:staged.sha256,input_size_bytes:staged.size_bytes}:{}),timing_seconds:{stage:(operationStarted-started)/1000,operation:(performance.now()-operationStarted)/1000,total:(performance.now()-started)/1000}};
+}
+if(require.main===module)cli(run);
+module.exports={run};

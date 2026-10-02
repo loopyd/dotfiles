@@ -4511,7 +4511,7 @@
       "source": "root/home/user/.agents/skills/gateway/SKILL.md.tmpl",
       "target": ".agents/skills/gateway/SKILL.md",
       "mode": "0600",
-      "sha256": "6d50fb9ac43d872bab607c7daa6654bddaa687ea4322a5a54a34c3bda1ef5408"
+      "sha256": "dcf07ff138023770d370519178dd20f31fdd702c30b8c10e288055e47b5d2684"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/agents/openai.yaml.tmpl",
@@ -4529,7 +4529,7 @@
       "source": "root/home/user/.agents/skills/gateway/scripts/gateway_artifact.cjs.tmpl",
       "target": ".agents/skills/gateway/scripts/gateway_artifact.cjs",
       "mode": "0700",
-      "sha256": "9bc2b10928092fb6dc111e42265f1d460796c816609035384d407d25f858b506"
+      "sha256": "9bd6cb5e9f30c3c8cb9e970f7bc87cbc449b2b2417f3d5312ac2e21fa4bd4550"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/scripts/gateway_pipeline.js.tmpl",
@@ -4541,7 +4541,7 @@
       "source": "root/home/user/.agents/skills/herdr/SKILL.md.tmpl",
       "target": ".agents/skills/herdr/SKILL.md",
       "mode": "0600",
-      "sha256": "e73afcdc88338c40fa0af4e2088fef85600021bbc4983b7a037f58c25e64f8d6"
+      "sha256": "8703d878101fac6e962326ef4538a64c2b586e60c22684858cea2c51a22cc572"
     },
     {
       "source": "root/home/user/.agents/skills/herdr/agents/openai.yaml.tmpl",
@@ -4685,7 +4685,7 @@
       "source": "root/home/user/.agents/skills/gateway/scripts/gateway_bulk.js.tmpl",
       "target": ".agents/skills/gateway/scripts/gateway_bulk.js",
       "mode": "0700",
-      "sha256": "6937a54272d37f29911384b7c5a03e3d3f74401a49bff7594cf2d985bcbe2ce3"
+      "sha256": "9df3ef3ecc8e29a5547583e949ec080a7c189bbecce0b1fede3efb13151298d6"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/scripts/gateway_purge.js.tmpl",
@@ -4697,7 +4697,7 @@
       "source": "root/home/user/.agents/skills/gateway/references/bulk-terminal.md.tmpl",
       "target": ".agents/skills/gateway/references/bulk-terminal.md",
       "mode": "0600",
-      "sha256": "94992127ee7b79e42c0e1054518b30940818579a4d02c0f695f10dc64f2b7c76"
+      "sha256": "703181c8165a5959158f261eb454c085e61a87a87ebb779607a5faceb4591367"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/scripts/json_io.cjs.tmpl",
@@ -4733,7 +4733,7 @@
       "source": "root/home/user/.agents/skills/herdr/references/automation.md.tmpl",
       "target": ".agents/skills/herdr/references/automation.md",
       "mode": "0600",
-      "sha256": "abc9360522e0a293216fffc7e6facd9616de7fb25125b10cd52fe0d4a905a1de"
+      "sha256": "268cb7d47b0c7c55ba1af21f94541691fc0fe4b71ca81cf77042868abb244684"
     },
     {
       "source": "root/home/user/.agents/skills/herdr/scripts/herdr_file.cjs.tmpl",
@@ -4752,6 +4752,12 @@
       "target": ".agents/skills/herdr/references/operations.md",
       "mode": "0600",
       "sha256": "eea4807563e6d5d5e7617db2c3c3453325d0d3c741261611d23578a464014fc7"
+    },
+    {
+      "source": "root/home/user/.agents/skills/herdr/scripts/herdr_roundtrip.cjs.tmpl",
+      "target": ".agents/skills/herdr/scripts/herdr_roundtrip.cjs",
+      "mode": "0600",
+      "sha256": "0e8ca0a68466a3dc6996e5e0c2ca3ccbb04a82f5ec0327db3bf41b753ed58959"
     }
   ],
   "symlinks": [

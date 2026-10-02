@@ -21,6 +21,8 @@ store('gateway_bulk_request', {
   remote_node_path:'/verified/remote/node',
   remote_download_helper:'/verified/remote/gateway_artifact.cjs',
   remote_producer:'/verified/remote/herdr_file.cjs',
+  remote_roundtrip_helper:'/verified/remote/herdr_roundtrip.cjs',
+  initial_wait_seconds:30,
   remote_request_path:'/private/task/request.json',
   remote_output_path:'/private/task/output.json',
   consumer_node_path:'/verified/consumer/node',
@@ -42,11 +44,15 @@ Optional captured/app-owned output: `remote_capture_path` equals `remote_output_
 
 ## State/recovery
 
+Preferred combined route: `remote_roundtrip_helper` uses the reviewed Herdr companion beside `remote_producer`. One `execute_argv` stages and verifies the request, then calls the unchanged journaled producer. URL travels only in encrypted `secret_stdin`; descriptor <=4KiB. Stage failure never reaches Herdr. Receipt reports input identity plus separate stage/operation durations. Host job timestamps measure queue/execution for the combined job. Gateway output hash/transfer remain separate supported operations, so fresh bulk needs three jobs instead of four.
+
+Omit that field for the existing two-job route. Existing run bindings remain compatible. Adding/changing a combined helper changes logical run identity; use a fresh run. Combined host-job timeout defaults180s, configurable `roundtrip_timeout_seconds`30..180, covering staging plus native operation and capture attestation. Existing separate jobs retain90s each. Timeout remains an uncertain outcome; inspect before retry. Initial submission wait defaults30s, configurable0..30; saves any returned job ID before following it. Missing response leaves submission uncertain and blocks duplicate operation.
+
 Upload -> authoritative artifact hash/size/expiry -> typed remote `execute_argv` staging with fresh link on encrypted `secret_stdin` -> independent byte check -> typed operation -> producer journal/control receipt -> authoritative Gateway `hash_file`/`download_path` -> exact consumer hash/size verification.
 
 Canonical `uploadId` is temporary input artifact ID; ready output ID comes from matching `list_files`. Do not confuse Library/backing IDs, upload filename or producer path with artifact identity. All control outputs bounded4KiB; no raw terminal content in job control receipt.
 
-Store upload result and durable stage/operate job IDs before proceeding. Unknown submission/no ID -> incomplete, inspect existing jobs before retry. Same run resumes known jobs; same typed idempotency key; host/argv checked. Remote journal reserves mutation before operation: completed identical request reused; started/missing outcome blocked; changed request hash rejected. Custom commands and text sends never blindly repeated. Simultaneous run owner excluded; producer's on-disk exclusive journal remains final duplicate guard.
+Store upload result and durable roundtrip or stage/operate job IDs before proceeding. Unknown submission/no ID -> incomplete, inspect existing jobs before retry. Same run resumes known jobs; same typed idempotency key; host/argv checked. Remote journal reserves mutation before operation: completed identical request reused; started/missing outcome blocked; changed request hash rejected. Custom commands and text sends never blindly repeated. Simultaneous run owner excluded; producer's on-disk exclusive journal remains final duplicate guard.
 
 Output pipeline has exclusive consumer file lock before Library mutation, rechecks completed local bytes even when their artifact link has expired, binds effective bounds, saves pending helper session and delivery state under a stable lock-attempt key before input, persists artifact pagination cursor. `artifact_scan_pending` differs from exhausted not-found; expired/unknown expiry rejected. Lost acquisition receipts preserve owner/session for explicit `resume_cli_session_id`; ambiguous submission blocks new owners. Incomplete control delivery -> retained session, inspect/terminate owned helper explicitly; never restart a writer automatically.
 

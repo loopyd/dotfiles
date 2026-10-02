@@ -8,12 +8,13 @@ const fail=code=>{const error=new Error(code);error.bulkCode=code;throw error};
 const save=fields=>{state={...state,...fields};store(key,state)};
 const data=result=>{if(result?.isError)fail('tool_rejected');if(result?.structuredContent)return result.structuredContent.result??result.structuredContent;for(const item of result?.content||[])if(item.type==='text'){try{const parsed=JSON.parse(item.text);return parsed.result??parsed}catch{}}fail('invalid_tool_result')};
 const path=value=>typeof value==='string'&&value.startsWith('/')&&!value.split('/').includes('..')&&!/[\0\r\n]/.test(value);
+const byteLength=value=>[...value].reduce((total,character)=>{const code=character.codePointAt(0);return total+(code<128?1:code<2048?2:code<65536?3:4)},0);
 const quote=value=>"'"+value.replace(/'/g,"'\\''")+"'";
 const clock=(job,begin)=>({submission:Number.isFinite(job.createdAt)?(job.createdAt*1000-begin)/1000:null,queue:Number.isFinite(job.startedAt)?job.startedAt-job.createdAt:null,execution:Number.isFinite(job.finishedAt)&&Number.isFinite(job.startedAt)?job.finishedAt-job.startedAt:null,observed_total:(Date.now()-begin)/1000});
 async function job(phase,argv,stdin,secret=false){
   const field=phase+'_job_id';let current;
   if(state[field])current=data(await tools.mcp__codex_apps__gateway_get_job({job_id:state[field],max_bytes:4096})).job;
-  else{if(state.phase===phase+'_submitting')fail(phase+'_submission_uncertain');save({phase:phase+'_submitting',[phase+'_begin']:Date.now()});const initial=data(await tools.mcp__codex_apps__gateway_execute_argv({server:request.server_id,input:{argv,privilege:'none',...(secret?{}:{stdin})},...(secret?{secret_stdin:stdin}:{}),idempotency_key:request.run_id+'-'+phase,timeout_seconds:90,wait_seconds:0}));current=initial.job;if(!current?.id)fail('missing_job_id');save({[field]:current.id})}
+  else{if(state.phase===phase+'_submitting')fail(phase+'_submission_uncertain');save({phase:phase+'_submitting',[phase+'_begin']:Date.now()});const initial=data(await tools.mcp__codex_apps__gateway_execute_argv({server:request.server_id,input:{argv,privilege:'none',...(secret?{}:{stdin})},...(secret?{secret_stdin:stdin}:{}),idempotency_key:request.run_id+'-'+phase,timeout_seconds:phase==='roundtrip'?(request.roundtrip_timeout_seconds??180):90,wait_seconds:request.initial_wait_seconds??30}));current=initial.job;if(!current?.id)fail('missing_job_id');save({[field]:current.id})}
   const deadline=Date.now()+(request.max_job_wait_seconds??180)*1000;
   while(['queued','running','cancel_requested'].includes(current.status)){if(Date.now()>deadline)fail('job_pending');const next=data(await tools.mcp__codex_apps__gateway_wait_for_job({job_id:current.id,timeout_seconds:30,max_bytes:4096}));current=next.job;}
   if(current.serverId!==request.server_id||current.operation?.name!=='host.execute_argv'||JSON.stringify(current.operation.input.argv)!==JSON.stringify(argv))fail('job_target_mismatch');
@@ -26,9 +27,13 @@ async function job(phase,argv,stdin,secret=false){
 }
 try{
   if(!request||!/^[A-Za-z0-9_-]{1,73}$/.test(request.run_id)||!/^srv_[A-Za-z0-9]+$/.test(request.server_id)||![request.remote_node_path,request.remote_download_helper,request.remote_producer,request.remote_request_path,request.remote_output_path,request.consumer_pipeline_path,request.consumer_node_path,request.consumer_helper_path,request.consumer_destination].every(path)||!['read','mutation'].includes(request.effect))fail('invalid_request');
+  if(request.remote_roundtrip_helper!==undefined&&!path(request.remote_roundtrip_helper)||request.initial_wait_seconds!==undefined&&(!Number.isInteger(request.initial_wait_seconds)||request.initial_wait_seconds<0||request.initial_wait_seconds>30))fail('invalid_request');
+  if(request.roundtrip_timeout_seconds!==undefined&&(!Number.isInteger(request.roundtrip_timeout_seconds)||request.roundtrip_timeout_seconds<30||request.roundtrip_timeout_seconds>180))fail('invalid_request');
+  if([request.remote_capture_path,request.remote_receipt_path].some(value=>value!==undefined&&!path(value)))fail('invalid_request');
+  if(request.remote_roundtrip_helper&&request.remote_producer!==request.remote_roundtrip_helper.slice(0,request.remote_roundtrip_helper.lastIndexOf('/'))+'/herdr_file.cjs')fail('producer_identity_mismatch');
   const upload=request.upload;
   if(!upload||typeof upload.content_base64!=='string'||!/^[0-9a-f]{64}$/.test(upload.sha256)||!Number.isInteger(upload.size_bytes)||upload.size_bytes<1||upload.size_bytes>1048576||!Number.isInteger(request.max_output_bytes)||request.max_output_bytes<1||request.max_output_bytes>3*1024**2)fail('invalid_bounds');
-  const binding=JSON.stringify([request.server_id,request.effect,upload.sha256,upload.size_bytes,request.remote_request_path,request.remote_output_path,request.remote_producer,request.remote_receipt_path,request.remote_capture_path,request.consumer_destination,request.max_output_bytes]);
+  const binding=JSON.stringify([request.server_id,request.effect,upload.sha256,upload.size_bytes,request.remote_request_path,request.remote_output_path,request.remote_producer,request.remote_receipt_path,request.remote_capture_path,request.consumer_destination,request.max_output_bytes,...(request.remote_roundtrip_helper?[request.remote_roundtrip_helper,request.remote_download_helper,request.remote_node_path]:[])]);
   if(state.binding&&state.binding!==binding)fail('run_identity_conflict');save({binding});
   if(state.active_owner)fail('run_already_active');save({active_owner:owner});claimed=true;
   if(!state.input_artifact){if(state.phase==='upload_submitting')fail('upload_outcome_uncertain');save({phase:'upload_submitting',upload_begin:Date.now()});const tick=Date.now();const uploaded=data(await tools.mcp__codex_apps__gateway_upload_file({content_base64:upload.content_base64,filename:'herdr-request.json',content_type:'application/json',sha256:upload.sha256}));save({input_artifact:uploaded,timing:{...state.timing,input_upload:(Date.now()-tick)/1000}})}
@@ -36,9 +41,21 @@ try{
   const file=artifact.file??artifact.artifact??artifact;
   const url=artifact.download?.url??file.download?.url;
   if(!url||file.sha256!==upload.sha256||file.byteSize!==upload.size_bytes||!Number.isFinite(file.expiresAt)||file.expiresAt*1000<=Date.now())fail('uploaded_artifact_invalid');
-  const staged=await job('stage',[request.remote_node_path,request.remote_download_helper],JSON.stringify({action:'artifact',destination:request.remote_request_path,download_url:url,expected_sha256:upload.sha256,size_bytes:upload.size_bytes,inspect_bytes:0})+'\n',true);
-  if(staged.sha256!==upload.sha256||staged.size_bytes!==upload.size_bytes||staged.path!==request.remote_request_path)fail('staged_integrity_mismatch');save({input_verified:true});
-  const captured=await job('operate',[request.remote_node_path,request.remote_producer],JSON.stringify({request_path:request.remote_request_path,output_path:request.remote_receipt_path??request.remote_output_path,...(request.remote_capture_path?{capture_path:request.remote_capture_path}:{}),sha256:upload.sha256,size_bytes:upload.size_bytes})+'\n');
+  const stageInput={action:'artifact',destination:request.remote_request_path,download_url:url,expected_sha256:upload.sha256,size_bytes:upload.size_bytes,inspect_bytes:0};
+  const operation={request_path:request.remote_request_path,output_path:request.remote_receipt_path??request.remote_output_path,...(request.remote_capture_path?{capture_path:request.remote_capture_path}:{}),sha256:upload.sha256,size_bytes:upload.size_bytes};
+  let captured;
+  if(request.remote_roundtrip_helper){
+    const descriptor=JSON.stringify({download_helper_path:request.remote_download_helper,stage:stageInput,operation});
+    if(byteLength(descriptor)+1>4096)fail('control_input_limit');
+    captured=await job('roundtrip',[request.remote_node_path,request.remote_roundtrip_helper],descriptor+'\n',true);
+    if(captured.input_verified!==true||captured.input_sha256!==upload.sha256||captured.input_size_bytes!==upload.size_bytes||captured.input_path!==request.remote_request_path)fail('staged_integrity_mismatch');
+  }else{
+    const staged=await job('stage',[request.remote_node_path,request.remote_download_helper],JSON.stringify(stageInput)+'\n',true);
+    if(staged.sha256!==upload.sha256||staged.size_bytes!==upload.size_bytes||staged.path!==request.remote_request_path)fail('staged_integrity_mismatch');
+    save({input_verified:true});
+    captured=await job('operate',[request.remote_node_path,request.remote_producer],JSON.stringify(operation)+'\n');
+  }
+  save({input_verified:true});
   if(captured.output_path!==request.remote_output_path||!Number.isInteger(captured.size_bytes)||captured.size_bytes>request.max_output_bytes||!/^[0-9a-f]{64}$/.test(captured.sha256))fail('output_identity_mismatch');save({captured});
   store('gateway_artifact_request',{run_id:request.run_id+'_output',server_id:request.server_id,remote_path:request.remote_output_path,mode:'fresh',node_path:request.consumer_node_path,helper_path:request.consumer_helper_path,destination:request.consumer_destination,max_file_bytes:request.max_output_bytes,max_job_wait_seconds:request.max_job_wait_seconds??180,inspect_bytes:0,library:{mode:'none'},...(request.sandbox_permissions?{sandbox_permissions:request.sandbox_permissions}:{})});
   const source=await tools.exec_command({cmd:'cat '+quote(request.consumer_pipeline_path),max_output_tokens:30000});if(source.exit_code!==0)fail('consumer_pipeline_missing');
@@ -47,6 +64,6 @@ try{
   if(output?.status!=='verified'||output.run_id!==request.run_id+'_output'||completed?.phase!=='complete'||completed.receipt?.status!=='verified'||output.sha256!==captured.sha256||output.size_bytes!==captured.size_bytes)fail('output_readback_incomplete');
   save({phase:'complete',output_verified:true,output_artifact_id:output.artifact_id});
   const ledgerKey='gateway_temporary_ledger:'+request.run_id;store(ledgerKey,[{artifact_id:artifact.uploadId,workflow_id:request.run_id,temporary:true,role:'input',sha256:upload.sha256,created_at_ms:state.upload_begin,readback_verified:state.input_verified,pending:false},{artifact_id:output.artifact_id,workflow_id:request.run_id,temporary:true,role:'output',sha256:output.sha256,created_at_ms:Date.now(),readback_verified:true,pending:false}]);
-  text({status:'verified',run_id:request.run_id,server_id:request.server_id,input_artifact_id:artifact.uploadId,output_artifact_id:output.artifact_id,path:output.path,sha256:output.sha256,size_bytes:output.size_bytes,readback_verified:true,purge_ledger_key:ledgerKey,timing_seconds:{...state.timing,output:output.timing_seconds,invocation_total:(Date.now()-started)/1000}});
-}catch(error){text({status:'incomplete',run_id:request?.run_id,phase:state.phase,error_code:error.bulkCode||'tool_or_runtime_failed',stage_job_id:state.stage_job_id,operate_job_id:state.operate_job_id})}
+  text({status:'verified',run_id:request.run_id,server_id:request.server_id,input_artifact_id:artifact.uploadId,output_artifact_id:output.artifact_id,path:output.path,sha256:output.sha256,size_bytes:output.size_bytes,readback_verified:true,roundtrip_job_id:state.roundtrip_job_id,stage_job_id:state.stage_job_id,operate_job_id:state.operate_job_id,purge_ledger_key:ledgerKey,timing_seconds:{...state.timing,output:output.timing_seconds,invocation_total:(Date.now()-started)/1000}});
+}catch(error){text({status:'incomplete',run_id:request?.run_id,phase:state.phase,error_code:error.bulkCode||'tool_or_runtime_failed',stage_job_id:state.stage_job_id,operate_job_id:state.operate_job_id,roundtrip_job_id:state.roundtrip_job_id})}
 finally{if(claimed&&load(key)?.active_owner===owner)store(key,{...load(key),active_owner:null})}

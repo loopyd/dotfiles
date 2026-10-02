@@ -18,6 +18,7 @@ Read [operation rules](references/operations.md) before agent lifecycle, layout 
 - Small direct read/control -> installed CLI, explicit `herdr --session <verified-name> ...`; no bare `herdr` for discovery.
 - Structured native operations -> [JavaScript automation](references/automation.md), `scripts/herdr_client.cjs`. Discover installed schema once; exact params and method effect. Native NDJSON, one response per ordinary connection on tested installation. Batch reads in one invocation; ordered writes stop on first application error.
 - CLI-only functionality -> same adapter's exact argv route. No guessed CLI-to-API translation, shell interpretation, implicit focus or session creation.
+- Whole local operation -> `scripts/herdr_roundtrip.cjs`, exact staged-file descriptor; same journal and capture verification. Through Gateway, same helper combines verified artifact staging and operation in one host job.
 - Large input/output -> Gateway [artifact bulk integration](references/automation.md#artifact-bulk-integration). Verified request artifact -> remote staging -> `scripts/herdr_file.cjs` -> captured output file -> Gateway hash/download -> verified consumer bytes. Small control receipts only.
 - Custom endpoint commands -> schema `command.invoke`, real issued command ID and explicit target; always mutation. Arbitrary shell command -> explicit authorized argv, `scripts/herdr_capture.cjs` inside owned pane, capture before execution. No automatic custom-command retries.
 

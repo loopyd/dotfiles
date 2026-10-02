@@ -222,9 +222,11 @@ async function main(input) {
   fail('invalid_action');
 }
 
-(async()=>{
+if(require.main===module)(async()=>{
   let receipt;
   try {receipt=await main(await readInput());}
   catch(error){receipt={status:'error',error_code:error instanceof TransferError?error.message:error.code&&/^[a-z_]+$/.test(error.code)?error.code:error instanceof SyntaxError?'invalid_input':'local_io_failed',...(error instanceof TransferError&&error.details?{details:error.details}:{})}}
   process.stdout.write(JSON.stringify(receipt)+'\n');process.exitCode=receipt.status==='verified'?0:1;
 })();
+
+module.exports={main};
