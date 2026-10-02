@@ -1,0 +1,142 @@
+const fs = require('node:fs/promises');
+const net = require('node:net');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+const path = require('node:path');
+const { ClientError, fail, sha, cli } = require('./json_io.cjs');
+const execute = promisify(execFile);
+const discoveryCache = new Map();
+const READS = new Set(['ping','server.agent_manifests','session.snapshot','workspace.list','workspace.get','worktree.list','tab.list','tab.get','agent.list','agent.get','agent.read','agent.explain','pane.layout','pane.process_info','layout.export','pane.neighbor','pane.edges','pane.selection.read','pane.list','pane.get','pane.link.resolve','pane.read','pane.graphics.info','events.subscribe','events.wait','pane.wait_for_output','integration.list','plugin.list','plugin.action.list','plugin.log.list']);
+function validate(value, spec, root, depth = 0) {
+  if (depth > 60) fail('schema_depth');
+  if (spec.$ref) { const resolved = spec.$ref.split('/').slice(1).reduce((v,k) => v?.[k.replace(/~1/g,'/').replace(/~0/g,'~')],root); if (!resolved) fail('unsupported_schema'); return validate(value,resolved,root,depth+1); }
+  for (const group of ['oneOf','anyOf']) if (spec[group]) {
+    const count=spec[group].filter(branch => {try {validate(value,branch,root,depth+1);return true}catch(error){if(error.code==='invalid_params')return false;throw error}}).length;
+    if (group==='oneOf'?count!==1:count<1) fail('invalid_params');
+  }
+  const type = value === null?'null':Array.isArray(value)?'array':typeof value==='number'&&Number.isInteger(value)?'integer':typeof value;
+  if (spec.type && !(Array.isArray(spec.type)?spec.type:[spec.type]).some(t=>t===type||t==='number'&&type==='integer')) fail('invalid_params');
+  if ('const' in spec && JSON.stringify(value)!==JSON.stringify(spec.const) || spec.enum && !spec.enum.some(v=>JSON.stringify(v)===JSON.stringify(value))) fail('invalid_params');
+  if (typeof value==='number' && (!Number.isFinite(value)||spec.minimum!==undefined&&value<spec.minimum||spec.maximum!==undefined&&value>spec.maximum)) fail('invalid_params');
+  if (typeof value==='string') {
+    const length = [...value].length;
+    if (spec.minLength !== undefined && length < spec.minLength || spec.maxLength !== undefined && length > spec.maxLength || spec.pattern && !new RegExp(spec.pattern).test(value)) fail('invalid_params');
+  }
+  if (type==='object') {
+    const length = Object.keys(value).length;
+    if (spec.minProperties !== undefined && length < spec.minProperties || spec.maxProperties !== undefined && length > spec.maxProperties) fail('invalid_params');
+    for(const key of spec.required||[])if(!Object.hasOwn(value,key))fail('invalid_params');
+    for(const [key,item] of Object.entries(value)) {
+      if (spec.propertyNames) validate(key, spec.propertyNames, root, depth+1);
+      if(spec.properties?.[key]) validate(item,spec.properties[key],root,depth+1);
+      else if(spec.additionalProperties===false)fail('invalid_params');
+      else if(spec.additionalProperties&&typeof spec.additionalProperties==='object')validate(item,spec.additionalProperties,root,depth+1);
+    }
+  }
+  if (type==='array') {
+    if (spec.minItems !== undefined && value.length < spec.minItems || spec.maxItems !== undefined && value.length > spec.maxItems) fail('invalid_params');
+    if (spec.uniqueItems && new Set(value.map(item => JSON.stringify(item))).size !== value.length) fail('invalid_params');
+    if (spec.items) for(const item of value) validate(item,spec.items,root,depth+1);
+  }
+}
+async function metadata(binary, refresh = false) {
+  const stat=await fs.stat(binary);
+  const signature=JSON.stringify([stat.dev,stat.ino,stat.size,stat.mtimeMs]);
+  const cached=discoveryCache.get(binary);
+  if(!refresh&&cached?.signature===signature&&Date.now()-cached.observed_ms<10000)return{...cached.value,cached:true};
+  const [schema,sessions] = await Promise.all([execute(binary,['api','schema','--json'],{timeout:10000,maxBuffer:4*1024**2}),execute(binary,['session','list','--json'],{timeout:10000,maxBuffer:1048576})]);
+  const value={schema:JSON.parse(schema.stdout),sessions:JSON.parse(sessions.stdout).sessions};
+  discoveryCache.set(binary,{signature,observed_ms:Date.now(),value});return{...value,cached:false};
+}
+async function connect(socketPath, timeout) {
+  return new Promise((resolve,reject)=>{const socket=net.createConnection(socketPath);const timer=setTimeout(()=>{socket.destroy();reject(new ClientError('connect_timeout'))},timeout);socket.once('connect',()=>{clearTimeout(timer);resolve(socket)});socket.once('error',error=>{clearTimeout(timer);reject(new ClientError('socket_unavailable',{network_code:/^[A-Z0-9_]{1,64}$/.test(error.code)?error.code:'UNKNOWN'}))})});
+}
+async function native(socketPath, requests, options) {
+  let received=0;
+  const deadline=Date.now()+options.timeout_ms;
+  const invoke=async request=>{
+    const remaining=deadline-Date.now();if(remaining<=0)fail('request_timeout');
+    const socket=await connect(socketPath,Math.min(remaining,5000));
+    let buffer=Buffer.alloc(0),written=false,response;const events=[];
+    return new Promise((resolve,reject)=>{
+      let finished=false;
+      const finish=(error)=>{if(finished)return;finished=true;clearTimeout(timer);clearTimeout(streamTimer);socket.destroy();if(error)reject(error);else resolve({response,events})};
+      let streamTimer;
+      const timer=setTimeout(()=>finish(new ClientError('request_timeout',{mutation_uncertain:written&&!READS.has(request.method)})),Math.max(1,deadline-Date.now()));
+      socket.on('error',()=>finish(new ClientError('socket_disconnected',{mutation_uncertain:written&&!READS.has(request.method)})));
+      socket.on('end',()=>finish(response?undefined:new ClientError('socket_disconnected',{mutation_uncertain:written&&!READS.has(request.method)})));
+      socket.on('data',chunk=>{
+        received+=chunk.length;if(received>options.max_output_bytes)return finish(new ClientError('output_limit',{mutation_uncertain:written&&!READS.has(request.method),truncated:true}));
+        buffer=Buffer.concat([buffer,chunk]);let end;
+        while((end=buffer.indexOf(10))>=0){const line=buffer.subarray(0,end);buffer=buffer.subarray(end+1);let value;try{value=JSON.parse(new TextDecoder('utf8',{fatal:true}).decode(line))}catch{return finish(new ClientError('invalid_response'))}
+          if(value.id){if(response||value.id!==request.id)return finish(new ClientError('response_id_mismatch'));response=value;if(!options.stream_ms||request.method!=='events.subscribe')return finish();streamTimer=setTimeout(()=>finish(),options.stream_ms)}
+          else if(value.event){if(events.length>=1000)return finish(new ClientError('event_limit'));events.push(value)}
+          else return finish(new ClientError('invalid_response'));
+        }
+      });
+      written=true;socket.write(JSON.stringify(request)+'\n');
+    });
+  };
+  const ping=(await invoke({id:options.run_id+':binding',method:'ping',params:{}})).response;
+  if(ping.error||ping.result?.protocol!==options.protocol||ping.result?.version!==options.version)fail('server_binding_mismatch');
+  const responses=[],events=[];
+  for(const request of requests){const value=await invoke(request);responses.push(value.response);events.push(...value.events);if(value.response.error)break}
+  return{responses,events,received_bytes:received};
+}
+function filterContent(value, include) {
+  if(include)return value;
+  if(Array.isArray(value))return value.map(v=>filterContent(v,false));
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,['text','stdout','stderr','content'].includes(key)&&typeof item==='string'?{bytes:Buffer.byteLength(item),sha256:sha(item),omitted:true}:filterContent(item,false)]));
+  return value;
+}
+async function main(input) {
+  if(!input||typeof input!=='object'||!path.isAbsolute(input.binary_path||'')||!['discover','call','cli'].includes(input.action))fail('invalid_input');
+  const discovered=await metadata(input.binary_path,input.action==='discover'||input.refresh===true);const schema=discovered.schema;
+  const catalogue=schema.schemas?.request?.oneOf;if(!Array.isArray(catalogue))fail('unsupported_schema');
+  if(input.action==='discover')return{status:'verified',protocol:schema.protocol,schema_sha256:sha(JSON.stringify(schema)),sessions:discovered.sessions,methods:catalogue.map(v=>({method:v.properties.method.const,effect:READS.has(v.properties.method.const)?'read':'mutation',params:v.properties.params})),schema:input.include_schema===true?schema:undefined};
+  const binding=input.binding;
+  if(!binding||typeof binding.host_id!=='string'||!binding.host_id)fail('binding_required');
+  const cliGlobal=input.action==='cli'&&binding.target_kind==='global';
+  const cliMachine=input.action==='cli'&&binding.target_kind==='machine';
+  if(!cliGlobal&&!cliMachine){
+    if(typeof binding.session!=='string'||!path.isAbsolute(binding.socket_path||'')||!Number.isInteger(binding.protocol)||typeof binding.version!=='string')fail('binding_required');
+    const session=discovered.sessions.find(s=>s.name===binding.session&&s.running===true&&s.socket_path===binding.socket_path);
+    if(!session||schema.protocol!==binding.protocol)fail('session_binding_mismatch');
+  }
+  const timeout=input.timeout_ms??30000,maxOutput=input.max_output_bytes??1048576;
+  if(!Number.isInteger(timeout)||timeout<1||timeout>60000||!Number.isInteger(maxOutput)||maxOutput<1024||maxOutput>2*1024**2)fail('invalid_bounds');
+  if(input.action==='cli') {
+    if(!Array.isArray(input.argv)||!input.argv.length||input.argv.some(v=>typeof v!=='string'||/[\0]/.test(v))||input.argv.some(v=>['--session','--machine','--remote','--current','--remote-keybindings','--handoff'].some(selector=>v===selector||v.startsWith(selector+'='))))fail('invalid_cli_argv');
+    if(!['read','mutation'].includes(input.effect))fail('effect_required');
+    const safeCli=new Set(['api schema','api snapshot','session list','status server','status client','workspace list','workspace get','tab list','tab get','agent list','agent get','agent read','agent explain','pane list','pane get','pane layout','pane process-info','pane neighbor','pane edges','pane read','worktree list','integration list','machine list','machine status','config check']);
+    const cliRead=input.argv.includes('--help')||input.argv[0]==='--version'||input.argv[0]==='completion'||safeCli.has(input.argv.slice(0,2).join(' '));
+    if(input.effect!==(cliRead?'read':'mutation'))fail('effect_mismatch');
+    let prefix=cliGlobal?[]:['--session',binding.session];
+    if(cliMachine){
+      if(typeof binding.machine_selector!=='string'||!binding.machine_selector)fail('binding_required');
+      const inventory=JSON.parse((await execute(input.binary_path,['machine','list','--json'],{timeout:10000,maxBuffer:1048576})).stdout);
+      if(!Array.isArray(inventory)||!inventory.some(item=>item.id===binding.machine_selector||item.label===binding.machine_selector))fail('machine_binding_unverified');
+      prefix=['--machine',binding.machine_selector];
+    }
+    let output;try {output=await execute(input.binary_path,[...prefix,...input.argv],{timeout,maxBuffer:maxOutput})}catch(error){return{status:'error',error_code:error.killed?'cli_timeout':'cli_failed',mutation_uncertain:input.effect==='mutation',exit_code:Number.isInteger(error.code)?error.code:null}}
+    return{status:'verified',binding,exit_code:0,output:filterContent({stdout:output.stdout,stderr:output.stderr},input.include_content===true)};
+  }
+  if(!Array.isArray(input.calls)||input.calls.length<1||input.calls.length>256||typeof input.run_id!=='string'||!/^[A-Za-z0-9_-]{1,80}$/.test(input.run_id))fail('invalid_calls');
+  const requests=input.calls.map((call,index)=>{
+    const variant=catalogue.find(v=>v.properties.method.const===call.method);if(!variant)fail('unsupported_method');
+    validate(call.params??{},variant.properties.params,schema);
+    const effect=READS.has(call.method)?'read':'mutation';if(call.effect!==effect)fail('effect_mismatch');
+    if(call.method==='pane.current')fail('ambient_target_rejected');
+    if(['workspace.create','pane.split','tab.create','worktree.create','worktree.open'].includes(call.method)&&call.params?.focus!==false)fail('explicit_focus_required');
+    if(call.method==='pane.split'&&!call.params?.target_pane_id)fail('explicit_target_required');
+    if(call.method==='workspace.create'&&!path.isAbsolute(call.params?.cwd||''))fail('explicit_cwd_required');
+    if(call.method==='tab.create'&&!call.params?.workspace_id||call.method==='command.invoke'&&!call.params?.pane_id&&!call.params?.workspace_id&&!call.params?.tab_id)fail('explicit_target_required');
+    return{id:input.run_id+':'+index,method:call.method,params:call.params??{}};
+  });
+  if(input.read_batch&&requests.some(r=>!READS.has(r.method)))fail('mutation_batch_rejected');
+  const started=performance.now();
+  const outcome=await native(binding.socket_path,requests,{timeout_ms:timeout,max_output_bytes:maxOutput,read_batch:input.read_batch===true,run_id:input.run_id,protocol:binding.protocol,version:binding.version,stream_ms:Math.min(input.stream_ms??0,10000)});
+  return{status:outcome.responses.some(r=>r.error)?'error':'verified',binding,discovery_cached:discovered.cached,responses:filterContent(outcome.responses,input.include_content===true),events:filterContent(outcome.events,input.include_content===true),received_bytes:outcome.received_bytes,timing_seconds:{socket_total:(performance.now()-started)/1000}};
+}
+if(require.main===module)cli(main);
+module.exports={main,validate,native,READS};

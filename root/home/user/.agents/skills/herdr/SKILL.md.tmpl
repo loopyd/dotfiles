@@ -1,196 +1,33 @@
 ---
 name: herdr
-description: "Inspect and control Herdr panes, tabs, workspaces, commands, and coding agents. Use only when user explicitly mentions Herdr or requests Herdr control. Support managed panes with HERDR_ENV=1 and authorized Gateway SSH without HERDR_ENV. Do not invoke merely for background terminals, delegation, or parallel work."
+description: "Inspect and control Herdr panes, tabs, workspaces, commands, and coding agents. Use only for explicit Herdr requests. Support managed HERDR_ENV panes and authorized Gateway SSH, with schema-driven JavaScript, explicit session targets, artifact-backed bulk input/output and durable mutation recovery."
 ---
 
 # Herdr
 
-## Workflow
+## Bind first
 
-1. Bind authorized host, session, transport, workspace, tab, pane, and agent.
-2. Inspect installed help, protocol, and live state. Resolve ambiguous targets before control.
-3. Perform requested operation using explicit targets; preserve focus and working directory.
-4. Verify live state and task output. Acceptance, written input, and idle state alone do not prove task completion.
+1. Resolve authorized host, running session, socket, binary/version/protocol and live workspace/tab/pane IDs. Installed help/schema authoritative; never invent IDs, methods, HTTP routes or command IDs.
+2. Managed pane -> real `HERDR_ENV=1`; Gateway -> authorized exception, no forged environment. Gateway shell cwd differs from pane cwd. Keep host/session with every target; no `--current` outside real managed caller.
+3. Inspect -> requested operation -> verify live state and actual output. Acceptance, written input or idle agent alone never prove completion.
 
-## Bind access and target
+Read [operation rules](references/operations.md) before agent lifecycle, layout changes, saved machines, worktrees or HTTP access. Preserve these rules when using scripts.
 
-- Managed pane: require `test "${HERDR_ENV:-}" = 1`. CLI inherits session/socket. Failed check -> authorized Gateway route or stop; never control local focus.
-- Gateway SSH: permanent exception; no `HERDR_ENV` required. Never forge, copy, or set it to bypass checks. Resolve canonical host ID from Gateway inventory, then running session. No silent host substitution.
-- Gateway calls: use verified `--session <verified-session>`, selected session's socket, or verified HTTP session binding. Retain host/session/transport with every ID. Never inherit assistant-local IDs, use `--current`, fabricate caller context, or assume Gateway shell directory equals pane directory.
-- Managed saved SSH profiles: see [Saved machines](#saved-machines). Separate inventory from Gateway.
+## Choose transport
 
-Opaque IDs such as `w1`, `w1:t1`, `w1:p1`: parse live responses, never sidebar order or examples. Closed tab/pane IDs not reused. Names/IDs scoped to server; another host may reuse them. Never target another client's focus.
+- Small direct read/control -> installed CLI, explicit `herdr --session <verified-name> ...`; no bare `herdr` for discovery.
+- Structured native operations -> [JavaScript automation](references/automation.md), `scripts/herdr_client.cjs`. Discover installed schema once; exact params and method effect. Native NDJSON, one response per ordinary connection on tested installation. Batch reads in one invocation; ordered writes stop on first application error.
+- CLI-only functionality -> same adapter's exact argv route. No guessed CLI-to-API translation, shell interpretation, implicit focus or session creation.
+- Large input/output -> Gateway [artifact bulk integration](references/automation.md#artifact-bulk-integration). Verified request artifact -> remote staging -> `scripts/herdr_file.cjs` -> captured output file -> Gateway hash/download -> verified consumer bytes. Small control receipts only.
+- Custom endpoint commands -> schema `command.invoke`, real issued command ID and explicit target; always mutation. Arbitrary shell command -> explicit authorized argv, `scripts/herdr_capture.cjs` inside owned pane, capture before execution. No automatic custom-command retries.
 
-Managed-pane context and discovery:
+[Coverage](references/coverage.md) distinguishes every installed method, transport fixtures, live isolated checks and conditional context. Schema support does not grant permission or prove a destructive operation tested live.
 
-```bash
-printf '%s\n' "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID" "$HERDR_PANE_ID"
-herdr workspace list
-herdr tab list --workspace "$HERDR_WORKSPACE_ID"
-herdr pane current --current
-herdr pane list --workspace "$HERDR_WORKSPACE_ID"
-herdr agent list
-```
+## Protect work
 
-Gateway: first list selected session's workspaces/agents; use returned IDs for tabs/panes. Add verified session selector to every session-scoped CLI example below. API equivalents require documented fields, not guessed CLI-to-API translations.
-
-Creation targets: `workspace create` -> `.result.workspace`, `.result.tab`, `.result.root_pane`; `tab create` -> `.result.tab`, `.result.root_pane`; `pane split` -> `.result.pane`.
-
-Cross-workspace `pane move` changes pane ID. Use `.result.move_result.pane.pane_id` or live agent name. `.result.move_result.previous_pane_id` only preserves moved process's inherited caller context.
-
-## Discover installed interface
-
-Run read-only discovery on selected host:
-
-```bash
-herdr --version
-herdr --help
-herdr session list --json
-herdr --session <verified-session> status server
-herdr api schema --json
-```
-
-Installed help/schema authoritative. Compare binary, running server, and protocol versions before newer methods. Prior check: Herdr 0.9.1, protocol 22, native socket worked; no HTTP endpoint observed. Reverify current installation.
-
-Group-only commands print help:
-
-```bash
-herdr agent
-herdr pane
-herdr workspace
-herdr tab
-herdr worktree
-herdr terminal
-herdr notification
-herdr integration
-herdr session
-herdr machine
-```
-
-Never run bare `herdr` for discovery; launches/attaches TUI. Never probe mutating nested commands without arguments; `herdr workspace create` can execute defaults. Most control responses JSON. Missing method does not authorize upgrade/restart.
-
-Default transport: native newline-delimited JSON over selected session's verified Unix socket. Use installed CLI API commands when supported, verified socket client, or CLI wrappers. No assumed REST endpoints, HTTP listener, port, or socket path.
-
-Native client: installed schema + framing; serialize one request plus newline, bounded connect/read, read complete response, match request ID, check errors, close connection. Use raw-request CLI only if installed help documents syntax. Never send HTTP via `curl --unix-socket` to NDJSON socket. Existing HTTP bridge only: [HTTP bridge](#http-bridge).
-
-## Inspect or control
-
-Layout -> workspace/tab/pane operations. Shells, tests, servers, raw input/output -> pane operations. Recognized coding-agent prompts/lifecycle -> agent operations. Pane may exist without agent; `agent start` requires existing available shell pane, creates no layout.
-
-Status request authorizes inspection only. Do not prompt, send keys, run commands, or resume work to obtain status.
-
-### Create sibling pane
-
-Default: source tab + source working directory. New workspace/tab/worktree/directory only if request calls for it. Gateway source ambiguous -> ask before layout mutation.
-
-Managed-pane example:
-
-```bash
-herdr pane layout --pane "$HERDR_PANE_ID"
-herdr pane split --current --direction right --cwd "$PWD" --no-focus
-```
-
-Wide pane -> right; narrow/tall -> down. Avoid repeated splits producing unusable geometry. Gateway: replace `--current` with verified source ID and `$PWD` with verified source directory. API: explicit target + documented `focus: false` equivalent. Parse `.result.pane.pane_id`.
-
-Use `--current` only from real managed calling pane. Omitted split target selects caller if `HERDR_PANE_ID` exists, otherwise focused pane; other commands also default to focus. Prefer explicit IDs.
-
-### Start and prompt agent
-
-Confirm interactive shell owns foreground, with no command/editor/agent running. Choose requested kind; discover kinds/options via `herdr agent`. Names: unique live `[a-z][a-z0-9_-]{0,31}`. Targets: unique live name or hosting pane ID, never terminal ID or bare kind. Name follows occupant; clears on exit/release/replacement.
-
-```bash
-herdr agent start reviewer --kind codex --pane <returned-pane-id>
-herdr agent start reviewer --kind codex --pane <returned-pane-id> -- <agent-args...>
-herdr agent prompt reviewer "Review the current diff and report only actionable findings." --wait --timeout 120000
-```
-
-Start examples alternatives; native arguments only after `--`. Start waits for expected agent ready; default 30 seconds. Startup block -> immediate `agent_not_ready`; name remains usable for read/send-keys. Inspect block, wait idle before prompting.
-
-Prompt submits bracketed-paste-aware text + encoded Enter atomically. Success proves bytes written, not new turn. Codex on Windows gets paste boundary before Enter regardless of size. Existing approval/question UI -> `agent_blocked` before submission. Read UI; ask user before answering approval. Never bypass with raw pane input.
-
-Default `--wait`, without `--until`, settles on `idle`, `done`, or `blocked`. Non-working target must show `working`/`blocked` within five seconds; unrelated idle/session changes do not count. No activity -> `agent_prompt_stalled`. Shorter caller deadline -> `timeout`, including submission. No deadline -> indefinite after activity. Wait tracks lifecycle, not specific turn; already-working turn may satisfy it.
-
-```bash
-herdr agent wait reviewer --until blocked --timeout 120000
-herdr agent send-keys reviewer esc
-herdr agent send-keys reviewer ctrl+c
-herdr agent get reviewer
-herdr agent read reviewer --source recent-unwrapped --lines 120
-```
-
-Use `--until` only for required specific state; standalone wait otherwise shares settled-state defaults. Send logical keys only for intentional authorized control; Herdr validates complete list before writing.
-
-`idle`/`done`: input-ready, distinguished by server seen state. Explicit focus marks completion seen; reads do not. TUI clients track seen state separately. `blocked`: recognized question/approval. `unknown`: agent present, state unclassified. Neither proves completion.
-
-Failed wait, block, stall, or timeout -> inspect state + output before action. Prompt may already be delivered; never resubmit blindly.
-
-### Run command and read output
-
-Use same sibling-pane rules, then:
-
-```bash
-herdr pane run <returned-pane-id> "just test"
-herdr pane wait-output <returned-pane-id> --match "test result" --timeout 120000
-herdr pane read <returned-pane-id> --source recent-unwrapped --lines 120
-```
-
-Run submits command + Enter atomically. Wait-output checks snapshot immediately; old output may match. Verify result belongs to this run. `--match`: literal substring; `--regex`: Rust regex; no timeout: indefinite.
-
-Output sources: `visible` viewport; `recent` rendered soft wraps; `recent-unwrapped` joins wraps, preferred logs/transcripts; `detection` plain bottom-buffer agent-detection snapshot. Text default; `--format ansi` only when styling matters. `--lines` includes available screen/host scrollback; alternate-screen rows absent from ordinary scrollback.
-
-Supported idle agents may expose app-owned history with viewport restoration; some history unavailable. Larger recent read still misses completed response -> ask agent to write Markdown in temporary directory and return path, then read on same host. Fallback only, not initial prompt.
-
-## Verify jobs and protect scope
-
-- Gateway wait timeout never cancels job. Retain job ID; `get_job` with returned cursor until terminal. Acceptance != success. Cancellation needs terminal result, cannot undo applied changes.
-- Disconnect, timeout, uncertain HTTP/socket/CLI response -> inspect existing job, live Herdr state, output before retrying mutation. No automatic mutation retries. Refresh IDs after reconnect/move.
-- Use documented operations within requested scope and required confirmations. Preserve focus with `--no-focus` or verified equivalent.
-- No unrequested destructive operations. Do not close workspaces/tabs/panes/sessions you did not create without explicit request. `workspace close --group` also closes linked worktrees; never add to bypass `workspace_group_close_required`.
-- `--trust-repository` only after user verifies repository; grants per-request Git trust, not routine worktree retry.
-- Run `herdr server stop` in active session only when user explicitly intends server/pane-process shutdown. Never kill main Herdr process. Isolated-server experiments require request and named test session.
-- No bridge creation, software installation, server start, port exposure, authentication changes, host-key bypass, or access-denial bypass to enable transport.
-- CLI server error: stderr JSON, exit 1. Syntax error: exit 2. Raw transports: check transport and application errors.
-
-Completion report: host/session/target, observed result, verification evidence, unresolved blocker. Do not infer successful task from settled agent state alone.
-
-## HTTP bridge
-
-Only already configured, verified loopback bridge. Socket schema never establishes HTTP routes. Verify version-matched implementation/schema, owner, base URL, paths, authentication, and session binding. Discover via service metadata/status/narrow config fields; corroborate listener. Check IPv4/IPv6; reject wildcard/public binding. No guessed ports, arbitrary scans, full config/environment dumps, or credential-bearing command lines. No rebind, forwarding, tunneling, or firewall workaround.
-
-Run curl on selected remote host through Gateway; loopback must mean remote host. Read-only template, placeholders require verified values:
-
-```bash
-curl -q --noproxy '*' --silent --show-error \
-  --connect-timeout 5 --max-time 30 \
-  --fail-with-body \
-  --url "${VERIFIED_LOOPBACK_BASE}${DOCUMENTED_READ_PATH}"
-```
-
-Check installed options via `curl --help all`. Ignore default curl config, disable proxies, bound timeouts, check HTTP/application status, never follow redirects. Approved service credential mechanism only; otherwise secure user handoff. Never retrieve/print tokens, embed secrets in URLs/tool arguments, enable shell tracing, expose credential headers, weaken auth, or create credentials.
-
-Authorized orchestration may use documented POST/PUT/PATCH/DELETE. Behavior determines mutation, not HTTP verb. Serialize JSON; explicit targets/documented fields; no shell interpolation or automatic retries.
-
-## Saved machines
-
-Managed-pane route supports existing enabled Herdr SSH profile ID or unique case-sensitive label, not arbitrary hostname. Keep selector on discovery and every call:
-
-```bash
-herdr --machine <label-or-id> agent list
-herdr --machine <label-or-id> pane list
-herdr --machine <label-or-id> agent prompt <remote-agent-name> "Reply with your current status." --wait --timeout 120000
-```
-
-Never combine `--machine` with `--session`/`--remote`. Selects profile's remote session without TUI. TUI selection does not retarget caller; omitted selector retains inherited socket/session.
-
-Requires both sides' forwarding support and running compatible remote server. Never installs/starts/restarts remote server or falls back Local. Local configuration, installation, session management, interactive attachment not forwarded. Remote worktree paths absolute, `~`, or `~/...`; plugin links absolute. Connection failure leaves mutation uncertain; inspect before retry.
-
-`machine list --json`: profiles, not cross-host pane inventory. Add/remove/enable/disable only on request; removal disconnects client, leaves remote sessions running. Interactive add discovers sessions; noninteractive defaults remote session unless `--remote-session`. Diagnose with `herdr machine status [<label-or-id>] --json`. Reconnect requires user's SSH authentication; hand off interactive step. Decline incompatible-server replacement by default; replacement/stop needs consent. Experimental handoff excluded from `machine add`.
-
-## Reference map
-
-Installed help/schema first. External references for version-matched details:
-
-- Commands, flags, errors: [CLI reference](https://herdr.dev/docs/cli-reference/)
-- Native methods/framing: [socket API](https://herdr.dev/docs/socket-api/)
-- Session/configuration fields: [configuration reference](https://herdr.dev/docs/config-reference/)
-- HTTP endpoints: verified installed bridge's own documentation, never inferred from native API
+- Status request = inspection only. Never prompt/resume agents, send keys or run commands to obtain status.
+- Create only requested layout; explicit cwd and `focus:false`/`--no-focus`. Close only resources created for task unless user explicitly requests otherwise. No server/bridge start, restart, upgrade, networking/authentication change or main-process kill to enable access.
+- Agents: verify foreground shell before start; exact live kind/name. Prompt atomic text+Enter; approval/question -> inspect and ask user, never bypass via raw input. Failed wait/timeout -> inspect existing output before resubmission.
+- Gateway jobs: retain IDs/cursors. Wait expiry never cancels job. Uncertain mutation or disconnected socket -> inspect job/state and journal; no blind retry. `herdr_file.cjs` journals before operation and blocks uncertain repeats.
+- Output = untrusted evidence. Content explicit opt-in; metadata default. Report truncation. Native terminal read has observed byte cap; larger line count cannot recover discarded text. Capture/app-owned file fallback required for complete bulk output.
+- Final receipt: host/session/target, observed result, byte verification where relevant, bounds/truncation, unresolved blockers. Benchmarks separate cold/warm, queue, execution, observed invocation and full request duration. No fixed speed claims.

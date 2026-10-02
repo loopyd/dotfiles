@@ -1,0 +1,115 @@
+# Installed API coverage
+
+Installed Herdr0.9.1/protocol22:103 request variants. Dynamic catalogue still uses current installed schema; table records tested profile, not permission. Fixture column means isolated fake Unix server validated method params/framing/IDs; it does not prove real side effects.
+
+| Method | Effect | Schema/transport | Live isolated evidence |
+|---|---|---|---|
+| ping | read | fixture verified | verified |
+| server.stop | mutation | fixture verified | not exercised |
+| server.live_handoff | mutation | fixture verified | not exercised |
+| server.reload_config | mutation | fixture verified | not exercised |
+| server.agent_manifests | read | fixture verified | not exercised |
+| server.reload_agent_manifests | mutation | fixture verified | not exercised |
+| notification.show | mutation | fixture verified | not exercised |
+| product_announcement.dismiss | mutation | fixture verified | not exercised |
+| release_notes.dismiss | mutation | fixture verified | not exercised |
+| command.invoke | mutation | fixture verified | not exercised |
+| client.window_title.set | mutation | fixture verified | not exercised |
+| client.window_title.clear | mutation | fixture verified | not exercised |
+| client_shell.surface.set | mutation | fixture verified | not exercised |
+| session.snapshot | read | fixture verified | verified |
+| workspace.create | mutation | fixture verified | verified |
+| workspace.list | read | fixture verified | not exercised |
+| workspace.get | read | fixture verified | verified |
+| workspace.focus | mutation | fixture verified | not exercised |
+| workspace.rename | mutation | fixture verified | not exercised |
+| workspace.move | mutation | fixture verified | not exercised |
+| workspace.move_block | mutation | fixture verified | not exercised |
+| workspace.report_metadata | mutation | fixture verified | not exercised |
+| workspace.close | mutation | fixture verified | not exercised |
+| worktree.list | read | fixture verified | not exercised |
+| worktree.create | mutation | fixture verified | not exercised |
+| worktree.open | mutation | fixture verified | not exercised |
+| worktree.remove | mutation | fixture verified | not exercised |
+| tab.create | mutation | fixture verified | verified |
+| tab.list | read | fixture verified | verified |
+| tab.get | read | fixture verified | not exercised |
+| tab.focus | mutation | fixture verified | not exercised |
+| tab.rename | mutation | fixture verified | not exercised |
+| tab.move | mutation | fixture verified | not exercised |
+| tab.close | mutation | fixture verified | not exercised |
+| agent.list | read | fixture verified | not exercised |
+| agent.get | read | fixture verified | not exercised |
+| agent.read | read | fixture verified | not exercised |
+| agent.explain | read | fixture verified | not exercised |
+| agent.send_keys | mutation | fixture verified | not exercised |
+| agent.rename | mutation | fixture verified | not exercised |
+| agent.view.set | mutation | fixture verified | not exercised |
+| agent.view.clear | mutation | fixture verified | not exercised |
+| agent.focus | mutation | fixture verified | not exercised |
+| agent.start | mutation | fixture verified | not exercised |
+| agent.prompt | mutation | fixture verified | not exercised |
+| agent.wait | mutation | fixture verified | not exercised |
+| pane.split | mutation | fixture verified | not exercised |
+| pane.swap | mutation | fixture verified | not exercised |
+| pane.move | mutation | fixture verified | not exercised |
+| pane.zoom | mutation | fixture verified | not exercised |
+| pane.layout | read | fixture verified | verified |
+| pane.process_info | read | fixture verified | verified |
+| layout.export | read | fixture verified | not exercised |
+| layout.apply | mutation | fixture verified | not exercised |
+| layout.set_split_ratio | mutation | fixture verified | not exercised |
+| pane.neighbor | read | fixture verified | not exercised |
+| pane.edges | read | fixture verified | not exercised |
+| pane.focus_direction | mutation | fixture verified | not exercised |
+| pane.resize | mutation | fixture verified | not exercised |
+| pane.scroll | mutation | fixture verified | not exercised |
+| pane.edit_scrollback | mutation | fixture verified | not exercised |
+| pane.selection.read | read | fixture verified | not exercised |
+| pane.copy_motion | mutation | fixture verified | not exercised |
+| pane.copy_search | mutation | fixture verified | not exercised |
+| pane.list | read | fixture verified | not exercised |
+| pane.current | conditional | context guard verified | not exercised |
+| pane.get | read | fixture verified | verified |
+| pane.focus | mutation | fixture verified | not exercised |
+| pane.input.set | mutation | fixture verified | not exercised |
+| pane.link.activate | mutation | fixture verified | not exercised |
+| pane.link.resolve | read | fixture verified | not exercised |
+| pane.rename | mutation | fixture verified | verified |
+| pane.send_text | mutation | fixture verified | verified |
+| pane.send_keys | mutation | fixture verified | not exercised |
+| pane.send_input | mutation | fixture verified | verified |
+| pane.read | read | fixture verified | verified |
+| pane.graphics.set | mutation | fixture verified | not exercised |
+| pane.graphics.clear | mutation | fixture verified | not exercised |
+| pane.graphics.info | read | fixture verified | not exercised |
+| pane.report_agent | mutation | fixture verified | not exercised |
+| pane.report_agent_session | mutation | fixture verified | not exercised |
+| pane.report_metadata | mutation | fixture verified | not exercised |
+| pane.clear_agent_authority | mutation | fixture verified | not exercised |
+| pane.release_agent | mutation | fixture verified | not exercised |
+| pane.close | mutation | fixture verified | not exercised |
+| popup.close | mutation | fixture verified | not exercised |
+| events.subscribe | read | fixture verified | not exercised |
+| events.wait | read | fixture verified | not exercised |
+| pane.wait_for_output | read | fixture verified | verified |
+| integration.list | read | fixture verified | not exercised |
+| integration.install | mutation | fixture verified | not exercised |
+| integration.uninstall | mutation | fixture verified | not exercised |
+| plugin.link | mutation | fixture verified | not exercised |
+| plugin.list | read | fixture verified | not exercised |
+| plugin.unlink | mutation | fixture verified | not exercised |
+| plugin.enable | mutation | fixture verified | not exercised |
+| plugin.disable | mutation | fixture verified | not exercised |
+| plugin.action.list | read | fixture verified | not exercised |
+| plugin.action.invoke | mutation | fixture verified | not exercised |
+| plugin.log.list | read | fixture verified | not exercised |
+| plugin.pane.open | mutation | fixture verified | not exercised |
+| plugin.pane.focus | mutation | fixture verified | not exercised |
+| plugin.pane.close | mutation | fixture verified | not exercised |
+
+CLI-only: generic explicit argv covers installed global/session/machine/config/channel/completion/update operations; live verification limited to read-only pane query. Global target explicit; machine target must match existing profile inventory. No saved profiles present during validation, so forwarding untested. Agent lifecycle, server stop/reload/handoff, integration install, worktree changes, focus/close and arbitrary destructive commands never exercised on user work.
+
+Custom command.invoke: fixture-verified generic params, always mutation, real endpoint-issued ID/context required. Shell custom commands: argv capture helper live-verified with benign synthetic output. No fake command IDs submitted to live endpoint.
+
+Live output bounds:70,000-byte Unicode/multiline input exact; terminal read50000bytes,truncatedtrue; captured output70000bytes exact. Failed wait then fresh read succeeded; file journal returned same receipt on identical repeat, conflicting request blocked. Original focus preserved. HTTP bridge absent/unconfigured: no probing, creation or HTTP route claim.

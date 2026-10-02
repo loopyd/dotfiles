@@ -1,0 +1,30 @@
+const fs=require('node:fs/promises');const path=require('node:path');const {spawn}=require('node:child_process');const {sha,fail,boundedFile}=require('./json_io.cjs');
+async function main(requestPath){
+  if(!['linux','darwin'].includes(process.platform))fail('process_group_unavailable');
+  if(!path.isAbsolute(requestPath||'')||requestPath.split('/').includes('..')||(await fs.lstat(requestPath)).isSymbolicLink())fail('invalid_request_path');
+  const raw=await boundedFile(requestPath,1048576);const request=JSON.parse(raw);
+  if(!Array.isArray(request.argv)||!request.argv.length||request.argv.some(v=>typeof v!=='string'||v.includes('\0'))||!path.isAbsolute(request.output_path||'')||!path.isAbsolute(request.cwd||'')||!['read','mutation'].includes(request.effect)||!Number.isInteger(request.max_output_bytes)||request.max_output_bytes<1||request.max_output_bytes>3*1024**2||!Number.isInteger(request.timeout_ms)||request.timeout_ms<1||request.timeout_ms>60000||request.workflow_request_sha256!==undefined&&!/^[0-9a-f]{64}$/.test(request.workflow_request_sha256))fail('invalid_capture_request');
+  if(process.env.HERDR_ENV!=='1'||process.env.HERDR_PANE_ID!==request.pane_id)fail('managed_pane_binding_mismatch');
+  for(let p=request.output_path;;p=path.dirname(p)){try{if((await fs.lstat(p)).isSymbolicLink())fail('symlink_rejected')}catch(e){if(e.code!=='ENOENT')throw e}if(p===path.dirname(p))break}
+  if(request.output_path.split('/').includes('..')||path.dirname(requestPath)!==path.dirname(request.output_path))fail('invalid_path');await fs.mkdir(path.dirname(request.output_path),{recursive:true,mode:0o700});
+  const journal=request.output_path+'.capture-run';let reserve;
+  try{reserve=await fs.open(journal,'wx',0o600);await reserve.writeFile(JSON.stringify({request_sha256:sha(raw),workflow_request_sha256:request.workflow_request_sha256??sha(raw),capture_request_path:requestPath,status:'started'})+'\n');await reserve.sync();await reserve.close()}catch(e){if(e.code==='EEXIST')fail('capture_already_started');throw e}
+  const file=await fs.open(request.output_path,'wx',0o600);let count=0,truncated=false,timedOut=false,shutdownBound=false;const chunks=[];
+  const child=spawn(request.argv[0],request.argv.slice(1),{cwd:request.cwd,detached:true,stdio:[request.interactive_input?'pipe':'ignore','pipe','pipe']});
+  const forward=data=>child.stdin.write(data);
+  const rawMode=request.interactive_input===true&&process.stdin.isTTY;
+  if(request.interactive_input&&!rawMode){child.kill();await file.close();fail('interactive_tty_required')}
+  if(rawMode){process.stdin.setRawMode(true);process.stdin.on('data',forward);process.stdin.resume()}
+  let forced,shutdown;
+  const signalGroup=signal=>{try{if(child.pid)process.kill(-child.pid,signal)}catch(error){if(error.code!=='ESRCH')shutdownBound=true}};
+  let finish;const stopped=new Promise(resolve=>finish=resolve);
+  const terminate=()=>{signalGroup('SIGTERM');forced??=setTimeout(()=>signalGroup('SIGKILL'),1000);shutdown??=setTimeout(()=>{shutdownBound=true;child.stdout.destroy();child.stderr.destroy();finish({code:null,signal:'shutdown_bound'})},2000)};
+  const timer=setTimeout(()=>{timedOut=true;terminate()},request.timeout_ms);
+  child.on('error',()=>{shutdownBound=true;finish({code:null,signal:'spawn_error'})});child.on('close',(code,signal)=>finish({code,signal}));
+  for(const [name,stream] of [['stdout',child.stdout],['stderr',child.stderr]])stream.on('data',chunk=>{process.stdout.write(chunk);if(request.capture_streams==='stdout'&&name==='stderr')return;count+=chunk.length;if(count>request.max_output_bytes){truncated=true;terminate();return}chunks.push(chunk)});
+  try{const exit=await stopped;const bytes=Buffer.concat(chunks);await file.writeFile(bytes);await file.sync();const receipt={status:exit.code===0&&!truncated&&!timedOut&&!shutdownBound?'verified':'error',completed:true,output_path:request.output_path,size_bytes:bytes.length,sha256:sha(bytes),exit_code:exit.code,signal:exit.signal,truncated,timed_out:timedOut,shutdown_bound:shutdownBound,process_group_pid:child.pid,mutation_uncertain:request.effect==='mutation'&&(timedOut||exit.signal!==null)};
+    const record={...receipt,request_sha256:sha(raw),workflow_request_sha256:request.workflow_request_sha256??sha(raw),capture_request_path:requestPath};const temp=journal+'.complete';await fs.writeFile(temp,JSON.stringify(record)+'\n',{flag:'wx',mode:0o600});await fs.rename(temp,journal);return receipt;
+  }finally{clearTimeout(timer);clearTimeout(forced);clearTimeout(shutdown);if(rawMode){process.stdin.removeListener('data',forward);process.stdin.setRawMode(false);process.stdin.pause()}await file.close()}
+}
+if(require.main===module)main(process.argv[2]).then(r=>{process.stdout.write('\nHERDR_CAPTURE_RECEIPT '+JSON.stringify(r)+'\n');process.exitCode=r.status==='verified'?0:1}).catch(e=>{process.stdout.write(JSON.stringify({status:'error',error_code:e.code&&/^[a-z_]+$/.test(e.code)?e.code:'capture_failed'})+'\n');process.exitCode=1});
+module.exports={main};

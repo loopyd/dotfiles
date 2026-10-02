@@ -1,0 +1,14 @@
+const assert = require('node:assert/strict');
+const { validate } = require('./herdr-js/herdr_client.cjs');
+const invalid = (value, spec) => assert.throws(() => validate(value, spec, {}), error => error.code === 'invalid_params');
+invalid([], { type: 'array', minItems: 1 });
+invalid(['a', 'b'], { type: 'array', maxItems: 1 });
+invalid(['a', 'a'], { type: 'array', uniqueItems: true });
+invalid('a', { type: 'string', minLength: 2 });
+invalid('abc', { type: 'string', maxLength: 2 });
+invalid({ first: 1, second: 2 }, { type: 'object', maxProperties: 1 });
+invalid({ 'bad name': 'value' }, { type: 'object', propertyNames: { pattern: '^[A-Za-z0-9_-]{1,32}$' } });
+validate({ good_name: 'value' }, { type: 'object', maxProperties: 1, propertyNames: { pattern: '^[A-Za-z0-9_-]{1,32}$' } }, {});
+validate(['a'], { type: 'array', minItems: 1, maxItems: 1, uniqueItems: true }, {});
+validate('😀', { type: 'string', minLength: 1, maxLength: 1 }, {});
+console.log('Schema collection, string and property-name bounds passed.');

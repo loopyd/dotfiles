@@ -1,0 +1,55 @@
+# Artifact-backed bulk terminal transport
+
+## Route/bounds
+
+Small metadata/control <=4KiB -> direct bounded argv/job. Bulk input/output -> Gateway file artifacts, not oversized terminal/SSH stdin. The reproduced4KiB limit belongs to canonical PTY input, not a proved global Gateway limit. Consumer control adapter uses raw PTY, ready handshake, exact UTF-8 byte framing and <=900-byte chunks; large content remains an artifact.
+
+`scripts/gateway_bulk.js`: `functions.exec` orchestration. `gateway_artifact.cjs`/`json_io.cjs`: verified consumer/remote Node24.5+ bytes, configured HTTP(S)_PROXY/NO_PROXY, standard TLS. No Python/package/server dependencies. Calls current Gateway schemas, no invented HTTP endpoints.
+
+Request JSON artifact <=1MiB; output <=3MiB; Gateway upload supports16MiB. Strict application limits keep below actual job/output retention caps. Secret content not supported by ordinary upload/request files; use approved secret workflows separately. Terminal content untrusted, explicit inspection only.
+
+## Request
+
+Verify remote reviewed Node/helper/producer paths and script hashes; create task-owned private staging paths. Consumer paths independent. Missing adapters -> materialize approved scripts through current file workflow, verify bytes before executing; do not install services or forge paths.
+
+```javascript
+store('gateway_bulk_request', {
+  run_id:'<stable logical operation, 1..73 characters>',
+  server_id:'<canonical discovered server>',
+  effect:'mutation',
+  upload:{content_base64:'<approved file bytes, privately retained>',sha256:'<actual64hex>',size_bytes:70000},
+  remote_node_path:'/verified/remote/node',
+  remote_download_helper:'/verified/remote/gateway_artifact.cjs',
+  remote_producer:'/verified/remote/herdr_file.cjs',
+  remote_request_path:'/private/task/request.json',
+  remote_output_path:'/private/task/output.json',
+  consumer_node_path:'/verified/consumer/node',
+  consumer_helper_path:'/consumer/gateway/scripts/gateway_artifact.cjs',
+  consumer_pipeline_path:'/consumer/gateway/scripts/gateway_pipeline.js',
+  consumer_destination:'/consumer/task/output.json',
+  max_output_bytes:1048576,
+  max_job_wait_seconds:180
+});
+const source=await tools.exec_command({cmd:"cat '/consumer/gateway/scripts/gateway_bulk.js'",max_output_tokens:20000});
+if(source.exit_code!==0)throw Error('Runner unavailable');
+const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
+await new AsyncFunction('tools','load','store','text','notify',source.output)(tools,load,store,text,notify);
+```
+
+Use shell-aware quoting for actual paths. Desktop may need explicitly authorized sandbox escalation; omit in ordinary cloud execution. Caller's `upload` built by consumer Node reading exact approved file and computing base64/size/SHA; never guess digest. Private `load/store` retain payload/link, receipts exclude them.
+
+Optional captured/app-owned output: `remote_capture_path` equals `remote_output_path`; separate `remote_receipt_path` stores producer outcome. Uploaded Herdr request must bind `capture_output_path` to same path. Producer requires successful completed capture attestation bound to the exact workflow/config hashes before hashing the selected file. Reserve capture before execution; start it within the uploaded request. Without capture path, produced Herdr JSON receipt itself becomes output artifact.
+
+## State/recovery
+
+Upload -> authoritative artifact hash/size/expiry -> typed remote `execute_argv` staging with fresh link on encrypted `secret_stdin` -> independent byte check -> typed operation -> producer journal/control receipt -> authoritative Gateway `hash_file`/`download_path` -> exact consumer hash/size verification.
+
+Canonical `uploadId` is temporary input artifact ID; ready output ID comes from matching `list_files`. Do not confuse Library/backing IDs, upload filename or producer path with artifact identity. All control outputs bounded4KiB; no raw terminal content in job control receipt.
+
+Store upload result and durable stage/operate job IDs before proceeding. Unknown submission/no ID -> incomplete, inspect existing jobs before retry. Same run resumes known jobs; same typed idempotency key; host/argv checked. Remote journal reserves mutation before operation: completed identical request reused; started/missing outcome blocked; changed request hash rejected. Custom commands and text sends never blindly repeated. Simultaneous run owner excluded; producer's on-disk exclusive journal remains final duplicate guard.
+
+Output pipeline has exclusive consumer file lock before Library mutation, rechecks completed local bytes even when their artifact link has expired, binds effective bounds, saves pending helper session and delivery state under a stable lock-attempt key before input, persists artifact pagination cursor. `artifact_scan_pending` differs from exhausted not-found; expired/unknown expiry rejected. Lost acquisition receipts preserve owner/session for explicit `resume_cli_session_id`; ambiguous submission blocks new owners. Incomplete control delivery -> retained session, inspect/terminate owned helper explicitly; never restart a writer automatically.
+
+Receipts distinguish verified stage/output, sizes, SHA, artifact IDs, job IDs and timings. Queue/execution from job timestamps; observed duration per original phase, current resumed invocation separate. Human pauses/earlier failed invocations are not a fresh end-to-end benchmark. Small local CLI reads may outperform cold Node discovery; artifacts trade fixed transfer/job overhead for lossless bulk, not promised latency.
+
+After verified stage/readback, temporary ledger `gateway_temporary_ledger:<run_id>` eligible for [artifact lifecycle](artifact-lifecycle.md). Do not delete files/artifacts while producer pending or before actual byte verification.
