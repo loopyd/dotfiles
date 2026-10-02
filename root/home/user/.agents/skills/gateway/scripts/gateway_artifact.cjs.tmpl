@@ -1,0 +1,230 @@
+#!/usr/bin/env node
+const fs = require('node:fs/promises');
+const constants = require('node:fs').constants;
+const https = require('node:https');
+const crypto = require('node:crypto');
+const path = require('node:path');
+const { readInput } = require('./json_io.cjs');
+const { spawnSync } = require('node:child_process');
+
+class TransferError extends Error {
+  constructor(code, details) { super(code); this.details = details; }
+}
+function fail(code) { throw new TransferError(code); }
+function networkFailure(error, parsed) {
+  const valid = value => typeof value === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/.test(value);
+  const causes = [error?.cause, ...(Array.isArray(error?.errors) ? error.errors.slice(0,8) : [])];
+  const codes = [...new Set(causes.map(item => item?.code).filter(valid))];
+  return new TransferError('download_failed', { host: parsed.hostname,
+    network_code: valid(error?.code) ? error.code : 'UNKNOWN', ...(codes.length ? { cause_codes: codes } : {}) });
+}
+function safeUrl(value) {
+  let parsed;
+  try { parsed = new URL(value); } catch { fail('invalid_input'); }
+  if (typeof value !== 'string' || value.length > 8192 || /[\r\n]/.test(value) || parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) fail('invalid_input');
+  return parsed;
+}
+async function destination(value) {
+  if (typeof value !== 'string' || !path.isAbsolute(value) || value.split('/').includes('..') || /[\0\r\n]/.test(value)) fail('invalid_destination');
+  for (let current = value; ; current = path.dirname(current)) {
+    try { if ((await fs.lstat(current)).isSymbolicLink()) fail('invalid_destination'); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (path.dirname(current) === current) break;
+  }
+  await fs.mkdir(path.dirname(value), { recursive: true, mode: 0o700 });
+  return value;
+}
+async function verify(file, size, expected) {
+  const handle = await fs.open(file, constants.O_RDONLY | (constants.O_NOFOLLOW || 0));
+  try {
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.size !== size) fail('integrity_mismatch');
+    const digest = crypto.createHash('sha256');
+    const buffer = Buffer.alloc(65536); let count = 0;
+    while (true) {
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, null);
+      if (!bytesRead) break;
+      count += bytesRead; if (count > size) fail('integrity_mismatch');
+      digest.update(buffer.subarray(0, bytesRead));
+    }
+    const actual = digest.digest('hex');
+    if (count !== size || actual !== expected) fail('integrity_mismatch');
+    return actual;
+  } finally { await handle.close(); }
+}
+async function inspect(file, limit, size, includeContent) {
+  const handle = await fs.open(file, constants.O_RDONLY | (constants.O_NOFOLLOW || 0));
+  let prefix;
+  try { const buffer = Buffer.alloc(limit); const read = await handle.read(buffer, 0, limit, 0); prefix = buffer.subarray(0, read.bytesRead); }
+  finally { await handle.close(); }
+  const result = { prefix_bytes: prefix.length, truncated: prefix.length < size, sha256: crypto.createHash('sha256').update(prefix).digest('hex') };
+  if ([...prefix].some(value => value < 9 || value > 13 && value < 32)) return { ...result, kind: 'binary' };
+  try { const text=new TextDecoder('utf-8',{fatal:true}).decode(prefix,{stream:prefix.length<size}); return { ...result, kind:'utf8', ...(includeContent?{text}:{}) }; }
+  catch { return { ...result, kind: 'binary' }; }
+}
+function response(url, headers, deadline, agent, hops = 0) {
+  const parsed = safeUrl(url);
+  if (hops > 3 || Date.now() >= deadline) throw new TransferError('download_failed', { host: parsed.hostname, network_code: hops > 3 ? 'REDIRECT_LIMIT' : 'DEADLINE_EXCEEDED' });
+  return new Promise((resolve, reject) => {
+    const request = https.get(parsed, { headers, agent, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) }, incoming => {
+      if ([301, 302, 303, 307, 308].includes(incoming.statusCode)) {
+        incoming.resume();
+        try {
+          const next = new URL(incoming.headers.location, parsed);
+          if (next.origin !== parsed.origin && Object.keys(headers).length) fail('cross_origin_headers_rejected');
+          resolve(response(next.href, headers, deadline, agent, hops + 1));
+        } catch (error) { reject(error); }
+      } else if (incoming.statusCode !== 200) { incoming.resume(); reject(new TransferError('download_failed', { host: parsed.hostname, http_status: incoming.statusCode })); }
+      else resolve(incoming);
+    });
+    request.on('error', error => reject(networkFailure(error, parsed)));
+  });
+}
+async function artifact(input) {
+  const started = performance.now();
+  const size = input.size_bytes, expected = input.expected_sha256;
+  const limit = input.inspect_bytes ?? 4096, timeout = input.timeout_seconds ?? 30;
+  if (!Number.isInteger(size) || size < 0 || size > 512 * 1024 ** 2 || !/^[0-9a-f]{64}$/.test(expected) ||
+      !Number.isInteger(limit) || limit < 0 || limit > 65536 || !Number.isInteger(timeout) || timeout < 1 || timeout > 60) fail('invalid_input');
+  const file = await destination(input.destination);
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') fail('tls_bypass_rejected');
+  if (input.download_url) safeUrl(input.download_url);
+  const headers = input.headers || {};
+  if (typeof headers !== 'object' || Array.isArray(headers) || Object.entries(headers).some(([k,v]) => typeof v !== 'string' || /[\r\n]/.test(k + v))) fail('invalid_input');
+  let exists = true; try { await fs.lstat(file); } catch (error) { if (error.code === 'ENOENT') exists = false; else throw error; }
+  let downloaded = 0, verification = 0, actual;
+  if (exists) {
+    const tick = performance.now();
+    try { actual = await verify(file, size, expected); } catch { fail('destination_exists'); }
+    verification = (performance.now() - tick) / 1000;
+  } else {
+    safeUrl(input.download_url);
+    const folder = await fs.mkdtemp(path.join(path.dirname(file), '.gateway-artifact-'));
+    const temporary = path.join(folder, 'data');
+    try {
+      const tick = performance.now(), deadline = Date.now() + timeout * 1000;
+      const [major, minor] = process.versions.node.split('.').map(Number);
+      if (major < 24 || major === 24 && minor < 5) fail('proxy_support_unavailable');
+      const agent = new https.Agent({ proxyEnv: process.env });
+      const output = await fs.open(temporary, 'wx', 0o600);
+      try {
+        const incoming = await response(input.download_url, headers, deadline, agent);
+        let count = 0;
+        try {
+          for await (const chunk of incoming) {
+            count += chunk.length;
+            if (count > size) fail('integrity_mismatch');
+            if (Date.now() > deadline) fail('download_failed');
+            await output.writeFile(chunk);
+          }
+          await output.sync();
+        } catch (error) { throw error instanceof TransferError ? error : networkFailure(error, safeUrl(input.download_url)); }
+        finally { incoming.destroy(); }
+      } finally { agent.destroy(); await output.close(); }
+      downloaded = (performance.now() - tick) / 1000;
+      const check = performance.now(); actual = await verify(temporary, size, expected);
+      verification = (performance.now() - check) / 1000;
+      try { await fs.link(temporary, file); } catch (error) { if (error.code === 'EEXIST') fail('destination_exists'); throw error; }
+    } finally { await fs.rm(folder, { recursive: true, force: true }); }
+  }
+  const tick = performance.now(), inspection = await inspect(file, limit, size, input.include_content === true);
+  return { status: 'verified', path: file, artifact_id: input.artifact_id || null, source: exists ? 'local_reuse' : 'download',
+    size_bytes: size, sha256: actual, inspection, timing_seconds: { download: downloaded, verification,
+      inspection: (performance.now() - tick) / 1000, total: (performance.now() - started) / 1000 } };
+}
+async function metadata(input) {
+  const file = await destination(input.destination);
+  if (!/^libfile_[A-Za-z0-9]+$/.test(input.library_file_id) || !Array.isArray(input.xattrs || [])) fail('invalid_input');
+  if (!(await fs.lstat(file)).isFile()) fail('invalid_destination');
+  const actual = await verify(file, input.size_bytes, input.expected_sha256);
+  const attributes = new Map();
+  for (const entry of input.xattrs || []) {
+    if (!entry || !/^user\.[A-Za-z0-9_.-]+$/.test(entry.name) || typeof entry.value !== 'string') fail('invalid_xattr');
+    if (attributes.has(entry.name) && attributes.get(entry.name) !== entry.value) fail('invalid_xattr');
+    attributes.set(entry.name, entry.value);
+  }
+  if (attributes.has('user.library-file-id') && attributes.get('user.library-file-id') !== input.library_file_id) fail('metadata_identity_mismatch');
+  attributes.set('user.library-file-id', input.library_file_id);
+  if (input.version !== undefined) {
+    if (!Number.isInteger(input.version) || input.version < 0) fail('invalid_input');
+    if (attributes.has('user.library-file-version') && attributes.get('user.library-file-version') !== String(input.version)) fail('metadata_version_mismatch');
+    attributes.set('user.library-file-version', String(input.version));
+  }
+  const sidecar = await destination(file + '.library.json');
+  try { const previous=JSON.parse(await fs.readFile(sidecar,'utf8')); if(previous.library_file_id!==input.library_file_id)fail('metadata_identity_conflict'); } catch(error){if(error.code!=='ENOENT')throw error;}
+  const setter = input.setfattr_path || 'setfattr', getter = input.getfattr_path || 'getfattr';
+  const available = /^[A-Za-z0-9_./-]+$/.test(file) && [setter, getter].every(command => spawnSync(command, ['--version'], { stdio: 'ignore' }).status === 0);
+  if (!available) {
+    const sidecar = await destination(file + '.library.json');
+    try {
+      const previous = JSON.parse(await fs.readFile(sidecar, 'utf8'));
+      if (previous.library_file_id !== input.library_file_id) fail('metadata_identity_conflict');
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    const record = { library_file_id: input.library_file_id, version: input.version ?? null,
+      path: file, sha256: actual, size_bytes: input.size_bytes,
+      xattrs: [...attributes].map(([name,value]) => ({ name, value })) };
+    const folder = await fs.mkdtemp(path.join(path.dirname(sidecar), '.gateway-metadata-'));
+    try {
+      const temporary = path.join(folder, 'metadata.json');
+      await fs.writeFile(temporary, JSON.stringify(record) + '\n', { flag: 'wx', mode: 0o600 });
+      await fs.rename(temporary, sidecar);
+    } finally { await fs.rm(folder, { recursive: true, force: true }); }
+    return { status: 'verified', path: file, library_file_id: input.library_file_id,
+      metadata_verified: true, metadata_persistence: 'sidecar', metadata_path: sidecar };
+  }
+  const prior=spawnSync(getter,['--absolute-names','--encoding=base64','-d','-m','^user.library-file-id$','--',file],{encoding:'utf8',timeout:5000,maxBuffer:65536});
+  if(prior.error||prior.status!==0)fail('metadata_read_failed');
+  const identity=prior.stdout.match(/^user\.library-file-id=0s([A-Za-z0-9+/=]*)$/m);
+  if(identity&&Buffer.from(identity[1],'base64').toString('utf8')!==input.library_file_id)fail('metadata_identity_conflict');
+  if(prior.stdout.includes('user.library-file-id=')&&!identity)fail('metadata_read_failed');
+  const restore = '# file: ' + file + '\n' + [...attributes].map(([name,value]) => name + '=0s' + Buffer.from(value).toString('base64')).join('\n') + '\n';
+  const set = spawnSync(setter, ['--restore=-'], { input: restore, encoding: 'utf8' });
+  if (set.error?.code === 'ENOENT') fail('xattr_tools_unavailable');
+  if (set.status !== 0) fail('metadata_write_failed');
+  for (const [name,value] of attributes) {
+    const get = spawnSync(getter, ['--absolute-names', '--only-values', '-n', name, '--', file]);
+    if (get.error?.code === 'ENOENT') fail('xattr_tools_unavailable');
+    if (get.status !== 0 || !get.stdout.equals(Buffer.from(value))) fail('metadata_verification_failed');
+  }
+  return { status: 'verified', path: file, library_file_id: input.library_file_id, metadata_verified: true, metadata_persistence: 'native_xattrs' };
+}
+async function main(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) fail('invalid_input');
+  if (input.action === 'acquire_lock') {
+    const lock = await destination(input.destination);
+    if(typeof input.owner!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(input.owner))fail('invalid_input');
+    try {await fs.mkdir(lock,{mode:0o700});await fs.writeFile(path.join(lock,'owner'),input.owner,{flag:'wx',mode:0o600});}
+    catch(error){if(error.code==='EEXIST')fail('run_already_owned');throw error;}
+    return{status:'verified',lock_path:lock};
+  }
+  if (input.action === 'release_lock') {
+    const lock=await destination(input.destination);
+    if(await fs.readFile(path.join(lock,'owner'),'utf8')!==input.owner)fail('lock_owner_mismatch');
+    await fs.unlink(path.join(lock,'owner'));await fs.rmdir(lock);return{status:'verified'};
+  }
+  if(input.action==='create_readback_directory'){const folder=await destination(input.destination);try{await fs.mkdir(folder,{mode:0o700})}catch(error){if(error.code==='EEXIST')fail('readback_directory_exists');throw error}return{status:'verified',path:folder};}
+  if (input.action === 'artifact') return artifact(input);
+  if (input.action === 'apply_library_metadata') return metadata(input);
+  if (input.action === 'materialize_library') {
+    const transfer = input.transfer;
+    if (!transfer || transfer.library_file_id !== input.library_file_id || transfer.method && transfer.method !== 'GET') fail('metadata_identity_mismatch');
+    if(input.file_id&&transfer.file_id!==input.file_id)fail('library_version_identity_mismatch');
+    const file = transfer.workspace_path || input.destination;
+    if(!input.readback_directory||!file.startsWith(input.readback_directory+'/'))fail('readback_destination_not_isolated');
+    if(!transfer.workspace_path){try{await fs.lstat(file);fail('readback_destination_exists')}catch(error){if(error.code!=='ENOENT')throw error}}
+    if(input.source_path){const source=await fs.stat(input.source_path);try{const target=await fs.stat(file);if(source.dev===target.dev&&source.ino===target.ino)fail('readback_source_alias')}catch(error){if(error.code!=='ENOENT')throw error}}
+    if (transfer.workspace_path) { try { await fs.access(file); } catch { fail('materialized_path_not_consumer_local'); } }
+    const receipt = await artifact({ ...input, destination: file, download_url: transfer.workspace_path ? undefined : transfer.download_url, headers: transfer.headers || {}, inspect_bytes: 0 });
+    const persisted = await metadata({ ...input, destination: receipt.path, xattrs: transfer.xattrs || [] });
+    return { ...receipt, library_file_id: input.library_file_id, metadata_verified: true,
+      metadata_persistence: persisted.metadata_persistence, ...(persisted.metadata_path ? { metadata_path: persisted.metadata_path } : {}) };
+  }
+  fail('invalid_action');
+}
+
+(async()=>{
+  let receipt;
+  try {receipt=await main(await readInput());}
+  catch(error){receipt={status:'error',error_code:error instanceof TransferError?error.message:error.code&&/^[a-z_]+$/.test(error.code)?error.code:error instanceof SyntaxError?'invalid_input':'local_io_failed',...(error instanceof TransferError&&error.details?{details:error.details}:{})}}
+  process.stdout.write(JSON.stringify(receipt)+'\n');process.exitCode=receipt.status==='verified'?0:1;
+})();

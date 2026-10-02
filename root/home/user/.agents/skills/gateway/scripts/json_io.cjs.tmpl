@@ -1,0 +1,45 @@
+const crypto = require('node:crypto');
+const fs = require('node:fs/promises');
+const constants = require('node:fs').constants;
+class ClientError extends Error { constructor(code, details = {}) { super(code); this.code = code; this.details = details; } }
+const fail = (code, details) => { throw new ClientError(code, details); };
+const sha = value => crypto.createHash('sha256').update(value).digest('hex');
+async function boundedFile(file, limit, expected) {
+  const handle=await fs.open(file,constants.O_RDONLY|(constants.O_NOFOLLOW||0));
+  try{const stat=await handle.stat();if(!stat.isFile()||stat.size>limit||expected!==undefined&&stat.size!==expected)fail('file_size_mismatch');const buffer=Buffer.alloc(stat.size+1);let count=0;while(count<buffer.length){const read=await handle.read(buffer,count,Math.min(65536,buffer.length-count),null);if(!read.bytesRead)break;count+=read.bytesRead}if(count!==stat.size)fail('file_size_mismatch');return buffer.subarray(0,count)}finally{await handle.close()}
+}
+async function readInput(stream = process.stdin, framed = process.argv.includes('--framed'), limit = 1048576) {
+  let buffered = Buffer.alloc(0), expected = null;
+  if (framed) process.stdout.write(JSON.stringify({ status: 'ready', framing: 'bytes-v1', max_input_bytes: limit }) + '\n');
+  for await (const chunk of stream) {
+    if (buffered.length + chunk.length > limit + 32) fail('input_limit');
+    buffered = Buffer.concat([buffered, chunk]);
+    if (framed && expected === null) {
+      const newline = buffered.indexOf(10);
+      if (newline < 0) { if (buffered.length > 20) fail('invalid_frame'); continue; }
+      const header = buffered.subarray(0,newline).toString('ascii');
+      if (!/^[1-9][0-9]{0,6}$/.test(header)) fail('invalid_frame');
+      expected = Number(header); if (expected > limit) fail('input_limit');
+      buffered = buffered.subarray(newline + 1);
+    }
+    if (framed && expected !== null && buffered.length >= expected) {
+      if (buffered.length !== expected) fail('frame_length_mismatch');
+      stream.pause(); return JSON.parse(new TextDecoder('utf8', { fatal: true }).decode(buffered));
+    }
+    if (!framed) {
+      const newline = buffered.indexOf(10);
+      if (newline >= 0) {
+        if (buffered.length !== newline + 1) fail('multiple_inputs');
+        if (newline > limit) fail('input_limit');
+        stream.pause(); return JSON.parse(new TextDecoder('utf8', { fatal: true }).decode(buffered.subarray(0,newline)));
+      }
+      if (buffered.length > limit) fail('input_limit');
+    }
+  }
+  fail('incomplete_frame');
+}
+async function cli(main) {
+  try { const receipt = await main(await readInput()); process.stdout.write(JSON.stringify(receipt) + '\n'); process.exitCode = receipt.status === 'verified' ? 0 : 1; }
+  catch (error) { process.stdout.write(JSON.stringify({ status: 'error', error_code: error instanceof ClientError ? error.code : error instanceof SyntaxError ? 'invalid_input' : 'local_runtime_failed', ...(error instanceof ClientError ? error.details : {}) }) + '\n'); process.exitCode = 1; }
+}
+module.exports = { ClientError, fail, sha, boundedFile, readInput, cli };

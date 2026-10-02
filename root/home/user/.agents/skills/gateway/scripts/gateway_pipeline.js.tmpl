@@ -1,0 +1,232 @@
+const request = load('gateway_artifact_request');
+const key = request?.run_id ? 'gateway_artifact_run:' + request.run_id : 'gateway_artifact_run:invalid';
+let state = load(key) || { phase: 'init', timing: {} };
+const started = Date.now();
+let owner = "run_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+let lockHeld = false;
+let lockPath;
+const lockKey='gateway_lock_attempt:'+request?.run_id;
+
+function fail(code) { const error = new Error(code); error.pipelineCode = code; throw error; }
+function save(fields) { state = { ...state, ...fields }; store(key, state); }
+function data(result) {
+  if (result?.isError) fail('tool_rejected');
+  if (result?.structuredContent) return result.structuredContent.result ?? result.structuredContent;
+  for (const block of result?.content || []) {
+    if (block.type === 'text') { try { const parsed = JSON.parse(block.text); return parsed.result ?? parsed; } catch {} }
+  }
+  fail('unexpected_tool_result');
+}
+function quote(value) { return "'" + value.replace(/'/g, "'\\''") + "'"; }
+function path(value) { return typeof value === 'string' && value.startsWith('/') && !value.split('/').includes('..') && !/[\0\r\n]/.test(value); }
+function progress(phase) { save({ phase }); notify({ run_id: request.run_id, phase }); }
+async function present(paths) {
+  const code = 'const fs=require("node:fs");console.log(JSON.stringify({present:process.argv.slice(1).every(p=>{try{return fs.statSync(p).isFile()}catch{return false}})}))';
+  const result = await tools.exec_command({ cmd: quote(request.node_path) + ' -e ' + quote(code) + ' ' + paths.map(quote).join(' '), max_output_tokens: 1000 });
+  if (result.exit_code !== 0) fail('consumer_preflight_failed');
+  try { return JSON.parse(result.output.trim()).present === true; } catch { fail('consumer_preflight_failed'); }
+}
+function clock(job, submitted) {
+  const seconds = (a, b) => Number.isFinite(a) && Number.isFinite(b) && b >= a ? (b - a) / 1000 : null;
+  return { submission: seconds(submitted, job.createdAt * 1000),
+    queue: seconds(job.createdAt * 1000, job.startedAt * 1000),
+    execution: seconds(job.startedAt * 1000, job.finishedAt * 1000),
+    gateway_total: seconds(submitted, Date.now()) };
+}
+function byteLength(value) { let total=0;for(const character of value){const code=character.codePointAt(0);total+=code<128?1:code<2048?2:code<65536?3:4}return total; }
+async function cli(script,payload) {
+  const binding=JSON.stringify([payload.action,payload.destination,payload.expected_sha256,payload.size_bytes,payload.library_file_id,payload.version,payload.owner]);
+  const control=['acquire_lock','release_lock'].includes(payload.action);
+  const cliKey='gateway_cli_control:'+owner;
+  const saveActive=value=>{if(control){store(cliKey,value??null);store(lockKey,{...(load(lockKey)||{}),owner,action:payload.action,cli:value??null,status:value?'pending':payload.action==='acquire_lock'?'acquired':'released'})}else save({cli:value})};
+  let active=control?(load(lockKey)?.cli||load(cliKey)):state.cli;
+  if(active&&active.binding!==binding)fail('consumer_cli_pending_other_operation');
+  if(!active){
+    const body=JSON.stringify(payload);const bytes=byteLength(body);if(bytes>1048576)fail('consumer_input_limit');
+    if(control)store(lockKey,{owner,action:payload.action,status:'submitting',cli:null});
+    const opened=await tools.exec_command({cmd:'stty raw -echo\n'+quote(request.node_path)+' '+quote(script)+' --framed',tty:true,yield_time_ms:250,max_output_tokens:1000,
+      ...(request.sandbox_permissions?{sandbox_permissions:request.sandbox_permissions}:{}),...(request.sandbox_permissions==='require_escalated'?{justification:'Process only the authorized artifact through its verified local adapter.'}:{})});
+    if(!opened.session_id)fail('consumer_cli_unavailable');
+    active={session_id:opened.session_id,binding,payload,output:opened.output||'',input_sent:false};saveActive(active);
+    let ready=active.output;
+    const handshakeDeadline=Date.now()+10000;
+    while(!ready.includes('"status":"ready"')&&Date.now()<handshakeDeadline){const next=await tools.write_stdin({session_id:active.session_id,chars:'',yield_time_ms:1000,max_output_tokens:1000});ready+=next.output;active.output=ready;saveActive(active);if(!next.session_id)fail('consumer_handshake_failed')}
+    let handshake;try{handshake=JSON.parse(ready.trim())}catch{fail('consumer_handshake_failed')}
+    if(handshake.status!=='ready'||handshake.framing!=='bytes-v1'||bytes>handshake.max_input_bytes)fail('consumer_handshake_failed');
+    active.output='';active.input_sent=true;active.delivery_complete=false;saveActive(active);
+    const framed=String(bytes)+'\n'+body;const chunks=[];let chunk='',chunkBytes=0;
+    for(const character of framed){const length=byteLength(character);if(chunkBytes+length>900){chunks.push(chunk);chunk='';chunkBytes=0}chunk+=character;chunkBytes+=length}if(chunk)chunks.push(chunk);
+    for(let index=0;index<chunks.length;index++){
+      active.submitting_chunk=index;saveActive(active);
+      const next=await tools.write_stdin({session_id:active.session_id,chars:chunks[index],yield_time_ms:250,max_output_tokens:12000});active.output+=next.output;active.result=next;active.confirmed_chunk=index;saveActive(active);
+      if(!next.session_id&&index<chunks.length-1)fail('consumer_frame_incomplete');
+    }
+    active.delivery_complete=true;saveActive(active);
+  }else if(!active.input_sent||!active.delivery_complete)fail('consumer_input_delivery_uncertain');
+  let result=active.result||{session_id:active.session_id};const deadline=Date.now()+65000;
+  while(result.session_id&&Date.now()<deadline){result=await tools.write_stdin({session_id:active.session_id,chars:'',yield_time_ms:1000,max_output_tokens:12000});active.output+=result.output;active.result=result;saveActive(active);}
+  if(result.session_id)fail('consumer_cli_pending');
+  const output=active.output;
+  let receipt;try{receipt=JSON.parse(output.trim())}catch{fail('invalid_or_truncated_helper_receipt')}
+  if(result.exit_code!==0||receipt.status!=='verified'){
+    const details=receipt.details;
+    if(details&&typeof details.host==='string'&&/^[A-Za-z0-9.:[\]-]{1,253}$/.test(details.host)){const safe={host:details.host};if(Number.isInteger(details.http_status)&&details.http_status>=100&&details.http_status<=599)safe.http_status=details.http_status;if(typeof details.network_code==='string'&&/^[A-Z][A-Z0-9_]{0,63}$/.test(details.network_code))safe.network_code=details.network_code;if(Array.isArray(details.cause_codes))safe.cause_codes=details.cause_codes.slice(0,8).filter(code=>typeof code==='string'&&/^[A-Z][A-Z0-9_]{0,63}$/.test(code));save({network_diagnostics:safe})}
+    if(control)store(lockKey,{owner,action:payload.action,status:'failed',cli:null});else saveActive(undefined);
+    fail(typeof receipt.error_code==='string'&&/^[a-z_]+$/.test(receipt.error_code)?'helper_'+receipt.error_code:'consumer_helper_failed');
+  }
+  saveActive(undefined);return receipt;
+}
+async function terminal(job, kind) {
+  if (!job?.id) fail('missing_job_id');
+  save({ [kind + '_job_id']: job.id });
+  const deadline = Date.now() + (request.max_job_wait_seconds || 180) * 1000;
+  let cursor;
+  while (['queued', 'running', 'cancel_requested'].includes(job.status)) {
+    notify({ run_id: request.run_id, phase: kind, job_id: job.id, status: job.status });
+    if (Date.now() >= deadline) fail('job_pending');
+    const next = data(await tools.mcp__codex_apps__gateway_wait_for_job({ job_id: job.id,
+      ...(Number.isInteger(cursor) ? { after_cursor: cursor } : {}), timeout_seconds: 30, max_bytes: 4096 }));
+    cursor = next.nextCursor; job = next.job;
+    if (!job?.id) fail('missing_job_status');
+  }
+  if (job.serverId !== request.server_id || job.status !== 'succeeded') fail('job_not_successful_on_target');
+  if (kind === 'hash' && (job.operation?.name !== 'file.hash' || job.operation.input?.path !== request.remote_path || job.operationResult?.status !== 'succeeded')) fail('hash_target_mismatch');
+  if (kind === 'transfer' && (job.kind !== 'transfer' || job.remotePath !== request.remote_path)) fail('transfer_target_mismatch');
+  return job;
+}
+async function artifact(id, jobId) {
+  let cursor=state.artifact_scan_cursor;
+  for (let page = 0; page < (request.max_scan_pages??20); page++) {
+    const result = data(await tools.mcp__codex_apps__gateway_list_files({ limit: 100, ...(cursor ? { cursor } : {}) }));
+    const found = result.files?.find(file => id ? file.id === id : file.jobId === jobId);
+    if (found) {
+      if (found.serverId !== request.server_id || found.sourcePath !== request.remote_path || found.sha256 !== state.sha256 || found.byteSize !== state.size_bytes || !Number.isFinite(found.expiresAt) || found.expiresAt * 1000 <= Date.now() || !found.download?.url) fail('artifact_identity_or_expiry_mismatch');
+      save({ artifact_id: found.id,artifact_scan_cursor:undefined }); return found;
+    }
+    cursor = result.nextCursor;save({artifact_scan_cursor:cursor});if(!cursor)fail('ready_artifact_not_found');
+  }
+  fail('artifact_scan_pending');
+}
+
+try {
+  if (!request || !/^[A-Za-z0-9_-]{1,80}$/.test(request.run_id) || !/^srv_[A-Za-z0-9]+$/.test(request.server_id) ||
+      !['fresh', 'ready'].includes(request.mode) || ![request.remote_path, request.destination, request.helper_path, request.node_path].every(path) ||
+      !['none', 'create', 'replace'].includes(request.library?.mode) || !Number.isInteger(request.max_file_bytes) || request.max_file_bytes < 0 || request.max_file_bytes > 50 * 1024 * 1024 ||
+      (request.max_job_wait_seconds !== undefined && (!Number.isInteger(request.max_job_wait_seconds) || request.max_job_wait_seconds < 30 || request.max_job_wait_seconds > 600)) ||
+      (request.inspect_bytes!==undefined&&(!Number.isInteger(request.inspect_bytes)||request.inspect_bytes<0||request.inspect_bytes>65536))|| (request.include_content===true&&(request.inspect_bytes??4096)>4096)||
+      (request.max_scan_pages!==undefined&&(!Number.isInteger(request.max_scan_pages)||request.max_scan_pages<1||request.max_scan_pages>100))||
+      (request.sandbox_permissions !== undefined && !['use_default', 'require_escalated'].includes(request.sandbox_permissions))) fail('invalid_request');
+  if (request.mode === 'ready' && (!/^fil_[A-Za-z0-9]+$/.test(request.artifact_id) || !/^[0-9a-f]{64}$/.test(request.expected_sha256) || !Number.isInteger(request.size_bytes))) fail('invalid_ready_artifact_request');
+  if (request.library.mode !== 'none' && (!path(request.library_verification_path) || request.library_verification_path === request.destination)) fail('invalid_library_paths');
+  if (request.library.mode === 'replace' && (!/^libfile_[A-Za-z0-9]+$/.test(request.library.library_file_id) || !Number.isInteger(request.library.expected_current_version) || request.library.expected_current_version < 0)) fail('invalid_library_replacement');
+  const binding = JSON.stringify([request.server_id, request.remote_path, request.destination, request.mode, request.artifact_id, request.expected_sha256, request.size_bytes, request.library, request.node_path, request.helper_path, request.library_verification_path, request.max_file_bytes, request.inspect_bytes??4096, request.include_content===true]);
+  if (state.binding && state.binding !== binding) fail('run_id_reused_for_different_request');
+  const requiredTools=['exec_command','write_stdin','mcp__codex_apps__gateway_list_files'];
+  if(request.mode==='fresh')requiredTools.push('mcp__codex_apps__gateway_hash_file','mcp__codex_apps__gateway_download_path','mcp__codex_apps__gateway_wait_for_job','mcp__codex_apps__gateway_get_job');
+  if(request.library.mode!=='none')requiredTools.push('mcp__codex_apps__library_prepare_materialize','mcp__codex_apps__library_'+(request.library.mode==='create'?'create':'replace')+'_library_file');
+  if(requiredTools.some(name=>typeof tools[name]!=='function'))fail('required_runtime_tool_unavailable');
+  if(!await present([request.helper_path,request.node_path]))fail('consumer_helper_missing');
+  lockPath=request.destination+'.gateway-lock';
+  const attempt=load(lockKey);
+  if(attempt&&['pending','submitting','acquired'].includes(attempt.status)){
+    owner=attempt.owner;
+    if(attempt.cli){if(request.resume_cli_session_id!==attempt.cli.session_id)fail(attempt.action==='release_lock'?'lock_release_pending_resume_required':'lock_acquisition_pending_resume_required');await cli(request.helper_path,attempt.cli.payload);}
+    else if(state.cli&&attempt.action==='acquire_lock'){if(request.resume_cli_session_id!==state.cli.session_id)fail('consumer_cli_pending_resume_required');}else fail('lock_outcome_uncertain_inspect_before_retry');
+    if(attempt.action==='release_lock'){owner='run_'+Date.now()+'_'+Math.random().toString(36).slice(2);await cli(request.helper_path,{action:'acquire_lock',destination:lockPath,owner});}
+    lockHeld=true;
+  }else{await cli(request.helper_path,{action:'acquire_lock',destination:lockPath,owner});lockHeld=true;}
+  if(state.cli){
+    if(request.resume_cli_session_id!==state.cli.session_id)fail('consumer_cli_pending_resume_required');
+    const pending=state.cli.payload;const recovered=await cli(request.helper_path,pending);
+    if(pending.action==='artifact'&&pending.destination===request.destination&&recovered.sha256===state.sha256&&recovered.size_bytes===state.size_bytes)save({downloaded:recovered});
+    if(pending.action==='create_readback_directory')save({library_readback_directory:recovered.path});
+    if(pending.action==='apply_library_metadata'&&pending.library_file_id===state.library?.library_file_id)save({library_metadata_applied:true,metadata_persistence:recovered.metadata_persistence});
+  }
+  save({binding,lock_owner:owner});
+  if(state.phase==='complete'&&state.receipt?.status==='verified'){
+    if(state.size_bytes>request.max_file_bytes)fail('file_exceeds_bound');
+    const verified=await cli(request.helper_path,{action:'artifact',destination:request.destination,expected_sha256:state.sha256,size_bytes:state.size_bytes,inspect_bytes:0});
+    if(verified.path!==request.destination)fail('download_receipt_mismatch');
+    text({...state.receipt,reused_completed_run:true,local_bytes_reverified:true});
+  }else{
+    if(state.phase==='library_submitting'&&!state.library)fail('library_submission_uncertain_inspect_before_retry');
+    if (request.mode === 'fresh' && !state.sha256) {
+      progress('hash'); save({ hash_submitted_ms: state.hash_submitted_ms || Date.now() });
+      const initial = state.hash_job_id || request.resume_hash_job_id ? data(await tools.mcp__codex_apps__gateway_get_job({ job_id: state.hash_job_id || request.resume_hash_job_id, max_bytes: 4096 })).job :
+        data(await tools.mcp__codex_apps__gateway_hash_file({ server: request.server_id,
+          input: { path: request.remote_path, algorithm: 'sha256', followSymlinks: false, maxBytes: request.max_file_bytes, privilege: 'none' },
+          idempotency_key: request.run_id + '-hash', timeout_seconds: 30, wait_seconds: 30 })).job;
+      const job = await terminal(initial, 'hash');
+      const current = job.operationResult?.data?.currentState;
+      if (!/^sha256:[0-9a-f]{64}$/.test(current?.digest) || current.algorithm !== 'sha256' || !Number.isInteger(current.bytes)) fail('invalid_hash_result');
+      save({ sha256: current.digest.slice(7), size_bytes: current.bytes, timing: { ...state.timing, hash: clock(job, state.hash_submitted_ms) } });
+    } else if (request.mode === 'ready') save({ sha256: request.expected_sha256, size_bytes: request.size_bytes });
+    if (state.size_bytes < 0 || state.size_bytes > request.max_file_bytes) fail('file_exceeds_bound');
+    if (request.mode === 'fresh' && !state.artifact_id) {
+      if (state.phase === 'transfer_submitting' && !state.transfer_job_id && !request.resume_transfer_job_id) fail('transfer_submission_uncertain_inspect_before_retry');
+      let initial;
+      if (state.transfer_job_id || request.resume_transfer_job_id) initial = data(await tools.mcp__codex_apps__gateway_get_job({ job_id: state.transfer_job_id || request.resume_transfer_job_id, max_bytes: 4096 })).job;
+      else {
+        progress('transfer_submitting'); save({ transfer_submitted_ms: Date.now() });
+        initial = data(await tools.mcp__codex_apps__gateway_download_path({ server: request.server_id, remote_path: request.remote_path, expected_sha256: state.sha256, timeout_seconds: 30 })).job;
+      }
+      const job = await terminal(initial, 'transfer');
+      save({ timing: { ...state.timing, transfer: clock(job, state.transfer_submitted_ms) } });
+    }
+    let downloaded;
+    if(state.downloaded){progress('download');downloaded=await cli(request.helper_path,{action:'artifact',expected_sha256:state.sha256,size_bytes:state.size_bytes,destination:request.destination,artifact_id:state.artifact_id,inspect_bytes:request.inspect_bytes??4096,include_content:request.include_content===true});}
+    else{progress('artifact');const ready=await artifact(request.mode==='ready'?request.artifact_id:state.artifact_id,state.transfer_job_id);progress('download');downloaded=await cli(request.helper_path,{action:'artifact',download_url:ready.download.url,expected_sha256:state.sha256,size_bytes:state.size_bytes,destination:request.destination,artifact_id:ready.id,inspect_bytes:request.inspect_bytes??4096,include_content:request.include_content===true,timeout_seconds:30});}
+    if (downloaded.sha256 !== state.sha256 || downloaded.size_bytes !== state.size_bytes || downloaded.path !== request.destination) fail('download_receipt_mismatch');
+    save({ downloaded });
+    if (request.library.mode !== 'none') {
+      if (!state.library) {
+        progress('library_submitting'); const tick = Date.now();
+        const uploaded = data(await (request.library.mode === 'create' ? tools.mcp__codex_apps__library_create_library_file({ file: downloaded.path, library_artifact_type: 'other' }) :
+          tools.mcp__codex_apps__library_replace_library_file({ file: downloaded.path, library_file_id: request.library.library_file_id, expected_current_version: request.library.expected_current_version, version_reason: 'Automated verified Gateway artifact handoff.' })));
+        if (uploaded.status !== 'succeeded' || !uploaded.library_file_id || !uploaded.file_id || !uploaded.file_name || uploaded.file_size_bytes !== state.size_bytes ||
+            (request.library.mode === 'replace' && uploaded.library_file_id !== request.library.library_file_id)) fail('library_result_not_verified');
+        save({ library: uploaded, timing: { ...state.timing, library_upload: (Date.now() - tick) / 1000 } });
+      }
+      if (!state.library_metadata_applied) {
+        const persisted = await cli(request.helper_path, { action: 'apply_library_metadata', destination: downloaded.path,
+          library_file_id: state.library.library_file_id, version: state.library.current_version_number,
+          expected_sha256: state.sha256, size_bytes: state.size_bytes, xattrs: state.library.xattrs || [] });
+        save({ library_metadata_applied: true, metadata_persistence: persisted.metadata_persistence });
+      }
+      progress('library_verification'); const tick = Date.now();
+      const base=request.library_verification_path.slice(0,request.library_verification_path.lastIndexOf('/'));
+      if(!state.library_readback_directory){const directory=await cli(request.helper_path,{action:'create_readback_directory',destination:base+'/'+request.run_id+'_'+Date.now()+'_'+Math.random().toString(36).slice(2)});save({library_readback_directory:directory.path});}
+      const parent=state.library_readback_directory;
+      let prepared = data(await tools.mcp__codex_apps__library_prepare_materialize({ items: [{ library_file_id: state.library.library_file_id, file_id: state.library.file_id, file_name: state.library.file_name }], destination: { directory: parent } }));
+      let transfer = prepared.transfers?.[0];
+      if (!transfer || transfer.library_file_id !== state.library.library_file_id || transfer.file_id !== state.library.file_id) fail('library_transfer_identity_mismatch');
+      if (transfer.workspace_path && !await present([transfer.workspace_path])) {
+        prepared = data(await tools.mcp__codex_apps__library_prepare_materialize({ items: [{ library_file_id: state.library.library_file_id, file_id: state.library.file_id, file_name: state.library.file_name }], destination: { directory: parent } }));
+        transfer = prepared.transfers?.[0];
+        if (!transfer || transfer.library_file_id !== state.library.library_file_id || transfer.file_id !== state.library.file_id) fail('library_transfer_identity_mismatch');
+        if (transfer.workspace_path && !await present([transfer.workspace_path])) fail('materialized_path_not_consumer_local');
+      }
+      let local = transfer.workspace_path || parent+'/'+request.library_verification_path.slice(request.library_verification_path.lastIndexOf('/')+1);
+      const checked = await cli(request.helper_path, { action: 'materialize_library', transfer, destination: local,
+        library_file_id: state.library.library_file_id, file_id:state.library.file_id, readback_directory:parent, source_path:downloaded.path, version: state.library.current_version_number,
+        expected_sha256: state.sha256, size_bytes: state.size_bytes, inspect_bytes: 0 });
+      if (checked.sha256 !== state.sha256 || checked.size_bytes !== state.size_bytes || checked.path !== local) fail('library_integrity_mismatch');
+      save({ library_verified: checked.sha256 === state.sha256, timing: { ...state.timing, library_verification: (Date.now() - tick) / 1000 } });
+    }
+    const receipt = { status: 'verified', run_id: request.run_id, mode: request.mode, path: downloaded.path,
+      artifact_id: state.artifact_id, sha256: state.sha256, size_bytes: state.size_bytes,
+      inspection: { kind: downloaded.inspection.kind, prefix_bytes: downloaded.inspection.prefix_bytes, truncated: downloaded.inspection.truncated },
+      library: state.library ? { library_file_id: state.library.library_file_id, file_id: state.library.file_id, version: state.library.current_version_number,
+        bytes_verified: state.library_verified, metadata_persistence: state.metadata_persistence } : null,
+      timing_seconds: { ...state.timing, local: downloaded.timing_seconds, invocation_total: (Date.now() - started) / 1000 } };
+    save({ phase: 'complete', receipt }); text(receipt);
+  }
+} catch (error) {
+  const receipt = { status: 'incomplete', run_id: request?.run_id, phase: state.phase,
+    error_code: error.pipelineCode || 'tool_or_runtime_failed', runtime_error_type:/^[A-Za-z]{1,40}$/.test(error.name)?error.name:undefined, hash_job_id: state.hash_job_id,
+    transfer_job_id: state.transfer_job_id, library_file_id: state.library?.library_file_id, cli_session_id:state.cli?.session_id, acquisition_owner:load(lockKey)?.owner, acquisition_session_id:load(lockKey)?.cli?.session_id, artifact_scan_cursor:state.artifact_scan_cursor,
+    ...(state.network_diagnostics ? { network_diagnostics: state.network_diagnostics } : {}) };
+  if(lockHeld)save({ last_receipt: receipt, receipt:null }); text(receipt);
+} finally {
+  if(lockHeld&&!state.cli){try{await cli(request.helper_path,{action:'release_lock',destination:lockPath,owner})}catch(error){notify({run_id:request?.run_id,phase:'lock_release_incomplete',error_code:error.pipelineCode||'runtime_failed'})}}
+}

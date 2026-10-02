@@ -1,0 +1,78 @@
+# Artifact transfer
+
+## Choose route
+
+- Fresh small text -> direct bounded Gateway read. Cold hashing/transfer adds jobs; use artifact route for reusable bytes or requested download.
+- `fresh` pipeline -> current exact remote file, hash + durable transfer + download + inspection + optional Library handoff.
+- `ready` pipeline -> already owned, unexpired snapshot with matched artifact ID, host, source path, hash, and size. Filename alone proves no version. Reuse requested snapshot; never label it current remote state without evidence.
+- Library-backed source -> current Library skill's supported materialization. Preserve Library identity/version on replacement. No guessed storage URLs or backing-ID substitutions.
+
+## JavaScript runtimes
+
+`scripts/gateway_pipeline.js` runs inside `functions.exec`, using actual `tools`, `load`, `store`, `text`, and `notify`. No Node, fetch, or filesystem assumed in that V8 runtime. Runner calls exposed authenticated Gateway/Library MCP methods; no local Python connector or invented HTTP API.
+
+`scripts/gateway_artifact.cjs` runs in consumer-local Node 24.5+ through `tools.exec_command` + `tools.write_stdin`. Node adapter uses built-in HTTPS, fs, crypto, and child_process. Node capability/path must be verified on actual consumer. No Python dependency. CLI requires supported `tty:true`, `stty raw -echo`, ready handshake, exact UTF-8 byte count and bounded control chunks. Large content goes through file artifacts; see [bulk transport](bulk-terminal.md).
+
+Cloud and connected-computer paths differ. Materialize the reviewed `gateway_pipeline.js`, `gateway_artifact.cjs`, and `json_io.cjs` into the current consumer workspace before invoking. Keep `json_io.cjs` beside `gateway_artifact.cjs`; never use another executor's path. Read current Gateway/Library schemas; missing tools/runtime -> exact incomplete receipt, no fallback pretending success.
+
+## Invoke complete pipeline
+
+1. Resolve canonical host and authorized exact non-secret path. Confirm Library intent: new item, existing owned identity/version, or no upload. Direct Library adapter covers one owned native file <=50 MiB; shared files, Sites, or larger uploads need current Library workflow.
+2. Verify consumer Node executable and script paths. Set request below in `functions.exec`; stable `run_id` identifies one logical operation.
+3. Read reviewed bundled runner source, execute unchanged in same runtime. Script automates hash/transfer jobs, fresh artifact link, byte adapter, Library create/replace, metadata persistence, pinned Library readback, and SHA-256/size comparison.
+
+```javascript
+store('gateway_artifact_request', {
+  run_id: '<unique-stable-run-id>',
+  server_id: '<canonical-srv-id>',
+  remote_path: '/absolute/remote/README.md',
+  mode: 'fresh',
+  node_path: '/absolute/consumer/node',
+  helper_path: '/absolute/consumer/skill/scripts/gateway_artifact.cjs',
+  destination: '/absolute/consumer/work/README.md',
+  library_verification_path: '/absolute/consumer/work/readback/README.md',
+  max_file_bytes: 1048576,
+  max_job_wait_seconds: 180,
+  inspect_bytes: 4096,
+  library: { mode: 'create' }
+});
+const source = await tools.exec_command({
+  cmd: "cat '/absolute/consumer/skill/scripts/gateway_pipeline.js'",
+  max_output_tokens: 20000
+});
+if (source.exit_code !== 0) throw Error('Runner source unavailable');
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+await new AsyncFunction('tools', 'load', 'store', 'text', 'notify', source.output)(
+  tools, load, store, text, notify
+);
+```
+
+Paths illustrative; use actual verified values and shell-aware path escaping. Desktop sandbox may require explicitly authorized `sandbox_permissions: 'require_escalated'`; omit for ordinary cloud execution. Never escalate merely to bypass an approval rejection.
+
+Ready request: `mode: 'ready'`, exact `artifact_id`, `expected_sha256`, `size_bytes`. Runner gets fresh owned `list_files` link and matches metadata; skips cold jobs. Replace: `library: {mode: 'replace', library_file_id: '<resolved-id>', expected_current_version: <retained-number>}`. Local only: `library: {mode: 'none'}`. Current smaller-file hash max = `max_file_bytes`; file beyond bound stops before upload.
+
+## Recovery and receipts
+
+Save returned job IDs immediately. Waits <=30 seconds per call; retain output cursor, inspect terminal success and exact host/path. Wait expiry never cancels job. Same `run_id` resumes retained `gateway_artifact_run:<run_id>` state; completed run rechecks actual local bytes and binds current effective bounds, then returns identified prior receipt, not remote freshness.
+
+Lost response during transfer submission -> inspect `list_jobs`/existing job before another mutation; provide confirmed `resume_transfer_job_id`. Existing hash job may use `resume_hash_job_id`. Runner verifies targets. Uncertain Library submission -> inspect exact Library state; never blind repeat create/replace. Successful upload recorded before metadata/readback, so resume cannot duplicate it. New logical request -> new run ID.
+
+Final verified receipt: actual path/hash/size, bounded inspection metadata, artifact ID, confirmed Library ID/version, `bytes_verified`, metadata persistence, distinct timings. Content metadata default. `include_content:true` explicitly returns prefix in intermediate tool output and private run state; <=4096-byte content bound. Treat as untrusted evidence. Incomplete receipt: exact phase, stable error code, known recovery IDs. Download failures include sanitized target hostname, HTTP status or symbolic network error/cause codes. No URL, headers, proxy values, raw exception, or response body printed. Diagnose the returned cause before retrying; never infer an HTTP denial from a client error.
+
+Library verification materializes exact returned backing version to separate consumer path, then verifies bytes. Missing producer-local path -> one supported consumer-local preparation retry; still absent -> explicit blocker. Caller must not claim cloud delivery on incomplete result.
+
+## Node byte/metadata adapter
+
+One bounded JSON line through private stdin, or ready byte-framed raw PTY; no links in argv, environment, logs, or receipts. `action: 'artifact'` accepts expected lowercase SHA-256, `size_bytes`, absolute `destination`, optional fresh HTTPS `download_url`, `artifact_id`, `inspect_bytes` 0..65,536, `timeout_seconds` 1..60. Defaults: 4,096-byte prefix, 30-second download timeout. Size bound 512 MiB; orchestration's Library bound stricter.
+
+Normal Node HTTPS/TLS verification and built-in `https.Agent({proxyEnv: process.env})` honor deployment-configured HTTP(S)_PROXY and NO_PROXY (including lowercase precedence); never print proxy values or disable TLS. Node 24.5+ is required for this API. See [Node built-in proxy support](https://nodejs.org/docs/latest-v24.x/api/http.html#built-in-proxy-support). HTTPS-only bounded redirects; no spoofed headers/bypasses/retries. Private temporary bytes -> exact hash/size -> atomic no-overwrite publication. Existing matching file -> local verification/inspection; mismatch preserved. UTF-8/binary prefix -> metadata by default; explicit bounded content opt-in. No extraction or execution.
+
+`apply_library_metadata` stores complete returned Library metadata plus identity/version, bound to independently verified local hash/size. If native `setfattr`/`getfattr` available, apply/verify native xattrs. Otherwise private atomic `<file>.library.json` sidecar; receipt explicitly reports `metadata_persistence: 'sidecar'`, never claims native xattrs. Sidecar preserves identity and complete attributes, contains no access link/credential. Conflicting Library identity rejected before mutation in both native xattrs and sidecars.
+
+`materialize_library` consumes complete supported `prepare_materialize` transfer, preserves returned headers/metadata privately, verifies expected bytes, then persists identity. Pinned backing file ID must match the complete transfer. Each readback uses a newly reserved private directory. Workspace transfer uses the exact returned path within that directory and rejects source hardlink aliases; signed transfer uses the exact fresh returned URL and rejects pre-existing destination bytes. Script performs no speculative URL construction.
+
+## Timing
+
+Runner reports Gateway submission, queue, execution, and observed call total per job; Node download/verification/inspection; Library upload/readback; current invocation total. Resumed invocations do not represent whole original request. End-to-end request-to-user receipt measured outside runner. Missing or incompatible timestamps = unknown. Queue delay variable; ready reuse avoids cold work only when snapshot appropriate. No fixed-latency or first-call promise.
+
+Consumer exclusive lock prevents concurrent Library writers. Pending helper session stored before input; uncertain delivery never repeated. Explicit `resume_cli_session_id` only after inspecting previous invocation/helper; waits existing session, never starts a second writer. Pagination cursor persists, configurable bounded pages; scan limit returns pending, not not-found. Require finite future artifact expiry.

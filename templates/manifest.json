@@ -4511,7 +4511,7 @@
       "source": "root/home/user/.agents/skills/gateway/SKILL.md.tmpl",
       "target": ".agents/skills/gateway/SKILL.md",
       "mode": "0600",
-      "sha256": "14a5da9082ef6712d84cf74df3fc8beabeab4cf9b21ab3a83bfccfc768747ced"
+      "sha256": "908b4a8ba1a90b1e9477898dc00e8a17b5465f0ffcf27d7520721a696a91810b"
     },
     {
       "source": "root/home/user/.agents/skills/gateway/agents/openai.yaml.tmpl",
@@ -4662,6 +4662,30 @@
       "target": ".config/easyllama/native/config/config.turboquant.yml.example",
       "mode": "0600",
       "sha256": "92734d94a3ddd3e114f7ea6e1cff6cf9db4aa682bc4acaa7e0defdc7a3388e85"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/references/artifact-transfer.md.tmpl",
+      "target": ".agents/skills/gateway/references/artifact-transfer.md",
+      "mode": "0600",
+      "sha256": "f14b7440d1d8799895aba21498b7f4b4415bd26405f86a4f63b0d4ad040bfb58"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_artifact.cjs.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_artifact.cjs",
+      "mode": "0700",
+      "sha256": "9bc2b10928092fb6dc111e42265f1d460796c816609035384d407d25f858b506"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/gateway_pipeline.js.tmpl",
+      "target": ".agents/skills/gateway/scripts/gateway_pipeline.js",
+      "mode": "0700",
+      "sha256": "ca2a2a91d0a58ebab128428b683e154b1519dc868f2bc0684defe553a6e165eb"
+    },
+    {
+      "source": "root/home/user/.agents/skills/gateway/scripts/json_io.cjs.tmpl",
+      "target": ".agents/skills/gateway/scripts/json_io.cjs",
+      "mode": "0700",
+      "sha256": "ed6cc54e0c5c626fe8000fce776613b33c0998abb78e9bf8cde810df0e098f4c"
     }
   ],
   "symlinks": [

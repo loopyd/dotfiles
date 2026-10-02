@@ -1,6 +1,6 @@
 ---
 name: gateway
-description: "Operate registered hosts through Gateway SSH. Use when user requests Gateway access, remote file reads, commands, or authorized host changes through Gateway. Reuse verified targets for bounded reads; track durable jobs and separate queue time from execution."
+description: "Operate registered hosts through Gateway SSH. Use when user requests Gateway access, remote file reads, artifact transfers, commands, or authorized host changes through Gateway. Reuse verified targets for bounded reads; track durable jobs and separate queue time from execution."
 ---
 
 # Gateway
@@ -16,6 +16,7 @@ Use connected Gateway tools and current schemas. Names below refer to Gateway to
 ## Route work
 
 - Small reads -> direct [bounded Gateway batch](#fast-bounded-read).
+- Requested file bytes or ready snapshots -> [artifact transfer](references/artifact-transfer.md): complete JavaScript hashing/transfer/verification/Library pipeline, bounded inspection, and recovery.
 - Authorized persistent-project mutations may delegate to Pi through Gateway + Herdr. Follow `$herdr` skill. Create separate pane with verified repository cwd, explicit session/pane targets, preserved focus. Never interrupt unrelated panes or expand requested scope.
 - User's requested model in every delegated directory: 9router/GPT combo. Open Pi `/model` list; select exact matching listed entry and verify active model before coding prompt. Discover actual identifier; never invent one or claim unverified selection. Missing/ambiguous entry -> report blocker before delegation work.
 - Give Pi repository, task, allowed scope, existing dirty-work constraints, and validation criteria. Inspect resulting diff and checks before reporting completion; submitted prompt or idle agent alone proves no result.
@@ -36,7 +37,7 @@ Verified Linux shell example, replace placeholders with exact known quoted paths
   "command": "head -c 8192 -- '/absolute/project/README.md' '/absolute/project/project-context.md'",
   "privilege": "none",
   "timeout_seconds": 30,
-  "wait_seconds": 45
+  "wait_seconds": 30
 }
 ```
 
