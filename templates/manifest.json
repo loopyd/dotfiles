@@ -4553,7 +4553,7 @@
       "source": "root/home/user/.config/easyllama/deployment.json.tmpl",
       "target": ".config/easyllama/deployment.json",
       "mode": "0600",
-      "sha256": "537e8115e5975c787aa33bb471492056cbbbbb3369dcc8fc291780c75748d236"
+      "sha256": "3802d8729df1700e70ce499029f8463d7fcea28b1641be3314d7a5d57c85ce38"
     },
     {
       "source": "root/home/user/.config/easyllama/native/chat_template/qwen3.5.jinja.tmpl",
