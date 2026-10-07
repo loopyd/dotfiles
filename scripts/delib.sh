@@ -247,7 +247,7 @@ lifecycle_check() {
             [[ "$("${HOME}/.local/bin/alacritty" --version)" == "alacritty 0.18.0-dev (${REVISION:0:8})" ]] || { err 'Pinned user Alacritty development build is missing'; return 1; } ;;
         herdr) python3 "${SCRIPT_DIR}/terminal.py" check-herdr; "${HOME}/.local/bin/herdr" --version ;;
         hindsight) python3 "${SCRIPT_DIR}/hindsight.py" preflight; python3 "${SCRIPT_DIR}/hindsight.py" health ;;
-        tools) python3 "${SCRIPT_DIR}/packages.py" check ;;
+        tools) python3 "${SCRIPT_DIR}/packages.py" check; python3 "${SCRIPT_DIR}/codex_plugins.py" check ;;
         router) python3 "${SCRIPT_DIR}/router.py" check ;;
         easyllama) python3 "${SCRIPT_DIR}/easyllama.py" status ;;
         tailscale) python3 "${SCRIPT_DIR}/tailscale.py" check ;;

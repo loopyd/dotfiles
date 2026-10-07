@@ -250,7 +250,7 @@ def capture(args):
     exclusions = Counter()
     links = []
     roots = ['.config', '.agents', '.pi/agent/agents', '.codex/agents', '.codex/skills', '.codex/rules', '.local/bin', '.local/share/applications', '.local/share/desktop-directories']
-    fixed = [*ROOT_FILES, '.codex/config.toml', '.codex/hooks.json', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.local/lib/dotfiles/hindsight-hook.mjs', '.local/lib/dotfiles/sudo-askpass', '.cargo/env', '.rustup/settings.toml']
+    fixed = [*ROOT_FILES, '.pi/agent/settings.json', '.pi/agent/models.json', '.pi/agent/pi-vcc-config.json', '.codex/config.toml', '.codex/hooks.json', '.codex/context-gardener-compact-prompt.md', '.codex/herdr-agent-state.sh', '.codex/AGENTS.md', '.hindsight/config', '.hindsight/coding-agent.json', '.local/lib/dotfiles/hindsight-hook.mjs', '.local/lib/dotfiles/sudo-askpass', '.cargo/env', '.rustup/settings.toml']
     candidates = [home / name for name in fixed if (home / name).exists()]
     for prefix in roots:
         base = home / prefix
@@ -350,7 +350,7 @@ def capture(args):
     (output / 'templates').mkdir(parents=True, exist_ok=True)
     example = {name: None for name in sorted(used) if name not in {'HOME', 'USER', 'UID', 'GID'}}
     (output / 'templates/values.example.json').write_text(json.dumps(example, indent=2) + '\n')
-    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.config/blender', '.config/ghidra', '.config/REAPER', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi runtime, sessions and installed packages (authored agents captured separately)']}
+    manifest = {'format': 1, 'files': entries, 'symlinks': links, 'excluded_file_counts': dict(exclusions), 'excluded_roots': ['.9router/auth', '.9router/db (configuration tables exported separately)', '.9router/logs', '.9router/runtime', '.codex/auth.json', '.codex/sessions', '.codex/memories', '.codex/plugins/cache', '.codex/plugins/data', '.codex/context-gardener-data', '.context-gardener', '.config/blender', '.config/ghidra', '.config/REAPER', 'Documents/patchbay_persist.xml', 'Documents/pipewirepatch.qpwgraph', '.local/state', '.local/share/hindsight', '.local/share/keyrings', '.local/share/mise', '.local/share/uv', '.hindsight/coding-agents (installed runtime)', '.ssh', '.gnupg', '.cache', '.pi runtime, sessions and installed packages (authored agents captured separately)']}
     (output / 'templates/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(json.dumps({'templates': len(entries), 'variables': len(example), 'unit_links': len(links), 'excluded_file_counts': dict(exclusions), 'private_values': str(values_path)}, indent=2))
 

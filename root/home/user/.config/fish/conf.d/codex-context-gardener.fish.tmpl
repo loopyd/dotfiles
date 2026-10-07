@@ -1,0 +1,7 @@
+set -l gardener_config "$HOME/.config/environment.d/60-codex-context-gardener.conf"
+if test -r "$gardener_config"
+    for line in (string match -r '^CONTEXT_GARDENER_[A-Z_]+=[0-9]+$' < "$gardener_config")
+        set -l setting (string split -m 1 '=' -- "$line")
+        set -gx $setting[1] $setting[2]
+    end
+end

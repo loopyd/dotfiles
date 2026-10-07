@@ -173,6 +173,34 @@ Successful component installs record their declared payload files and packages i
 - `scripts/8bitdo.sh` provides optional controller setup.
 - `scripts/openspec.sh` installs the global OpenSpec agent integration for Pi and Codex (details below).
 
+### Codex Context Gardener
+
+The default Codex model is GPT-6.1 Sol at `xhigh`. Native compaction starts at 220,000 total tokens, leaving headroom within Codex's currently advertised 272,000-token window. This uses the Codex model catalog's limit. The public API model's larger window does not override that catalog. Each tool result has an 8,000-token history limit, and `~/.codex/context-gardener-compact-prompt.md` configures a continuation checkpoint prompt.
+
+`templates/codex-plugins.json` pins [Context Gardener](https://github.com/nimdalkr/codex-context-gardener) 0.1.0 to commit `9bb867679a0f547b8a2f769aa9306554f43e6cf2`, with checksums for every installed plugin file and hashes for six reviewed hook definitions. `scripts/tools.sh install|update` restores that pin after installing Codex. To restore just the plugin after rendering dotfiles:
+
+```bash
+python3 scripts/codex_plugins.py sync --dry-run
+python3 scripts/codex_plugins.py sync
+python3 scripts/codex_plugins.py check
+```
+
+The captured config trusts only the six reviewed definitions. Changed definitions require another review through `/hooks`. `python3 scripts/codex_plugins.py trust` applies the captured review through Codex's native API after checking every pinned file and hook hash. It rejects changed source files or definitions, preserves other hook trust, and never bypasses the hook trust policy. Existing marketplace pins that differ from the lock require explicit review before replacement.
+
+The single settings file, `~/.config/environment.d/60-codex-context-gardener.conf`, configures desktop launches and is loaded by Bash and Fish. Restart Codex from a new terminal after installation so its launcher inherits these values:
+
+| Setting | Value |
+| --- | ---: |
+| Mask tool responses at | 32,768 bytes |
+| Preview limit | 1,800 characters |
+| Checkpoint injection limit | 6,000 characters |
+| Successful ledger entries | 40 |
+| Unresolved error entries | 20 |
+| Observation masking | Enabled |
+| Forced subagent handoffs | Disabled |
+
+Global Codex instructions apply `$context-gardener:manage-context` to long tasks. The skill maintains `.context-gardener/VCC.md`, and the hooks snapshot and reload it around compaction. Stored observations remain private local runtime data under Codex's `PLUGIN_DATA`; they are excluded from capture alongside the plugin cache. `.context-gardener/` is ignored by Git. Context Gardener complements native compaction and Hindsight; it does not compile transcripts or replace Codex's compaction algorithm.
+
 ### Shared skills and agents
 
 `root/home/user/.agents/skills/` captures the installed shared skills, including bundled scripts, reference documents and TSV templates. Skill contents are preserved rather than rewritten during sync. The collection includes `drive-surface`, which routes surface verification by surface (browser/Electron/web UI through the `playwright` MCP tools, CLI/TUI through the `herdr` skill), and `figure-it-out`, which designs a bespoke playbook when no narrower one fits.
@@ -181,7 +209,9 @@ Successful component installs record their declared payload files and packages i
 
 `~/.pi/agent/settings.json` installs `npm:@nguyenquangthai/pi-ask@0.2.1` globally at that pinned version. The extension adds `ask_user_question`, a keyboard-driven terminal questionnaire with up to four questions and a review tab. It registers only in Pi's TUI, so run `/reload` or restart Pi before it is available.
 
-Compaction is enabled with `keepRecentTokens: 24000` for every model. The `ninerouter/qwen-combo` override sets `reserveTokens: 131072`, so Pi compacts above 131072 tokens even though the model declares a 262144-token context window. `ninerouter/gpt-combo` keeps its own 128000-token reserve; other models are unchanged and use the base 32768-token reserve.
+Compaction is enabled with `keepRecentTokens: 24000`. The `ninerouter/qwen-combo` override sets `reserveTokens: 131072`, so Pi compacts above 131072 tokens within its 262144-token window. For GPT-6.1 Sol, `ninerouter/gpt-combo` reserves 210000 tokens in its 1050000-token window and compacts above 840000 tokens. Direct `openai-codex/gpt-6.1-sol` uses Pi's bundled 272000-token window, reserves 52000 tokens, and compacts at about 220000 tokens. Other models use the base 32768-token reserve. Revisit the direct-provider reserve if Pi's catalog changes its context window.
+
+Pi installs `npm:@sting8k/pi-vcc@0.10.0`, following the [upstream installation instructions](https://github.com/sting8k/pi-vcc#install). `pi-vcc-config.json` enables algorithmic VCC compaction for `/compact`, automatic compaction, and `/pi-vcc` across all Pi providers, including `openai-codex`. Run `/reload` after installation. Use `/pi-vcc keep:1` to compact manually, and `vcc_recall` or `/pi-vcc-recall` to retrieve older session entries. For the gateway GPT-6.1 Sol profile, launch `pi --model ninerouter/gpt-combo`. Direct Codex models require Pi's own `/login openai-codex`, followed by `/model openai-codex/gpt-6.1-sol`. The pinned upstream package is a Pi extension and supplies no standalone Codex CLI wrapper.
 
 `scripts/skills.sh` wraps `scripts/skills.py`, which refreshes only those two sources, `~/.agents/skills` and `~/.pi/agent/agents`, without recapturing unrelated configuration. It scrubs secrets into private value markers and rejects symlinks, binaries and unsafe captures before writing anything:
 

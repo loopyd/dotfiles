@@ -43,6 +43,8 @@ main() {
         options+=(--include-retired-pi)
     fi
     python3 "${SCRIPT_DIR}/packages.py" "${LIFECYCLE_ACTION}" "${options[@]}"
+    export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:${PATH}"
+    python3 "${SCRIPT_DIR}/codex_plugins.py" sync
 }
 
 lifecycle_dispatch tools "$@"
