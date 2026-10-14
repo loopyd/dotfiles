@@ -3353,7 +3353,7 @@
       "source": "root/home/user/.config/tailscale/network.json.tmpl",
       "target": ".config/tailscale/network.json",
       "mode": "0600",
-      "sha256": "2de72e7667a401d33bd30f96d150ddefdc8ce925fe9074522bd38a1bff299c36"
+      "sha256": "866d50a25ff4d64ffa706aa25c62e3eddcdf762e51fdb41ab759a6235dc3058d"
     },
     {
       "source": "root/home/user/.config/tailscale/default.env.tmpl",
