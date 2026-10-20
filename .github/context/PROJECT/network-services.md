@@ -1547,6 +1547,77 @@ and evidence: `~/.local/state/9router/pr4396/`, including a SQLite backup with
 `integrity_check` passing, previous build receipt and cutover result. No database
 restore or networking/provider configuration change was part of this cutover.
 
+### Router update to v0.5.104 (2026-10-19)
+
+The fork was advanced from `v0.5.91` to upstream `v0.5.104` (108 commits, 300
+changed files) with one merge commit and no rebase, so the previous history stays
+intact. Two of the fork's three patches are now upstream and are no longer
+fork-local: `#4473` (Codex CLI identity `0.159.0`) and `#4488` (GPT-6.1 Sol,
+including the `2.50` per 1M cache-write price). The only remaining fork-local
+patch is upstream PR `#4396`, function-tool strict semantics on every Responses
+route (`open-sse/translator/concerns/toolStrict.js` plus its four executor call
+sites and two request translators).
+
+Merge conflicts were three files: `open-sse/providers/pricing.js` (took upstream,
+which already carries the `gpt-6.1-sol` cache-write fix and newer GPT-6/Sol/Luna
+rows), `open-sse/executors/codex.js` (kept `readToolStrict`/`restoreToolStrict`
+over upstream's boolean-only re-attach, so a client `strict: null` opt-out still
+survives the tool rebuild) and `open-sse/executors/opencode-zen.js` (kept both the
+new upstream `isOpencodeFreeTierModel` import and the fork's strict imports).
+
+One upstream gap was fixed in the fork: `v0.5.104` lists `gpt-6.1-sol` in the
+Codex registry but not in `PROVIDER_CAPABILITIES.codex`, so it fell through to the
+global `*gpt-6*` glob and advertised the 1.05M API window on a ChatGPT backend
+that truncates lower. It is now pinned to the same `272000`/`128000` window as
+its gpt-6 siblings, which the fork test `tests/unit/codex-gpt6-lite.test.js`
+already asserted. The upstream note that Codex OAuth windows are lower than the
+API's 1.05M is the rationale; understating the window is the safe direction.
+
+Upstream `Dockerfile` is byte-identical between `v0.5.91` and `v0.5.104`, and no
+top-level directories were added, so the vendored `scripts/9router.Dockerfile`
+was kept unchanged (`dockerfile_sha256` unchanged). v0.5.104 adds `enquirer` and
+the optional `@aws-sdk/credential-providers`; the builder still runs `npm install`,
+so optional dependencies are present. The AWS SDK is only imported lazily for
+Bedrock connections using profile/SSO mode, which this host does not use.
+
+Verification before cutover: the fork's vitest run was compared against a clean
+`v0.5.104` worktree. Both runs fail the same 89 pre-existing upstream assertions;
+the only diffs are the fixed `gpt-6.1-sol` capability expectation and two
+`golden-url-header` minimax snapshot mismatches that also fail on the baseline
+because `X-Mavis-Session-Id` is a fresh `randomUUID()`. The 106 assertions in
+`responses-tool-strict`, `codex-gpt6-lite`, `codex-registry-model-routing`,
+`codex-image-models` and `gpt-6-context-window` all pass. `vitest` is not declared
+in upstream `devDependencies`; it was installed with `--no-save` for the run and
+removed afterwards.
+
+Deployed `v0.5.104-fork-f1e82492` from fork revision
+`f1e824928a61f89894c356c1ab1fab763b1ee15e` (source archive SHA-256
+`463495903ceb21f50dea8ffb59223137a12c573c848b93827d5bff6d0656eaec`, verified twice
+from two independent downloads) in `scripts/router-build.json`. Image
+`sha256:2677739d…`. The cutover was one unattended run: verify the build receipt,
+rehearse the candidate in a separate container on port `20129` against a snapshot
+of the live database, refresh the pre-update SQLite backup, retag `9router:local`,
+run the maintained `bash scripts/router.sh update`, then `router.py check` plus
+inference probes, and finally clean up. `router.py check` passes with **81
+authenticated models** (up from 75), required Qwen models present and
+`cx/gpt-6.1-sol` exposed. `ds-combo` answered `READY`; `gpt-combo` reached the
+Codex backend and relayed a provider `429 usage limit has been reached (reset
+after 30m)`, which is account quota, not a gateway defect. No database schema
+change was observed on the rehearsal copy, so no restore was needed.
+
+The rehearsal container, its data snapshot, the temporary baseline worktree and
+the test-only `node_modules` were removed. Retained: rollback alias
+`9router:rollback-pre-v0.5.104-fork-f1e82492` (previous image
+`sha256:37c1830a…`), the pre-update SQLite backup with `integrity_check` == `ok`,
+the previous build receipt and the rehearsal/cutover reports under
+`~/.local/state/9router/update-v0.5.104-fork-f1e82492/`. Rollback is
+`docker tag 9router:rollback-pre-v0.5.104-fork-f1e82492 9router:local` followed by
+`systemctl --user restart 9router.service`; restore the recorded SQLite backup only
+if a future check fails on database state, and stop the gateway first. The older
+pre-update snapshots under `~/.local/state/9router/` (`cutover-2026…`, `fork45f79d18`,
+`pr4396`, `update-v0.5.91`, `upgrades/`, about 8 GB) are historical and were left
+in place.
+
 ### Router fork migration to loopyd/9router-custom (2026-09-30)
 
 The build source moved from an unmerged upstream PR pin to the maintained

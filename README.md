@@ -173,33 +173,9 @@ Successful component installs record their declared payload files and packages i
 - `scripts/8bitdo.sh` provides optional controller setup.
 - `scripts/openspec.sh` installs the global OpenSpec agent integration for Pi and Codex (details below).
 
-### Codex Context Gardener
+### Codex configuration
 
-The default Codex model is GPT-6.1 Sol at `xhigh`. Native compaction starts at 220,000 total tokens, leaving headroom within Codex's currently advertised 272,000-token window. This uses the Codex model catalog's limit. The public API model's larger window does not override that catalog. Each tool result has an 8,000-token history limit, and `~/.codex/context-gardener-compact-prompt.md` configures a continuation checkpoint prompt.
-
-`templates/codex-plugins.json` pins [Context Gardener](https://github.com/nimdalkr/codex-context-gardener) 0.1.0 to commit `9bb867679a0f547b8a2f769aa9306554f43e6cf2`, with checksums for every installed plugin file and hashes for six reviewed hook definitions. `scripts/tools.sh install|update` restores that pin after installing Codex. To restore just the plugin after rendering dotfiles:
-
-```bash
-python3 scripts/codex_plugins.py sync --dry-run
-python3 scripts/codex_plugins.py sync
-python3 scripts/codex_plugins.py check
-```
-
-The captured config trusts only the six reviewed definitions. Changed definitions require another review through `/hooks`. `python3 scripts/codex_plugins.py trust` applies the captured review through Codex's native API after checking every pinned file and hook hash. It rejects changed source files or definitions, preserves other hook trust, and never bypasses the hook trust policy. Existing marketplace pins that differ from the lock require explicit review before replacement.
-
-The single settings file, `~/.config/environment.d/60-codex-context-gardener.conf`, configures desktop launches and is loaded by Bash and Fish. Restart Codex from a new terminal after installation so its launcher inherits these values:
-
-| Setting | Value |
-| --- | ---: |
-| Mask tool responses at | 32,768 bytes |
-| Preview limit | 1,800 characters |
-| Checkpoint injection limit | 6,000 characters |
-| Successful ledger entries | 40 |
-| Unresolved error entries | 20 |
-| Observation masking | Enabled |
-| Forced subagent handoffs | Disabled |
-
-Global Codex instructions apply `$context-gardener:manage-context` to long tasks. The skill maintains `.context-gardener/VCC.md`, and the hooks snapshot and reload it around compaction. Stored observations remain private local runtime data under Codex's `PLUGIN_DATA`; they are excluded from capture alongside the plugin cache. `.context-gardener/` is ignored by Git. Context Gardener complements native compaction and Hindsight; it does not compile transcripts or replace Codex's compaction algorithm.
+The default Codex model is GPT-6.1 Sol at `xhigh`. Native compaction starts at 220,000 total tokens. Each tool result has an 8,000-token history limit.
 
 ### Shared skills and agents
 
@@ -329,7 +305,7 @@ For a replacement host, check out the source commit recorded in rendered `~/.con
 
 `scripts/router.sh` and `scripts/tailscale.sh` expose the same lifecycle actions as other components; bootstrap selects them with `--with-network` or `--only tailscale,router`. The Compose definition runs a locally built image (`9router:local`), 2 CPUs, 4 GiB `/dev/shm` and the existing `~/.9router` data. Its backend is loopback-only `127.0.0.1:20128`; host Tailscale socket/binary mounts are removed and internal publication is set to `false`.
 
-The router image is never pulled from a floating upstream tag: `scripts/router.py build` uses the immutable revision and archive SHA-256 in `scripts/router-build.json`, currently PR #4396 atop v0.5.91, and builds with `scripts/9router.Dockerfile`, tagging `9router:<tag>` and `9router:local`. Install/update preserves this pin; `--tag TAG` explicitly overrides it with an upstream release, and `--force` rebuilds. Reuse requires a matching image and build receipt. The tag, revision, archive digest, image ID, Dockerfile hash and timestamp are recorded in `~/.local/state/9router/build.json`. The user unit is independent of EasyLlama: starting it latches onto an already-running `9router` container without recreating it, a stopped or absent managed container is reconciled from Compose first, and `systemctl --user restart 9router.service` stops and restarts the container. Retain a consistent private SQLite backup before `bash scripts/router.sh update`. Unlike that direct command, `bootstrap.sh update --only router` also selects Docker/NVIDIA, Tailscale and EasyLlama updates.
+The router image is never pulled from a floating upstream tag: `scripts/router.py build` uses the immutable revision and archive SHA-256 in `scripts/router-build.json`, currently the `loopyd/9router-custom` fork's merge of upstream v0.5.104 that keeps PR #4396, and builds with `scripts/9router.Dockerfile`, tagging `9router:<tag>` and `9router:local`. Install/update preserves this pin; `--tag TAG` explicitly overrides it with an upstream release, and `--force` rebuilds. Reuse requires a matching image and build receipt. The tag, revision, archive digest, image ID, Dockerfile hash and timestamp are recorded in `~/.local/state/9router/build.json`. The user unit is independent of EasyLlama: starting it latches onto an already-running `9router` container without recreating it, a stopped or absent managed container is reconciled from Compose first, and `systemctl --user restart 9router.service` stops and restarts the container. Retain a consistent private SQLite backup before `bash scripts/router.sh update`. Unlike that direct command, `bootstrap.sh update --only router` also selects Docker/NVIDIA, Tailscale and EasyLlama updates.
 
 Tailscale runs as the native root daemon on `koija.tailc28ab1.ts.net` with `tag:ssh`. `svc:ninerouter` / `tag:ninerouter` serves private HTTPS 443 to `127.0.0.1:20128`, and the dedicated Hindsight dashboard endpoint `https://hindsight.tailc28ab1.ts.net` proxies `127.0.0.1:9999` via native `svc:hindsight` / `tag:hindsight`. Use `https://ninerouter.tailc28ab1.ts.net/v1` as the API base, with DNS resolving to the captured Service VIPs. Only the stable native node is manually approved; no Funnel or userspace app node is used. The API and database are not published; the dashboard access key remains required. Startup uses native Serve without API credentials; ACLs and `autoApprovers` are unchanged. Clients 1.94 and newer use Service routes by default; older Linux clients need individually reviewed `accept-routes`.
 
