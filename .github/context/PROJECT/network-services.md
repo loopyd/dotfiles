@@ -1543,8 +1543,10 @@ unrelated cached dependencies is not acceptance evidence; its temporary links
 and copied dependency were removed.
 
 Rollback image: `9router:rollback-pre-pr4396` (unmodified v0.5.91). Private recovery
-and evidence: `~/.local/state/9router/pr4396/`, including a SQLite backup with
-`integrity_check` passing, previous build receipt and cutover result. No database
+and evidence: `~/.local/state/9router/pr4396/` (pruned 2026-10-19 with the other
+superseded snapshots; the image and receipt values recorded here remain valid),
+including a SQLite backup with `integrity_check` passing, previous build receipt
+and cutover result. No database
 restore or networking/provider configuration change was part of this cutover.
 
 ### Router update to v0.5.104 (2026-10-19)
@@ -1614,9 +1616,13 @@ the previous build receipt and the rehearsal/cutover reports under
 `docker tag 9router:rollback-pre-v0.5.104-fork-f1e82492 9router:local` followed by
 `systemctl --user restart 9router.service`; restore the recorded SQLite backup only
 if a future check fails on database state, and stop the gateway first. The older
-pre-update snapshots under `~/.local/state/9router/` (`cutover-2026…`, `fork45f79d18`,
-`pr4396`, `update-v0.5.91`, `upgrades/`, about 8 GB) are historical and were left
-in place.
+pre-update snapshots under `~/.local/state/9router/` (`cutover-2026…`,
+`fork45f79d18`, `pr4396`, `update-v0.5.91` and `upgrades/`, about 8 GB) were pruned
+on 2026-10-19 after this cutover was verified; this update's directory is the only
+retained database snapshot. The same day, `docker builder prune --all` reclaimed
+343 GB of build cache (none of it belongs to a running container or a tagged
+image). Rollback still depends only on the retained image tags, so pruning data
+snapshots and build cache does not narrow it.
 
 ### Router fork migration to loopyd/9router-custom (2026-09-30)
 
@@ -1640,10 +1646,12 @@ exposes `cx/gpt-6.1-sol`. A live `/v1/chat/completions` probe against
 `cx/gpt-6.1-sol` returned HTTP 200 (`model: gpt-6.1-sol`, content `ok`),
 confirming the 0.159.0 Codex identity clears the 400. Rollback alias
 `9router:rollback-pre-fork-45f79d18`
-points at the previous PR #4396 image. Private backup at
-`~/.local/state/9router/fork45f79d18/` (SQLite backup via the backup API,
-`integrity_check` ok, plus the previous receipt and image ID). No database
-restore, networking or provider-configuration change was part of this cutover.
+points at the previous PR #4396 image. Private backup was at
+`~/.local/state/9router/fork45f79d18/` — a SQLite backup via the backup API with
+`integrity_check` ok, plus the previous receipt and image ID — pruned on
+2026-10-19; only the image tags and the receipt values recorded here remain. No
+database restore, networking or provider-configuration change was part of this
+cutover.
 
 ### Router image update to v0.5.85 (2026-09-22)
 
@@ -1659,6 +1667,7 @@ regional mirrors this host's builds require), the `APP_VERSION` label
 `org.opencontainers.image.version`), and the dropped full `apk upgrade`.
 
 Recovery point: `~/.local/state/9router/upgrades/0.5.81-to-0.5.85-20260922T211059Z/`
+(pruned 2026-10-19 with the rest of `upgrades/`; the image tags remain)
 (`data.sqlite` via SQLite's backup API — `integrity_check` ok, 12 tables — plus
 `compose.yaml` and `image.txt`). `bash scripts/router.sh update --dry-run` was
 previewed; the build ran first as `update --no-start` so the running gateway kept
@@ -1746,8 +1755,9 @@ container is healthy, authenticated discovery preserves 66 models and both Qwen
 IDs, chat and embeddings pass, and local/Funnel dashboard routes still require
 login. The native npm binary
 is retained only for rollback; the versionless package restore no longer installs
-it. The private SQLite/launcher recovery point is under
-`~/.local/state/9router/cutover-20260910T205650Z/`. No upstream source was edited.
+it. The private SQLite/launcher recovery point was under
+`~/.local/state/9router/cutover-20260910T205650Z/` (pruned 2026-10-19). No upstream
+source was edited.
 
 Router uninstall stops its Compose project but preserves all data/configuration.
 For Tailscale removal and retained state, see [runtime lifecycle](#runtime-lifecycle).
