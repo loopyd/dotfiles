@@ -23,7 +23,7 @@ by Codex. Automatic ingestion is provided separately by the coding-agent integra
 ## Codex shared memory
 
 The official `@vectorize-io/hindsight-coding-agents` runtime is installed under
-`~/.hindsight/coding-agents/`, initially version 0.5.3, through its supported npx
+`~/.hindsight/coding-agents/`, minimum version 0.8.2, through its supported npx
 update path. It connects only to `http://127.0.0.1:8888` and uses the single
 `shared` bank across projects. Project tags/metadata retain provenance without
 creating separate banks. Settings live in `~/.hindsight/coding-agent.json`.
@@ -52,6 +52,19 @@ MCP initialization and bank routing were verified from two different workspaces.
 A synthetic Stop-hook transcript was retained, recalled and then deleted.
 Receipts and private pre-change backups are in `~/.local/state/hindsight/`.
 Restart Codex to load the new MCP connection, hooks and global instructions.
+
+## Pi compatibility
+
+Pi loads `~/.local/lib/dotfiles/hindsight-pi.mjs`, which imports the installed
+upstream runtime. Standalone Pi 1.4.0 can start a run with a custom message and
+no `prompt` field. Hindsight 0.8.2 assumes that field is a string. The adapter
+supplies an empty prompt for these events so memory injection still runs without
+treating automatic continuation text as a user request.
+
+The Hindsight installer registers this adapter after upstream Pi wiring. Runtime
+auto-updates leave the adapter intact. `scripts/hindsight.py wire-pi` repairs
+the registration without changing services. Restart Pi after installation to
+load the adapter.
 
 ## One-time Pi/docs migration
 

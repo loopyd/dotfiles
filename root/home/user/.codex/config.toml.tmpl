@@ -4,7 +4,6 @@ model_reasoning_effort = "xhigh"
 model_auto_compact_token_limit = 220000
 model_auto_compact_token_limit_scope = "total"
 tool_output_token_limit = 8000
-experimental_compact_prompt_file = "@@DOTFILES:HOME@@/.codex/context-gardener-compact-prompt.md"
 
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
@@ -69,28 +68,3 @@ command = "node"
 args = ["@@DOTFILES:HOME@@/.local/lib/dotfiles/hindsight-hook.mjs", "--mcp"]
 env = { HINDSIGHT_MCP_HARNESS = "codex" }
 
-[marketplaces.codex-context-gardener]
-source_type = "git"
-source = "https://github.com/nimdalkr/codex-context-gardener.git"
-ref = "9bb867679a0f547b8a2f769aa9306554f43e6cf2"
-
-[plugins."context-gardener@codex-context-gardener"]
-enabled = true
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:post_tool_use:0:0"]
-trusted_hash = "sha256:6a400d648b96e33fcb5d3434f8c9bf1d8736eeace8371d749525cb8662487d29"
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:pre_compact:0:0"]
-trusted_hash = "sha256:2b4a56caaa3cb6a7f93d2d881d72b787800d8694df45c7a8d8e8bcd7444469da"
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:post_compact:0:0"]
-trusted_hash = "sha256:b366e8815e947145e2754a146aabf82812ee0868a9423b5edd03116593002a64"
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:session_start:0:0"]
-trusted_hash = "sha256:ed9937303de34fc8d0307c8c3efebbecaa6dd28d1c9b4c58bccb5b79a0e38cbe"
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:subagent_start:0:0"]
-trusted_hash = "sha256:eed8309d4ed5ebde839673d4fd80521962f8d8b9093770ebaea7468a7c11d9b8"
-
-[hooks.state."context-gardener@codex-context-gardener:hooks/hooks.json:subagent_stop:0:0"]
-trusted_hash = "sha256:6e60ad878abcd5a33ce2a5f79d648cbdec75bad22c816171f115bbd454530c82"

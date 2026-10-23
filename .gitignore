@@ -64,7 +64,4 @@ values.local.json
 __pycache__/
 *.pyc
 
-# Context Gardener task state and evidence stay local.
-.context-gardener/
 /root/home/user/.codex/plugins/data/
-/root/home/user/.codex/context-gardener-data/

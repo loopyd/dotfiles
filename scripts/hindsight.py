@@ -283,7 +283,8 @@ def preflight():
     require(codex.get('features', {}).get('hooks') is True, 'Restore Codex hook configuration first')
     require((home / '.pi/agent/skills/hindsight-coding-agent/SKILL.md').is_file(), 'pi harness skill missing; run scripts/hindsight.sh update')
     pi_settings = json.loads((home / '.pi/agent/settings.json').read_text())
-    require(any('coding-agents/dist/pi.js' in entry for entry in (pi_settings.get('extensions') or [])), 'pi extension not registered in ~/.pi/agent/settings.json; run scripts/hindsight.sh update')
+    require(str(home / '.local/lib/dotfiles/hindsight-pi.mjs') in (pi_settings.get('extensions') or []), 'pi compatibility adapter not registered; run scripts/hindsight.sh update')
+    require((home / '.local/lib/dotfiles/hindsight-pi.mjs').is_file(), 'pi compatibility adapter missing; run scripts/hindsight.sh update')
     verify_services(compose_services(home))
     for relative in ['.local/share/hindsight/postgres', '.local/share/hindsight/cache']:
         require((home / relative).is_dir(), 'Render persistent directory first: ' + relative)
@@ -313,6 +314,24 @@ def health():
     raise ValueError('Hindsight did not become healthy/authenticated; inspect user service logs (no credentials printed)')
 
 
+def wire_pi():
+    home = Path.home()
+    settings_path = home / '.pi/agent/settings.json'
+    settings = json.loads(settings_path.read_text())
+    extensions = settings.get('extensions', [])
+    require(isinstance(extensions, list), 'Pi extensions must be a list')
+    wrapper = home / '.local/lib/dotfiles/hindsight-pi.mjs'
+    direct = home / '.hindsight/coding-agents/dist/pi.js'
+    settings['extensions'] = [entry for entry in extensions if not (
+        isinstance(entry, str) and Path(entry).expanduser() in {wrapper, direct})]
+    settings['extensions'].append(str(wrapper))
+    wrapper.parent.mkdir(parents=True, exist_ok=True)
+    wrapper.write_text((REPO / 'root/home/user/.local/lib/dotfiles/hindsight-pi.mjs.tmpl').read_text())
+    wrapper.chmod(0o644)
+    private_write(settings_path, json.dumps(settings, indent=2) + '\n')
+    print('Pi Hindsight compatibility adapter installed and registered')
+
+
 def runtime(minimum):
     root = Path.home() / '.hindsight/coding-agents'
     path = root / 'package.json'
@@ -321,13 +340,13 @@ def runtime(minimum):
     version = json.loads(path.read_text()).get('version', '')
     if not re.fullmatch(r'\d+\.\d+\.\d+', version):
         return False
-    return tuple(map(int, version.split('.'))) >= tuple(map(int, minimum.split('.'))) and all((root / 'dist' / name).is_file() for name in ['installer.js', 'mcp-server.js', 'codex-hook.js'])
+    return tuple(map(int, version.split('.'))) >= tuple(map(int, minimum.split('.'))) and all((root / 'dist' / name).is_file() for name in ['installer.js', 'mcp-server.js', 'codex-hook.js', 'pi.js'])
 
 
 def main():
     parser = argparse.ArgumentParser(description='Hindsight validation and pinned upstream image build')
-    parser.add_argument('command', choices=['preflight', 'health', 'runtime', 'build-image'])
-    parser.add_argument('--minimum', default='0.5.3')
+    parser.add_argument('command', choices=['preflight', 'health', 'runtime', 'wire-pi', 'build-image'])
+    parser.add_argument('--minimum', default='0.8.2')
     parser.add_argument('--dry-run', action='store_true')
     recovery = parser.add_mutually_exclusive_group()
     recovery.add_argument('--adopt-iidfile', type=Path, help='Attest that a trusted completed build used the exact recipe; verify its IID, source checkout and OCI labels before recording it')
@@ -341,6 +360,9 @@ def main():
             return 0
         if args.command == 'runtime':
             return 0 if runtime(args.minimum) else 1
+        if args.command == 'wire-pi':
+            wire_pi()
+            return 0
         if args.command == 'preflight':
             preflight()
         else:

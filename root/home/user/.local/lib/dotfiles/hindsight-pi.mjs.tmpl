@@ -1,0 +1,21 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+export default async function hindsightPi(pi) {
+  const runtime = pathToFileURL(join(homedir(), '.hindsight/coding-agents/dist/pi.js'));
+  const { default: extension } = await import(runtime.href);
+  return extension({
+    ...pi,
+    on(name, handler) {
+      if (name !== 'before_agent_start') return pi.on(name, handler);
+      return pi.on(name, (event, ctx) => {
+        // Standalone Pi custom runs have no prompt. Keep them out of user retrieval.
+        const compatible = typeof event.prompt === 'string'
+          ? event
+          : Object.create(event, { prompt: { value: '' } });
+        return handler(compatible, ctx);
+      });
+    },
+  });
+}

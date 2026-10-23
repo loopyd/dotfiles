@@ -995,7 +995,7 @@
       "source": "root/home/user/.bashrc.tmpl",
       "target": ".bashrc",
       "mode": "0600",
-      "sha256": "ab4de8fda49923a75b0cf9004d834319a66bebf32f357c35630ce71fcd0adb00"
+      "sha256": "7efacf8ed5ceec1c6eea23d1c08b172db6b2e9c1a11abc7dd65cf7a3dd160eaf"
     },
     {
       "source": "root/home/user/.cargo/env.tmpl",
@@ -1007,13 +1007,13 @@
       "source": "root/home/user/.codex/AGENTS.md.tmpl",
       "target": ".codex/AGENTS.md",
       "mode": "0600",
-      "sha256": "cb55049bbd1c059889b207894ef82553cc04429728b86d3d34b1dd70b065edf4"
+      "sha256": "30864a0983dd6901f159cb9f6ca362c903b4c6a34d88d353623a88abe7bed3b8"
     },
     {
       "source": "root/home/user/.codex/config.toml.tmpl",
       "target": ".codex/config.toml",
       "mode": "0600",
-      "sha256": "eea2b176f6687310e983a3181e85f2a379cb18e56dd73d352f11c759527561ae"
+      "sha256": "bdca5a221f7a1bab8052152f5c31a43b2c96291d3a66d02779124442433ec12e"
     },
     {
       "source": "root/home/user/.codex/hooks.json.tmpl",
@@ -2855,7 +2855,7 @@
       "source": "root/home/user/.config/hindsight/README.md.tmpl",
       "target": ".config/hindsight/README.md",
       "mode": "0600",
-      "sha256": "583663789ed0b1f55b91ea2d743a8478a55feb0f541e3d444045f6b70daa4799"
+      "sha256": "f92374dd497df10b11eb403559470e238875b863c72d0217b76a60192d2a2631"
     },
     {
       "source": "root/home/user/.config/hindsight/compose.yaml.tmpl",
@@ -3506,6 +3506,12 @@
       "sha256": "965989f81a71f251f6fb3d96474c3cebb664c2fa1a846496d521ad12a34601df"
     },
     {
+      "source": "root/home/user/.local/lib/dotfiles/hindsight-pi.mjs.tmpl",
+      "target": ".local/lib/dotfiles/hindsight-pi.mjs",
+      "mode": "0644",
+      "sha256": "80f26f8653d6b821d02640e8cb41b3df7d4c9308d0023b9bde9c114b8dceb8c4"
+    },
+    {
       "source": "templates/nas-backup.json.tmpl",
       "target": ".config/dotfiles/nas-backup.json",
       "mode": "0600",
@@ -3551,7 +3557,7 @@
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
       "target": ".pi/agent/settings.json",
       "mode": "0600",
-      "sha256": "e0cfdd47686c94f36a0d18aae055d27c2bb49e89692ae6fe05cbd0c0880eaac0"
+      "sha256": "07241bb0d41945ff84026bf13bf3c30f1109579eab2b21ab88b945d9f74c22f1"
     },
     {
       "source": "root/home/user/.config/openspec/config.json.tmpl",
@@ -4760,24 +4766,6 @@
       "sha256": "0e8ca0a68466a3dc6996e5e0c2ca3ccbb04a82f5ec0327db3bf41b753ed58959"
     },
     {
-      "source": "root/home/user/.codex/context-gardener-compact-prompt.md.tmpl",
-      "target": ".codex/context-gardener-compact-prompt.md",
-      "mode": "0600",
-      "sha256": "540f97f4dac1f65e36e8b26f13d8f6de57bc5b4b6db4b6999b4f5c66411b707c"
-    },
-    {
-      "source": "root/home/user/.config/environment.d/60-codex-context-gardener.conf.tmpl",
-      "target": ".config/environment.d/60-codex-context-gardener.conf",
-      "mode": "0600",
-      "sha256": "4b1dbf65d8efd7a640554135a1c466c866beb43dd2c9ecbde757814f7a8e2594"
-    },
-    {
-      "source": "root/home/user/.config/fish/conf.d/codex-context-gardener.fish.tmpl",
-      "target": ".config/fish/conf.d/codex-context-gardener.fish",
-      "mode": "0600",
-      "sha256": "7096f741f8dc21b956c269f1fd201c69b3354325aca3beb2f1323ebcb09715a4"
-    },
-    {
       "source": "root/home/user/.pi/agent/pi-vcc-config.json.tmpl",
       "target": ".pi/agent/pi-vcc-config.json",
       "mode": "0600",
@@ -4851,8 +4839,6 @@
     ".config/REAPER",
     "Documents/patchbay_persist.xml",
     "Documents/pipewirepatch.qpwgraph",
-    ".codex/plugins/data",
-    ".codex/context-gardener-data",
-    ".context-gardener"
+    ".codex/plugins/data"
   ]
 }

@@ -1,14 +1,4 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
-# Context Gardener settings also apply to noninteractive Codex launchers.
-if [ -r "$HOME/.config/environment.d/60-codex-context-gardener.conf" ]; then
-    while IFS='=' read -r gardener_name gardener_value; do
-        case "$gardener_name" in
-            CONTEXT_GARDENER_*) export "$gardener_name=$gardener_value" ;;
-        esac
-    done < "$HOME/.config/environment.d/60-codex-context-gardener.conf"
-    unset gardener_name gardener_value
-fi
-
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 

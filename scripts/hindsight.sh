@@ -9,7 +9,7 @@ source "${SCRIPT_DIR}/delib.sh"
 DRY_RUN=false
 START_SERVICES=true
 CLI_VERSION=0.9.2
-RUNTIME_VERSION=0.5.3
+RUNTIME_VERSION=0.8.2
 TEMP_BINARY=""
 COMPOSE=(docker compose --project-name hindsight --file "${HOME}/.config/hindsight/compose.yaml")
 
@@ -50,6 +50,7 @@ install_clients() {
         log "DRY-RUN: install verified Hindsight CLI ${CLI_VERSION} (${platform}) into ~/.local/bin"
         run_maybe_dry npm exec --yes "--package=@vectorize-io/hindsight-coding-agents@${RUNTIME_VERSION}" -- hindsight-coding-agents update
         log 'DRY-RUN: wire pi harness (extension in ~/.pi/agent/settings.json + skill)'
+        run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" wire-pi
         return
     fi
     if [[ -f "${HOME}/.local/bin/hindsight" ]] && [[ "$(compute_sha256 "${HOME}/.local/bin/hindsight")" == "${checksum}" ]]; then
@@ -78,6 +79,7 @@ wire_agents() {
         return 0
     fi
     run_maybe_dry node "${runner}" install pi
+    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" wire-pi
     log 'pi harness wired (extension + skill)'
 }
 
@@ -130,8 +132,8 @@ main() {
         run_maybe_dry safe_sudo systemctl enable --now docker.service
     fi
     run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" build-image
-    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" preflight
     install_clients
+    run_maybe_dry python3 "${SCRIPT_DIR}/hindsight.py" preflight
     activate_services
     log 'Completed; no bank creation, key rotation, database reset or lingering changes'
 }
