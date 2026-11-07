@@ -1,23 +1,10 @@
 # syntax=docker/dockerfile:1.7
-# Vendored from decolua/9router @ v0.5.91 (Dockerfile); the pinned
-# loopyd/9router-custom revision keeps this Dockerfile unchanged.
-# Owned by this repository so the deployment never depends on upstream image
-# tags being present or reproducible; scripts/router.py builds the digest-checked
-# revision in router-build.json (or an explicit --tag override). Review on bumps.
-# Reviewed against v0.5.91 (upstream Dockerfile unchanged since v0.5.85):
-# every COPY stage (public, .next/static, standalone,
-# custom-server.js, open-sse, src/mitm, node-forge, next, sql.js,
-# node-machine-id), the su-exec entrypoint and the runtime ENV set are unchanged
-# from v0.5.81. Upstream-only differences that are intentionally not adopted:
-# its ALPINE_MIRROR/NPM_REGISTRY build args and npm cache mount (this file pins
-# the regional mirrors that this host's builds require), its APP_VERSION label
-# (router.py applies the resolved tag as org.opencontainers.image.version), and
-# its drop of the full `apk upgrade` (this file keeps it for base-CVE drift).
-ARG NODE_IMAGE=node:22-alpine
+# Vendored from decolua/9router @ v0.5.112, with the regional npm build mirror,
+# apk upgrades and version labels supplied by scripts/router.py.
+# Review runtime COPY steps and dependencies on every source pin update.
+ARG NODE_IMAGE=node:22.23.4-alpine
 FROM ${NODE_IMAGE} AS base
 WORKDIR /app
-# CN mirror for apk (used by builder and runner stages)
-RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories
 
 FROM base AS builder
 
@@ -29,6 +16,11 @@ RUN npm install --registry=https://registry.npmmirror.com
 COPY . ./
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
+
+# Lazy runtime imports are omitted by Next standalone tracing.
+RUN mkdir -p /opt/lazy-runtime && cd /opt/lazy-runtime && \
+  npm init -y >/dev/null && \
+  npm install --no-save --registry=https://registry.npmmirror.com wreq-js playwright-core
 
 FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
@@ -57,13 +49,14 @@ COPY --from=builder /app/node_modules/next ./node_modules/next
 COPY --from=builder /app/node_modules/sql.js ./node_modules/sql.js
 # node-machine-id is createRequire-loaded at runtime; tracing omits it.
 COPY --from=builder /app/node_modules/node-machine-id ./node_modules/node-machine-id
+COPY --from=builder /opt/lazy-runtime/node_modules/. ./node_modules/
 
 RUN mkdir -p /app/data && chown -R node:node /app && \
   mkdir -p /app/data-home && chown node:node /app/data-home && \
   ln -sf /app/data-home /root/.9router 2>/dev/null || true
 
 # Fix permissions at runtime (handles mounted volumes)
-RUN apk --no-cache upgrade && apk --no-cache add su-exec && \
+RUN apk --no-cache upgrade && apk --no-cache add su-exec ffmpeg && \
   printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 

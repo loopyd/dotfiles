@@ -1527,6 +1527,47 @@ digest for pinned builds, are recorded in `~/.local/state/9router/build.json`. T
 the previous `9router:<tag>` image and private backups; stop the gateway before
 any database recovery, never overwrite a live database.
 
+### Router update to v0.5.112 (2026-11-06)
+
+Merged upstream `v0.5.112` into `loopyd/9router-custom` at
+`d737938aa2eae7c1a1fc43aa02095b375ecafa6e`, preserving PR #4396's function-tool
+strict semantics. Upstream now carries the GPT-6.1 Sol capability entry, so the
+merge drops the duplicate fork entry. The source archive SHA-256 is
+`7d64a5203aacef59fb64976f65cfd6a1c08bdb75b7c31f9c542f633c04abf3c8`,
+confirmed by two downloads. The pin is `v0.5.112-fork-d737938a`.
+
+The vendored Dockerfile now uses upstream's Node `22.23.4-alpine`, includes
+FFmpeg and copies the lazy `wreq-js` and `playwright-core` runtime dependencies.
+It retains the npm regional mirror and uses Alpine's official package mirror
+after the regional Alpine mirror returned a package 404. The application build
+and runtime dependency-resolution checks passed.
+
+Before cutover, the candidate passed checks on loopback port `20129` against a
+private SQLite backup. The database schema stayed unchanged and integrity was
+`ok`. The maintained `bash scripts/router.sh update` then deployed image
+`sha256:fdfcb374a6d84d74e805fc379ae3037afcdafcb98ad7a972e3d3a45d6249deae`.
+Live checks passed for the managed image, limits, storage and loopback binding;
+86 authenticated models, including both required Qwen models and
+`cx/gpt-6.1-sol`; Qwen chat HTTP 200; and embeddings HTTP 200 with 1024 dimensions.
+Private HTTPS certificate validation, dashboard login redirect and authenticated
+model discovery passed. Anonymous chat and embedding requests return 401.
+Anonymous model discovery returns 200 on both the previous v0.5.104 deployment
+and v0.5.112; discovery is not an authentication or inference test.
+Hindsight returned to active state and its authenticated health check passed.
+
+Validation: 104 focused fork assertions passed. Of 464 assertions in the 46
+unit-test files added by this upstream release, 463 passed. The failing
+`combo-credit-fallback` assertion, `routes a 400 response correctly: Bad request`,
+fails identically in a clean upstream `v0.5.112` worktree. All 20 dotfiles
+regression tests passed. This was not a full upstream-suite or reboot test.
+
+The rehearsal container was removed. Private backups, previous build receipt and
+verification logs remain under `~/.local/state/9router/update-v0.5.112/`.
+`before-cutover.sqlite` passed its integrity check. The previous image remains
+`9router:rollback-pre-v0.5.112` at `sha256:2677739d…`. To roll back, retag that
+image as `9router:local` and restart `9router.service`; stop the gateway before
+restoring the database if database recovery is needed.
+
 ### Router PR #4396 deployment (2026-09-27)
 
 Deployed `v0.5.91-pr4396-140f5404e914`, pinned to upstream commit
