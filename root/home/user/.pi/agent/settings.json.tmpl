@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.85.1",
+  "lastChangelogVersion": "1.5.0",
   "defaultProvider": "ninerouter",
   "defaultModel": "qwen-combo",
   "defaultThinkingLevel": "xhigh",
@@ -51,10 +51,10 @@
     "npm:pi-subagents",
     "npm:pi-intercom",
     "npm:pi-web-access",
-    "npm:@sting8k/pi-vcc@0.10.0",
     "npm:pi-semantic-edit",
     "npm:pi-goal-x",
-    "npm:@nguyenquangthai/pi-ask@0.2.1"
+    "npm:@nguyenquangthai/pi-ask@0.2.1",
+    "npm:@sting8k/pi-vcc@0.10.0"
   ],
   "agentScope": "both",
   "confirmProjectAgents": true,
@@ -91,6 +91,14 @@
     "mermaid": "streaming"
   },
   "extensions": [
+    "-builtin:mcp",
     "@@DOTFILES:HOME@@/.local/lib/dotfiles/hindsight-pi.mjs"
-  ]
+  ],
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:pi-mcp-adapter\",\"scope\":\"user\"}": "7.0.1",
+    "{\"source\":\"npm:pi-subagents\",\"scope\":\"user\"}": "0.84.0",
+    "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.46.0",
+    "{\"source\":\"npm:@nguyenquangthai/pi-ask@0.2.1\",\"scope\":\"user\"}": "0.2.1",
+    "{\"source\":\"npm:@sting8k/pi-vcc@0.10.0\",\"scope\":\"user\"}": "0.10.0"
+  }
 }

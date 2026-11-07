@@ -2951,7 +2951,7 @@
       "source": "root/home/user/.config/mise/config.toml.tmpl",
       "target": ".config/mise/config.toml",
       "mode": "0600",
-      "sha256": "7e7a1a26aef3e058e615b56c172f6be8945388375f9c2a7227168ab7529f391d"
+      "sha256": "81ba605686a3d07da2a0ce206da6e2ab6c31dba202b1a80153890122d837f5d5"
     },
     {
       "source": "root/home/user/.config/nemo/desktop-metadata.tmpl",
@@ -3551,13 +3551,13 @@
       "source": "root/home/user/.pi/agent/models.json.tmpl",
       "target": ".pi/agent/models.json",
       "mode": "0600",
-      "sha256": "743e8409079ab11dd23248a94d07b45ccdd1a88a361b58023749a9bb63c0ba78"
+      "sha256": "528b2d2a8f24b726b026a4beceb52b8ab88bd42ea92095e3e6d5803dfc439eca"
     },
     {
       "source": "root/home/user/.pi/agent/settings.json.tmpl",
       "target": ".pi/agent/settings.json",
       "mode": "0600",
-      "sha256": "07241bb0d41945ff84026bf13bf3c30f1109579eab2b21ab88b945d9f74c22f1"
+      "sha256": "df70c4b4b178c04d835c27d3db4e7a41071ae20296f07cbb01054e12568ed9e0"
     },
     {
       "source": "root/home/user/.config/openspec/config.json.tmpl",

@@ -262,7 +262,7 @@ The CLI checksum pins come from the official [Hindsight v0.9.2 release](https://
 
 ### User toolchains and versionless packages
 
-`templates/packages.json` inventories user npm globals across installed Node runtimes, mise tool identities, Python user-site and user-owned mise distributions, requested packages, uv tools, Cargo crates, Rust components/targets, and Go command package paths. Package versions and duplicate runtime installations are omitted; restoration resolves current releases. Configured runtime selectors are preserved separately: Node `24`, Python `3.12.13`, and the remaining selectors in the mise template. The rustup default version/profile is preserved with the destination host target. Inactive mise tools install without changing global defaults. uv becomes a global mise tool instead of restoring its old standalone binary/installation receipt.
+`templates/packages.json` inventories user npm globals across installed Node runtimes, mise tool identities, Python user-site and user-owned mise distributions, requested packages, uv tools, Cargo crates, Rust components/targets, and Go command package paths. Package versions and duplicate runtime installations are omitted; restoration resolves current releases. Configured runtime selectors are preserved separately: Node `24.22.2`, Python `3.12.13`, and the remaining selectors in the mise template. The rustup default version/profile is preserved with the destination host target. Inactive mise tools install without changing global defaults. uv becomes a global mise tool instead of restoring its old standalone binary/installation receipt.
 
 ```bash
 python3 scripts/dotfiles.py install --values /private/path/values.json
